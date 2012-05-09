@@ -1,0 +1,48 @@
+
+Liste des scripts
+JS > C#
+JS > Boo
+C# > JS
+C# > Boo
+Boo > JS
+Boo > C#
+
+- les scripts à convertir sont dans un dossier "Assets/ScriptsToConvert"
+- les scripts convertis ont le même nom et sont créés dans le dossier "Assets/ConvertedScripts"
+
+Il y a juste à ajouter le script de convertion à un gameObject et à lancer le jeu dans Unity pour que tous les scripts à convertirs le soients.
+
+
+
+visibilité classes
+
+
+
+
+
+
+LIMITATION :
+
+JS > C#
+
+- commentaires entre fin finction declaration et bracket d'ouverture
+
+
+
+- variable declaration, without type definition and the value comes from a function or a class without "new" keyword :
+var test = DoSomething();
+Can't guess if DoSomething() is a function or a class, can't guess the type => nothing gets converted
+
+- var declaration in a for/foreach loop, can't guess the variable type   for (var name in array) > foreach (?? name in array)
+=> nothing is done
+
+- does not add the IEnumerator return type to functions that yields.
+
+
+- single quotation marks not converted to double quotation marks in string[] array
+
+- some leftover String types (function return type)
+
+// setter must follow it's getter
+            // a getter must be followed by it's setter
+            // can add anything between a getter and setter but another getter/setter
