@@ -128,7 +128,7 @@ function Update () {
 }
 
 
-var rect: Rect = new Rect (0, 0, 100, 100);
+private var rect: Rect = new Rect (0, 0, 100, 100);
 function OnGUI () {
     var text: String = "Begining Convertion ...";
 
@@ -1077,7 +1077,7 @@ function Functions () {
         // look for return keyword patterns
         pattern = "return.+;";
         if ( ! Regex.Match (functionString, pattern).Success) { // no return keyword : add "void" return type
-            file = file.Insert (functionStartIndex-1, ": void "); 
+            file = file.Insert (functionStartIndex-1, ": void1 "); 
             offset += 7;
             continue;
         }
@@ -1206,7 +1206,7 @@ function Functions () {
         // look for "empty" return keyword, allowed in void functions
         pattern = "return"+optWS+";"; 
         if (Regex.Match (functionString, pattern).Success) { 
-            file = file.Insert (functionStartIndex-1, ": void "); // functionStartIndex-1 is the index of the opening bracket
+            file = file.Insert (functionStartIndex-1, ": void2 "); // functionStartIndex-1 is the index of the opening bracket
             offset += 7;
             continue;
         }
