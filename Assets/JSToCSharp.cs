@@ -38,15 +38,16 @@ using System.IO; // Regex.Replace(), Match, Matches, MatchCollection...
 
 
 public struct Block {
+	public Match match;
 
 	public int startIndex;
 	public int endIndex; // index of the opening and closing bracket of block in reftext
 	public string refText; //
 
-	public string name = ""; // name of the function or class
-	public string declaration = ""; // full block's declaration (up util the opening bracket)
-	public string text = ""; // text inside the block between the opening and closing bracket
-	public string newText = "";
+	public string name; // name of the function or class
+	public string declaration; // full block's declaration (up util the opening bracket)
+	public string text; // text inside the block between the opening and closing bracket
+	public string newText;
 
 
 	// ----------------------------------------------------------------------------------
@@ -58,14 +59,20 @@ public struct Block {
 	/// <param name="refText"></param>
 	/// <param name="offset"></param>
 	public Block (Match match, string refText, int offset) {
+		this.match = match;
+		name = ""; // can't do that now, it depends of the regex, or I coult use match.Groups["name"]
 		declaration = match.Value;
 		this.refText = refText;
 		
-		startIndex = match.Index + match.Length;
-		endIndex = GetEndOfBlockIndex (functionStartIndex, file);
+		startIndex = match.Index + offset + match.Length - 1;
+		endIndex = 0;
+		text = "";
+		newText = "";
 
+		endIndex = this.GetEndOfBlockIndex ();
+		
 		if (endIndex <= startIndex) {
-			Debug.LogError ("Block:Block() : endIndex <= startIndex. Can't get block text. startIndex=["+startIndex+"] endIndex=["+endIndex+"].");
+			Debug.LogWarning ("Block:Block() : endIndex <= startIndex. Can't get block text. match=["+match.Value+"] startIndex=["+startIndex+"] endIndex=["+endIndex+"] refText=["+refText+"].");
 			return;
 		}
 
@@ -89,11 +96,12 @@ public struct Block {
 	int GetEndOfBlockIndex () {
 		int openedBrackets = 1;
 
-		for (int i = startIndex+1; i < reftext.Length; i++) {
-			if (reftext[i] == '{')
+		for (int i = startIndex+1; i < refText.Length; i++) {
+			//Debug.Log ("char at index["+i+" =["+refText[i]+"]");
+			if (refText[i] == '{')
 				openedBrackets++;
 
-			if (reftext[i] == '}') {
+			if (refText[i] == '}') {
 				openedBrackets--;
 
 				if (openedBrackets == 0)
@@ -102,7 +110,8 @@ public struct Block {
 		}
 
 		// no matching closing bracket has been found
-		Debug.LogError ("Block:GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning 0. startIndex=["+startIndex+"] ["+reftext[startIndex-1]+reftext[startIndex]+reftext[startIndex+1]+"] text=["+reftext+"].");
+		Debug.LogError ("Block:GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning 0.  match=["+match.Value+"] startIndex=["+startIndex+"] ["+
+			refText[startIndex-1]+"|"+refText[startIndex]+"|"+refText[startIndex+1]+"] text=["+refText+"].");
 		return 0;
 	}
 }
@@ -514,77 +523,76 @@ public class JSToCSharp: MonoBehaviour {
         // loop the classes declarations
         string pattern = "class"+oblWS+commonName+"("+oblWS+"extends"+oblWS+commonName+")?"+optWS+"{";
 		MatchCollection classesMatches = Regex.Matches (file, pattern);
-		
-		//MatchCollection matches;
-        int classOffset = 0;
+		MatchCollection matches;
+        int fileOffset = 0;
 
         // list of functions and variable declaration that are found within a class
         List<string> classesContent = new List<string> ();
 
         foreach (Match classMatch in classesMatches) {
-			Block classBlock  = new Block (classMatch, file, classOffset);
-			classBlock.name = match.Groups[2].Value;
+			Block _class  = new Block (classMatch, file, fileOffset);
+			_class.name = classMatch.Groups[2].Value;
 
-			if (classBlock.text == "")
+			if (_class.text.Trim() == "")
 				continue;
 
-            //Match classMatch = match;
-			//string className = match.Groups[2].Value;
-        
-            // look for constructors
-			pattern = classBlock.name+optWS+"\\(.*\\)"+optWS+"{";
-            MatchCollection constructorsMatches = Regex.Matches (classBlock.text, pattern);
-			int constructorOffset = 0;
+			_class.newText = _class.text;
+
+            // look for constructors in the modified class
+			pattern = _class.name+optWS+"\\(.*\\)"+optWS+"{";
+			MatchCollection constructorsMatches = Regex.Matches (_class.newText, pattern);
+			int classNextTextOffset = 0;
 
 			foreach (Match constructorMatch in constructorsMatches) {
-				Block constructorBlock = new Block (constructorMatch, file, constructorOffset);
+				// here, we are inside one of the constructors of the current class (_class)
+				Block constructor = new Block (constructorMatch, _class.newText, classNextTextOffset);
+				// start and end index are relative to _class.text, not relative to file !
 
-				//int functionStartIndex = constructor.Index + constructorOffset + constructor.Length;
-				//int functionEndIndex = GetEndOfBlockIndex (functionStartIndex, file);
-				//string  functionString = file.Substring (functionStartIndex, functionEndIndex-functionStartIndex);
-           
                 // look for parent constructor call : super();
                 pattern = "super"+optWS+"\\((.*)\\)"+optWS+";";
-				Match parentConstructorCallMatch = Regex.Match (constructorBlock.text, pattern);
+				Match parentConstructorCallMatch = Regex.Match (constructor.text, pattern);
 
 				if (parentConstructorCallMatch.Success) {
 					Match m = parentConstructorCallMatch;
+					// the current constructor make a call to the parent class's constructor
+					
+					// add the new syntax to _class.newText
+					_class.newText = _class.newText.Insert (constructor.startIndex-1, ": base("+m.Groups[2].Value+") ");
+					
+					// delete the old syntax from _class.newText :
+					// first create the new constructor
+					constructor.newText = constructor.text.Replace (m.Value, ""); 
+					// then replace the old contructor by the new
+					_class.newText = _class.newText.Replace (constructor.text, constructor.newText);
 
-					file = file.Insert (constructorBlock.startIndex-1, ": base("+m.Groups[2].Value+") ");
-					offset += 9+m.Groups[2].Length;
-					constructorOffset += 9+m.Groups[2].Length;
-
-					file = file.Replace (constructorBlock.text, constructorBlock.text.Replace (m.Value, "")); // delete the parent constructor call from file
-					offset -= m.Length;
-					constructorOffset -= m.Length;
+					// calculating the offset
+					classNextTextOffset += 9 + m.Groups[2].Length; // what has been added to _class.newText
+					classNextTextOffset -= m.Length; // what has been removed in constructor.newText, hence in _class.newText
                 }
-            }
+            } // end looping throught constructors of _class
 
-			// now replace in file, the old classBlock.text by the new
+			// we won't do more search/replace for this class _class.newText
+			// now replace in file, the old _class.text by the new
+			file = file.Replace (_class.text, _class.newText);
+			fileOffset = (_class.text.Length - _class.newText.Length);
+
 
             // look for functions and var inside the class
 			//int classStartIndex = classMatch.Index + offset + classMatch.Length;
 			//int classEndIndex = GetEndOfBlockIndex (classStartIndex, file);
-
-			//if (classEndIndex <= classStartIndex) { // empty class ??
-			//    Debug.Log ("class "+className+" is empty");
-			//    continue;
-			//}
-
-			//string  classstring = file.Substring (classStartIndex, classEndIndex-classStartIndex);
-
+			
             pattern = "function"+oblWS+commonName+optWS+"\\(";
-            matches = Regex.Matches (classBlock.text, pattern);
+            matches = Regex.Matches (_class.text, pattern); // it doesn't matter here if the search is done in _class.text or newText beau the have thse functions and variables
 
-            foreach (Match function in matches)
+			foreach (Match function in matches)
                 classesContent.Add (function.Groups[2].Value);
 
             pattern = "var"+oblWS+commonName+optWS+"(:|;|=)";
-            matches = Regex.Matches (classstring, pattern);
+			matches = Regex.Matches (_class.text, pattern);
 
             foreach (Match variable in matches)
 				classesContent.Add (variable.Groups[2].Value);
-        }
+		} // end looping through classes      foreach (Match classMatch in classesMatches)
 
 
         // we made a list of functions and variables inside classes
@@ -607,7 +615,7 @@ public class JSToCSharp: MonoBehaviour {
         // ... compare the two list
         // if there is a difference, that mean that some variable or function declaration lies outside a public class
         // that means that the file is a MonoBehaviour derived public class
-        if (classes.Count == 0 || classesContent.Count != fileContent.Count ) {// no public class declaration within the file
+		if (classesMatches.Count == 0 || classesContent.Count != fileContent.Count) {// no class declaration within the file
             file = file.Insert (0, EOL+"public class "+fileName+" : MonoBehaviour {"+EOL);
             file = file+EOL+"} // end of class "+fileName; // the closing public class bracket
         }
@@ -1159,13 +1167,13 @@ public class JSToCSharp: MonoBehaviour {
 
         foreach (Match match in matches) {
             string propName = match.Groups[5].Value;
-            string varName = match.Groups[14].Value;
+            string variableName = match.Groups[14].Value;
 
             // now I have all infos nedded to start building the property in C#
             // match.Groups[1].Value is the getter's visibility. It always exists by now because it has been added by the AddVisibility() method above
             // match.Groups[10].Value is the getter's return type
             string property = match.Groups[1].Value+" "+match.Groups[10].Value+" "+propName+" {"+EOL 
-            +"\t\tget { return "+varName+"; }"+EOL; // getter
+            +"\t\tget { return "+variableName+"; }"+EOL; // getter
 
 
             // now look for the corresponding setter
@@ -1173,7 +1181,7 @@ public class JSToCSharp: MonoBehaviour {
             Match setMatch = Regex.Match (unModifiedFile, pattern);
 
             if (setMatch.Success)
-                property += "\t\t"+setMatch.Groups[1].Value+" set { "+varName+" = value; }"+EOL; // setter
+                property += "\t\t"+setMatch.Groups[1].Value+" set { "+variableName+" = value; }"+EOL; // setter
 
             property +="\t}"+EOL; // property closing bracket
 
@@ -1210,32 +1218,22 @@ public class JSToCSharp: MonoBehaviour {
         // coroutines gets a IEnumerator return type and thair call is wrapped by StartCoroutine( )
 
         pattern = "function"+oblWS+commonName+optWS+"\\(.*\\)"+optWS+"{"; // look for all JS functions that has no explicit return type
-        MatchCollection matches = Regex.Matches (file, pattern);
-        offset = 0;
+        MatchCollection functionMatches = Regex.Matches (file, pattern);
+        fileOffset = 0;
 
-        foreach (Match match in matches) {
-			//Block function = new Block (match, file, offset);
-			//function.name = match.Groups[2].Value;
+		foreach (Match functionMatch in functionMatches) {
+			Block function = new Block (functionMatch, file, fileOffset);
+			function.name = match.Groups[2].Value;
 
-
-			string functionName = match.Groups[2].Value;
-			int functionStartIndex = match.Index + offset + match.Length;
-			int functionEndIndex = GetEndOfBlockIndex (functionStartIndex, file);
-
-			if (functionEndIndex <= functionStartIndex) // empty method
-				continue;
-
-			string functionString = file.Substring (functionStartIndex, functionEndIndex-functionStartIndex);
-
-			Debug.Log ("function "+functionName+" String="+functionString);
-
-         
+			Debug.Log ("function="+function.name+" string=["+function.text+"].");
+			
 
             // look for return keyword patterns
             pattern = "return.+;";
-            if ( ! Regex.Match (functionString, pattern).Success) { // no return keyword : add "void" return type
-                file = file.Insert (functionStartIndex-1, ": void "); 
-                offset += 7;
+
+			if (!Regex.Match (function.text, pattern).Success) { // no return keyword : add "void" return type
+                file = file.Insert (function.startIndex-1, ": void "); 
+                fileOffset += 7;
                 continue;
             }
 
@@ -1246,9 +1244,9 @@ public class JSToCSharp: MonoBehaviour {
             // yield / coroutine
             pattern = "yield"+oblWS+"return";
 
-			if (Regex.Match (functionString, pattern).Success) { 
-                file = file.Insert (functionStartIndex-1, ": IEnumerator ");
-                offset += 14;
+			if (Regex.Match (function.text, pattern).Success) { 
+                file = file.Insert (function.startIndex-1, ": IEnumerator ");
+                fileOffset += 14;
 
                 // In C# (and Boo), a coroutine call must be wrapped by the StartCoroutine() method : StartCoroutine( CoroutineName() );
                 // The current void is a coroutine, so search for it's call in the file
@@ -1259,7 +1257,7 @@ public class JSToCSharp: MonoBehaviour {
 					string coroutineCall = "StartCoroutine( "+coroutine.Groups[1].Value+" );";
 
 					file = file.Replace (coroutine.Value, coroutineCall);
-					offset += (19-coroutine.Groups[3].Length); // 19 is the length of "StartCoroutine(  );"    match.Groups[3].Length is the length of ""+optWS+";""
+					fileOffset += (19-coroutine.Groups[3].Length); // 19 is the length of "StartCoroutine(  );"    match.Groups[3].Length is the length of 'optWS+";"'
                 }
 
                 continue;
@@ -1267,61 +1265,61 @@ public class JSToCSharp: MonoBehaviour {
 
 
             // this pattern will match an int, a float, a bool ar a variable name
-            pattern = "return"+oblWS+commonName+optWS+";"; 
-            Match varMatch = Regex.Match (functionString, pattern);
-            string varName = "";
+            pattern = "return"+oblWS+commonName+optWS+";";
+			Match variableMatch = Regex.Match (function.newText, pattern);
+            string variableName = "";
 
-			if (varMatch.Success) {
-				varName = varMatch.Groups[2].Value;
+			if (c.Success) {
+				variableName = variableMatch.Groups[2].Value;
 
                 // bool
-                if (Regex.Match (varName, "(true|false)").Success) { 
-                    file = file.Insert (functionStartIndex-1, ": bool ");
-                    offset += 7;
+                if (Regex.Match (variableName, "(true|false)").Success) { 
+                    file = file.Insert (function.startIndex-1, ": bool ");
+                    fileOffset += 7;
                     continue;
                 }
 
                 // float
-                if (Regex.Match (varName, "-?[0-9]+\\.{1}[0-9]+(f|F){1}").Success) { 
-                    file = file.Insert (functionStartIndex-1, ": float ");
-                    offset += 8;
+                if (Regex.Match (variableName, "-?[0-9]+\\.{1}[0-9]+(f|F){1}").Success) { 
+                    file = file.Insert (function.startIndex-1, ": float ");
+					fileOffset += 8;
                     continue;
                 }
 
 				// double
-				if (Regex.Match (varName, "-?[0-9]+\\.{1}[0-9]+(f|F){0}").Success) {
-					file = file.Insert (functionStartIndex-1, ": double ");
-					offset += 9;
+				if (Regex.Match (variableName, "-?[0-9]+\\.{1}[0-9]+(f|F){0}").Success) {
+					file = file.Insert (function.startIndex-1, ": double ");
+					fileOffset += 9;
 					continue;
 				}
 
                 // int
-                if (Regex.Match (varName, "^-?[0-9]+$").Success) { 
-                    file = file.Insert (functionStartIndex-1, ": int ");
-                    offset += 6;
+                if (Regex.Match (variableName, "^-?[0-9]+$").Success) { 
+                    file = file.Insert (function.startIndex-1, ": int ");
+					fileOffset += 6;
                     continue;
                 }
 
-                // varName seems to be a variable name after all
-                // search for the variable declaration in the void
+                // variableName seems to be a variable name after all
+                // search for the variable declaration in the function
                 // variable declarations are already C#-style
-                pattern = commonChars+oblWS+varName+optWS+"="; // it will also match non converted var declarations : "public var _theVariable ="
-                varMatch = Regex.Match (functionString, pattern);
+                pattern = commonChars+oblWS+variableName+optWS+"="; // it will also match non converted var declarations : "public var _theVariable ="
+				variableMatch = Regex.Match (function.text, pattern);
 
-				if (varMatch.Success && varMatch.Groups[1].Value != "var") {
-					file = file.Insert (functionStartIndex-1, ": "+varMatch.Groups[1].Value+" ");
-					offset += (3+varMatch.Groups[1].Length);
+				if (variableMatch.Success && varMatch.Groups[1].Value != "var") {
+					file = file.Insert (function.startIndex-1, ": "+variableMatch.Groups[1].Value+" ");
+					fileOffset += (3 + variableMatch.Groups[1].Length);
                 }
                 else { // declaration not found in the function, maybe it's somewhere in the file
-					varMatch = Regex.Match (file, pattern);
+					variableMatch = Regex.Match (file, pattern);
 
-					if (varMatch.Success && varMatch.Groups[1].Value != "var") {
+					if (variableMatch.Success && variableMatch.Groups[1].Value != "var") {
 
-						file = file.Insert (functionStartIndex-1, ": "+varMatch.Groups[1].Value+" ");
-						offset += (3+varMatch.Groups[1].Length);
+						file = file.Insert (function.startIndex-1, ": "+variableMatch.Groups[1].Value+" ");
+						fileOffset += (3 + variableMatch.Groups[1].Length);
                     }
                     else { // no, it's really anywhere ...
-                        file = file.Insert (functionStartIndex-1, ": MISSING_RETURN_TYPE ");
+                        file = file.Insert (function.startIndex-1, ": MISSING_RETURN_TYPE ");
                         offset += 22;
                     }
                 }
@@ -1335,49 +1333,52 @@ public class JSToCSharp: MonoBehaviour {
             Match stringCharMatch = Regex.Match (functionString, pattern);
 
 			if (stringCharMatch.Success) {
-				varName = stringCharMatch.Groups[2].Value;
+				variableName = stringCharMatch.Groups[2].Value;
             
                 // char
                 pattern = "(\"|'){1}"+commonChars+"(\"|'){1}"+optWS+"\\["+optWS+"[0-9]+"+optWS+"\\]";
-                if (Regex.Match (varName, pattern).Success) { 
-                    file = file.Insert (functionStartIndex-1, ": char ");
-                    offset += 7;
+
+                if (Regex.Match (variableName, pattern).Success) { 
+                    file = file.Insert (function.startIndex-1, ": char ");
+                    fileOffset += 7;
                     continue;
                 }
 
                 // string
                 pattern = "(\"|'){1}"+commonChars+"(\"|'){1}";
-                if (Regex.Match (varName, pattern).Success) {
-                    file = file.Insert (functionStartIndex-1, ": string ");
-                    offset += 9;
+
+                if (Regex.Match (variableName, pattern).Success) {
+                    file = file.Insert (function.startIndex-1, ": string ");
+                    fileOffset += 9;
                     continue;
                 }
             }
 
 
-            // public class instanciation  return new Class ();
+            // class instanciation  return new Class ();
             pattern = "return"+oblWS+"new"+oblWS+commonName;
-            Match classMatch = Regex.Match (functionString, pattern);
+            Match classMatch = Regex.Match (function.text, pattern);
 
 			if (classMatch.Success) {
-				file = file.Insert (functionStartIndex-1, ": "+classMatch.Groups[3].Value+" ");
-				offset += (3+classMatch.Groups[3].Length);
+				file = file.Insert (function.startIndex-1, ": "+classMatch.Groups[3].Value+" ");
+				fileOffset += (3 + classMatch.Groups[3].Length);
                 continue;
             }
 
 
             // look for "empty" return keyword, allowed in void functions
-            pattern = "return"+optWS+";"; 
-            if (Regex.Match (functionString, pattern).Success) { 
-                file = file.Insert (functionStartIndex-1, ": void2 "); // functionStartIndex-1 is the index of the opening bracket
-                offset += 7;
+            pattern = "return"+optWS+";";
+
+            if (Regex.Match (function.text, pattern).Success) { 
+                file = file.Insert (function.startIndex-1, ": void "); // functionStartIndex-1 is the index of the opening bracket
+                fileOffset += 7;
                 continue;
             }
 
             // can't resolve anything ...
-            file = file.Insert (functionStartIndex-1, ": MISSING_RETURN_TYPE ");
-            offset += 22;
-        } // end for
+            file = file.Insert (function.startIndex-1, ": MISSING_RETURN_TYPE ");
+            fileOffset += 22;
+        } // end looping function declarations
     
 
         // now actually convert the declaration that have a return type (all functions should, even if it's the missing return type)
@@ -1422,7 +1423,7 @@ public class JSToCSharp: MonoBehaviour {
         MatchCollection matches = Regex.Matches (file, pattern);
 
         foreach (Match match in matches) {
-            string varName = match.Groups[3].Value;
+            string variableName = match.Groups[3].Value;
             string functionName = match.Groups[6].Value;
         
             // look for the function declaration that match the function name
@@ -1430,7 +1431,7 @@ public class JSToCSharp: MonoBehaviour {
             Match function = Regex.Match (file, pattern);
 
             if (function.Success) { // function declaration found in file    function.Groups[1].Value is the return type
-                patterns.Add ( "var("+oblWS+varName+optWS+"="+optWS+functionName+optWS+"\\()" );
+                patterns.Add ( "var("+oblWS+variableName+optWS+"="+optWS+functionName+optWS+"\\()" );
                 replacements.Add ( function.Groups[1].Value+"$1" );
             }
         }
@@ -1462,10 +1463,10 @@ public class JSToCSharp: MonoBehaviour {
             Match varMatch = Regex.Match (functionString, pattern);
 
             if (varMatch.Success) { // if the current function returns a variable
-                string  varName = varMatch.Groups[2].Value;
+                string  variableName = varMatch.Groups[2].Value;
 
                 // search for the variable declaration in the function
-                pattern = commonChars+oblWS+varName+optWS+"="; // it will also match non converted var declarations : "public var _theVariable ="
+                pattern = commonChars+oblWS+variableName+optWS+"="; // it will also match non converted var declarations : "public var _theVariable ="
                 varMatch = Regex.Match (functionString, pattern);
 
 				if (varMatch.Success && varMatch.Groups[1].Value != "var") // var declaration found in the void
