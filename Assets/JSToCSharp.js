@@ -1069,6 +1069,10 @@ function Functions () {
         var functionName: String = match.Groups[2].Value;
         var functionStartIndex: int = match.Index + match.Length + offset;
         var functionEndIndex: int = GetEndOfBlockIndex (functionStartIndex, file);
+
+        if (functionEndIndex <= functionStartIndex) // empty method
+            continue;
+
         var functionString: String = file.Substring (functionStartIndex, functionEndIndex-functionStartIndex );
 
 
