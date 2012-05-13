@@ -98,7 +98,6 @@ public struct Block {
 	/// <summary>
 	/// 
 	/// </summary>
-	/// <returns></returns>
 	int GetEndOfBlockIndex () {
         int openedBrackets = 0;
 
@@ -123,6 +122,9 @@ public struct Block {
 }
 
 
+// ----------------------------------------------------------------------------------
+
+
 public class JSToCSharp: MonoBehaviour {
 
     // custom classes names
@@ -140,7 +142,10 @@ public class JSToCSharp: MonoBehaviour {
     //----------------
 
     // list of classes that exists in the pool of files that will be converted
-    private List<string> ClassesList = new List<string> (); 
+    private List<string> classesList = new List<string> ();
+
+    // list of items variable or functions and their coresponding type
+    private Dictionary<string, string> itemsAndTypes = new Dictionary<string, string> ();
 
     // list of the files and their paths to be converted
     private string[] paths;
@@ -206,8 +211,8 @@ public class JSToCSharp: MonoBehaviour {
         Debug.Log ("Beginning converting "+paths.Length+" files.");
 
         // read all file and make a list of all encountered classes
-        BuildClassesList (paths);
-        //BuildFunctionsList (paths);
+        GetClassesList ();
+        GetItemsAndTypes ();
     }
 
 
@@ -254,24 +259,73 @@ public class JSToCSharp: MonoBehaviour {
     /// <summary>
     /// Read all file and make a list of all encountered classes
     /// </summary>
-    void BuildClassesList (string[] paths) {
+    void GetClassesList () {
+        StreamReader reader;
         foreach (string path in paths) {
-            StreamReader reader = new StreamReader (path);
+            reader = new StreamReader (path);
             file = reader.ReadToEnd ();
             reader.Close();
 
             fileName = path.Remove (path.Length-3).Substring (path.LastIndexOf ("\\")+1); // remove .js and get the part after the last slash
-            ClassesList.Add (fileName); // always add the fileName because it will often be the public class name
+            classesList.Add (fileName); // always add the fileName because it will often be the public class name
 
             // search for class declaration pattern
-            string pattern = "class"+oblWS+commonName+"("+oblWS+"extends"+oblWS+commonName+")?"+optWS+"{";
+            pattern = "class"+oblWS+commonName+"("+oblWS+"extends"+oblWS+commonName+")?"+optWS+"{";
             MatchCollection matches = Regex.Matches (file, pattern);
 
-            foreach (Match match in matches) {
-                if ( ! ClassesList.Contains (match.Groups[2].Value))
-                    ClassesList.Add (match.Groups[2].Value);
-            }
+            foreach (Match match in matches)
+                if ( ! classesList.Contains (match.Groups[2].Value))
+                    classesList.Add (match.Groups[2].Value);
         }
+
+
+        // append the myClasses list to classesList
+        foreach (string className in myClasses)
+            if ( ! classesList.Contains (className))
+                classesList.Add (className);
+
+
+        // append the content of UnityClasses to classesList
+        reader = new StreamReader (Application.dataPath+"/UnityClasses.txt");
+
+        while (true) {
+            string className = reader.ReadLine ();
+            if (className == null)
+                break;
+
+            if (className.StartsWith ("#")) // a comment
+                continue;
+
+            if ( ! classesList.Contains (className))
+                classesList.Add (className);
+        }
+
+        reader.Close ();
+    }
+
+
+    // ----------------------------------------------------------------------------------
+
+    /// <summary>
+    /// 
+    /// </summary>
+    void GetItemsAndTypes () {
+        StreamReader reader = new StreamReader (Application.dataPath+"/itemsTypes.txt");
+
+        while (true) {
+            string line = reader.ReadLine ();
+            if (line == null)
+                break;
+
+            if (line.StartsWith ("#") || ! line.Contains ("=")) // a comment, or a line that does not contains an equal sign (that would cause errors below)
+                continue;
+
+            string[] items = line.Split ('='); // item[0] is the item/value    item[1] is the type
+
+            itemsAndTypes.Add (items[0].Trim (), items[1].Trim ());
+        }
+
+        reader.Close ();
     }
 
 
@@ -722,9 +776,7 @@ public class JSToCSharp: MonoBehaviour {
 
 
         DoReplacements ();
-
-        // Assembly import, see in ConvertFile()
-    }
+    } // end Classes()
 
 
     // ----------------------------------------------------------------------------------
@@ -742,61 +794,32 @@ public class JSToCSharp: MonoBehaviour {
                 file = file.Insert (match.Groups[9].Index, "new "); // add "new " in front of Class ()
 
         
-        //--------------------
-
-
         //also add a new keyword in front of collections
-            pattern = "="+optWS+collections+optWS+"\\("; // when setting the value of a variable
-            InsertInPatterns (pattern, 1, " new");
+        pattern = "="+optWS+collections+optWS+"\\("; // when setting the value of a variable
+        InsertInPatterns (pattern, 1, " new");
 
 
-            pattern = "return"+oblWS+collections+optWS+"\\("; // when returning an empty instance
-            allMatches = ReverseMatches (file, pattern);
+        pattern = "return"+oblWS+collections+optWS+"\\("; // when returning an empty instance
+        allMatches = ReverseMatches (file, pattern);
 
-            foreach (Match match in allMatches) {
-                file = file.Insert (match.Groups[2].Index, "new ");
-                //offset += 4;
-            }
+        foreach (Match match in allMatches)
+            file = file.Insert (match.Groups[2].Index, "new ");
 
 
         // and Generic collections
-            pattern = "="+optWS+genericCollections+"<"+commonChars+">"+optWS+"\\(";
-            InsertInPatterns (pattern, 1, " new");
+        pattern = "="+optWS+genericCollections+"<"+commonChars+">"+optWS+"\\(";
+        InsertInPatterns (pattern, 1, " new");
 
 
-            pattern = "return"+oblWS+genericCollections+optWS+"\\(";
-            allMatches = ReverseMatches (file, pattern);
-            
-            foreach (Match match in allMatches) {
-                file = file.Insert (match.Groups[2].Index, "new ");
-                
-            }
-
-
-        //--------------------
+        pattern = "return"+oblWS+genericCollections+optWS+"\\(";
+        allMatches = ReverseMatches (file, pattern);
         
-
-        // append the myClasses list to ClassesList
-        foreach (string className in myClasses)
-            if ( ! ClassesList.Contains (className))
-                ClassesList.Add (className);
+        foreach (Match match in allMatches)
+            file = file.Insert (match.Groups[2].Index, "new ");
 
 
-        // append the content of UnityClasses to ClassesList
-        StreamReader reader = new StreamReader (Application.dataPath+"/UnityClasses.txt");
-
-        while (true) {
-            string className = reader.ReadLine ();
-            if (className == null)
-                break;
-
-            if ( ! ClassesList.Contains (className))
-                ClassesList.Add (className);
-        }
-
-
-        // add "new" keyword for classes in ClassesList
-        foreach (string className in ClassesList) {
+        // and classes in ClassesList
+        foreach (string className in classesList) {
             pattern = "="+optWS+className+optWS+"\\(";
             InsertInPatterns (pattern, 1, " new");
 
@@ -807,8 +830,6 @@ public class JSToCSharp: MonoBehaviour {
             foreach (Match match in allMatches)
                 file = file.Insert (match.Groups[2].Index, "new ");
         }
-  
-    
     } // end AddNewKeyword ()
 
 
@@ -896,6 +917,7 @@ public class JSToCSharp: MonoBehaviour {
         patterns.Add ( "([0-9]+\\.{1}[0-9]+)(f|F){0}" );
         replacements.Add ( "$1f" );
 
+
         // arrays
 
             // replace square brackets by curly brackets
@@ -981,7 +1003,8 @@ public class JSToCSharp: MonoBehaviour {
                 replacements.Add ( "$7[] $2" );
 
 
-        // =====================================================================================================================================================
+        // ----------------------------------------------------------------------------------
+
 
         // variable with type declaration but no value setting      string test;
 
@@ -1053,24 +1076,54 @@ public class JSToCSharp: MonoBehaviour {
             replacements.Add ( "float$1" );
         
 
+        // variable without type declaration or value setting
+
+            // if a variable name begins by "is" there is a chance that's a bool
+            patterns.Add ( "var("+oblWS+"is"+commonName+optWS+";)" );
+            replacements.Add ( "bool$1" );
+
+            // one thing I could do is guessing the type the first time the value is set
+
+
+        //--------------------
+
+
         // other types (classes instantiation)    Test _test3 = new Test();
+        // "new" keywords are already added everywhere they are needed by the method "AddNewKeyword()"
+        patterns.Add ( "var"+oblWS+"("+commonName+optWS+"="+optWS+"new"+oblWS+commonChars+optWS+"\\((.*);)" );
+        replacements.Add ( "$7 $2" );
 
-            // I can"t do anything if there is no "new" keyword, I can't guess the type of the variable and I can"t tell if Test() is a public class or a method
-            // new keyword are already added everywhere they are needed by the method "AddNewKeyword()"
-            patterns.Add ( "var"+oblWS+"("+commonName+optWS+"="+optWS+"new"+oblWS+commonChars+optWS+"\\((.*);)" );
-            replacements.Add ( "$7 $2" );
-
-
-
-		// something float value gets 2 f ??
-			patterns.Add ("([0-9]+\\.{1}[0-9]+)(f|F){2,}");
-			replacements.Add ("$1f");
+		
+        //--------------------
 
 
-        // var declaration vithout a type and the value comes from a function
-        // The type can be resolved if the function declaration is done in the file, but JS allows not to specify which type returns a void
-        // Wait until the functions declarations are processed (in Functions()) to try to convert those variables
-        
+        // var declaration vithout a type and the value comes from a function :
+        // The type can be resolved if the function exists in itemsAndTypes (see below) or if the function declaration is done in the file, 
+        // As UnityScript allows not to specify which type returns a void, wait until the functions declarations are processed (in Functions(), below Properties()) to try to convert those variables
+
+        // meanwhile, check for values and function calls that are within itemsAndTypes
+        foreach (KeyValuePair<string, string> item in itemsAndTypes) {
+            if (file.Contains (item.Key)) { // it just reduce the number of elements in patterns and replacements lists
+                
+                if (item.Key.EndsWith ("(")) { // the item is a function call
+                    patterns.Add ( "var("+oblWS+commonName+optWS+"="+optWS+item.Key.Replace ("(", "\\(")+".*\\)"+optWS+";)" );
+                    replacements.Add ( item.Value+"$1" );
+                }
+                else {
+                    patterns.Add ( "var("+oblWS+commonName+optWS+"="+optWS+item.Key+optWS+";)" );
+                    replacements.Add ( item.Value+"$1" );
+                }
+
+            }
+        }
+        // about the same code is run again in Function()
+
+
+        // patching time !
+        // sometimes float value gets 2 f ??????
+            patterns.Add ("([0-9]+\\.{1}[0-9]+)(f|F){2,}");
+            replacements.Add ("$1f");
+
 
         DoReplacements ();
     } // end VariablesDeclarations ()
@@ -1092,21 +1145,9 @@ public class JSToCSharp: MonoBehaviour {
 
         DoReplacements ();
 
-        /*
-        protected int moo = 1;
-        public int Foo {
-		    get { return foo; }
-		    public set { foo = value; }
-	    }
 
-    
+        //--------------------
 
-        C#
-        protected int _foo;
-        public int Foo {
-            get { return _foo; }
-            protected set { _foo = value; }
-        }*/
 
         // first, get all property getters (if a property exists, I assume that a getter always exists for it)
         pattern = "(?<visibility>public|private|protected)"+oblWS+"function"+oblWS+"get"+oblWS+"(?<propName>"+commonName+")"+optWS+"\\("+optWS+"\\)"+optWS+":"+optWS+"(?<returnType>"+commonChars+")"+optWS+
@@ -1158,11 +1199,11 @@ public class JSToCSharp: MonoBehaviour {
         // coroutines gets a IEnumerator return type and thair call is wrapped by StartCoroutine( )
 
         // look for all JS functions that has no explicit return type
-        pattern = "function"+oblWS+commonName+optWS+"\\(.*\\)"+optWS+"{"; 
+        pattern = " function"+oblWS+commonName+optWS+"\\(.*\\)"+optWS+"{"; 
         List<Match> allFunctions = ReverseMatches (file, pattern);
 
 		foreach (Match aFunction in allFunctions) {
-            Debug.Log ("aFunction="+aFunction.Value+" ["+file[aFunction.Index-1]+file[aFunction.Index]+file[aFunction.Index+1]+"]");
+            //Debug.Log ("aFunction="+aFunction.Value+" ["+file[aFunction.Index-1]+file[aFunction.Index]+file[aFunction.Index+1]+"]");
 
 			Block function = new Block (aFunction, file);
 			function.name = aFunction.Groups[2].Value;
@@ -1173,7 +1214,7 @@ public class JSToCSharp: MonoBehaviour {
 
             // if there is none, add ""
 			if ( ! Regex.Match (function.text, pattern).Success) { // no return keyword : add "void" return type
-                file = file.Replace (function.declaration, function.declaration.Replace ("function", "void")); 
+                file = file.Replace (function.declaration, function.declaration.Replace (" function ", " void ")); 
                 continue;
             }
 
@@ -1185,7 +1226,7 @@ public class JSToCSharp: MonoBehaviour {
             pattern = "yield"+oblWS+"return";
             
 			if (Regex.Match (function.text, pattern).Success) { 
-                file = file.Replace (function.declaration, function.declaration.Replace ("function", "IEnumerator"));
+                file = file.Replace (function.declaration, function.declaration.Replace (" function ", " IEnumerator "));
 
                 // In C# (and Boo), a coroutine call must be wrapped by the StartCoroutine() method : StartCoroutine( CoroutineName() );
                 // The current function is a coroutine, so search for it's call in the file
@@ -1196,7 +1237,7 @@ public class JSToCSharp: MonoBehaviour {
             }
 
 
-            // this pattern will match an int, a float, a bool ar a variable name
+            // this pattern will match an int, a float, a bool or a variable name
             pattern = "return"+oblWS+commonName+optWS+";";
 			Match variableMatch = Regex.Match (function.text, pattern);
             string variableName = "";
@@ -1206,25 +1247,25 @@ public class JSToCSharp: MonoBehaviour {
 				
                 // bool
                 if (Regex.Match (variableName, "^(true|false)$").Success) { 
-                    file = file.Replace (function.declaration, function.declaration.Replace ("function", "bool"));
+                    file = file.Replace (function.declaration, function.declaration.Replace (" function ", " bool "));
                     continue;
                 }
 
                 // float
                 if (Regex.Match (variableName, "^-?[0-9]+\\.{1}[0-9]+(f|F){1}$").Success) { 
-                    file = file.Replace (function.declaration, function.declaration.Replace ("function", "float"));
+                    file = file.Replace (function.declaration, function.declaration.Replace (" function ", " float "));
                     continue;
                 }
 
 				// double
 				if (Regex.Match (variableName, "^-?[0-9]+\\.{1}[0-9]+(f|F){0}$").Success) {
-					file = file.Replace (function.declaration, function.declaration.Replace ("function", "double"));
+					file = file.Replace (function.declaration, function.declaration.Replace (" function ", " double "));
 					continue;
 				}
 
                 // int
                 if (Regex.Match (variableName, "^-?[0-9]+$").Success) { 
-                    file = file.Replace (function.declaration, function.declaration.Replace ("function", "int"));
+                    file = file.Replace (function.declaration, function.declaration.Replace (" function ", " int "));
                     continue;
                 }
 
@@ -1235,16 +1276,29 @@ public class JSToCSharp: MonoBehaviour {
 				variableMatch = Regex.Match (function.text, pattern);
 
 				if (variableMatch.Success && variableMatch.Groups[1].Value != "var")
-                    file = file.Replace (function.declaration, function.declaration.Replace ("function", variableMatch.Groups[1].Value));
+                    file = file.Replace (function.declaration, function.declaration.Replace (" function ", " "+variableMatch.Groups[1].Value+" "));
 
-                else { // declaration not found in the function, maybe it's somewhere in the file
+                else { // declaration not found in the function, maybe it's somewhere in the file, or in itemsAndTypes
 					variableMatch = Regex.Match (file, pattern);
 
 					if (variableMatch.Success && variableMatch.Groups[1].Value != "var")
-						file = file.Replace (function.declaration, function.declaration.Replace ("function", variableMatch.Groups[1].Value));
-                    else
-                        file = file.Replace (function.declaration, function.declaration.Replace ("function", "MISSING_VAR_TYPE"));
-                }
+						file = file.Replace (function.declaration, function.declaration.Replace (" function ", " "+variableMatch.Groups[1].Value+" "));
+                    else { // no it's nowhere in the file either
+                        bool isFinded = false;
+
+                        // now check if it's in itemsAndTypes
+                        foreach (KeyValuePair<string, string> item in itemsAndTypes) {
+                            if (variableName == item.Key) {
+                                file = file.Replace (function.declaration, function.declaration.Replace (" function ", item.Value));
+                                isFinded = true;
+                                break;
+                            }
+                        }
+
+                        if ( ! isFinded) // no, it's really anywhere ...
+                            file = file.Replace (function.declaration, function.declaration.Replace (" function ", " MISSING_VAR_TYPE "));
+                    } // end if found in the file
+                } // end if found in the function
 
                 continue;
             }
@@ -1261,14 +1315,14 @@ public class JSToCSharp: MonoBehaviour {
                 pattern = "(\"|'){1}"+commonChars+"(\"|'){1}"+optWS+"\\["+optWS+"[0-9]+"+optWS+"\\]";
 
                 if (Regex.Match (variableName, pattern).Success)
-                    file = file.Replace (function.declaration, function.declaration.Replace ("function", "char"));
+                    file = file.Replace (function.declaration, function.declaration.Replace (" function ", " char "));
 
 
                 // string
                 pattern = "(\"|'){1}"+commonChars+"(\"|'){1}";
 
                 if (Regex.Match (variableName, pattern).Success)
-                    file = file.Replace (function.declaration, function.declaration.Replace ("function", "string"));
+                    file = file.Replace (function.declaration, function.declaration.Replace (" function ", " string "));
 
                 continue;
             }
@@ -1279,7 +1333,7 @@ public class JSToCSharp: MonoBehaviour {
             Match returnNewInstanceMatch = Regex.Match (function.text, pattern);
 
 			if (returnNewInstanceMatch.Success) {
-                file = file.Replace (function.declaration, function.declaration.Replace ("function", returnNewInstanceMatch.Groups[3].Value));
+                file = file.Replace (function.declaration, function.declaration.Replace (" function ", " "+returnNewInstanceMatch.Groups[3].Value+" "));
                 continue;
             }
 
@@ -1288,12 +1342,25 @@ public class JSToCSharp: MonoBehaviour {
             pattern = "return"+optWS+";";
 
             if (Regex.Match (function.text, pattern).Success) { 
-                file = file.Replace (function.declaration, function.declaration.Replace ("function", "void"));
+                file = file.Replace (function.declaration, function.declaration.Replace (" function ", " void "));
                 continue;
             }
 
+
+            // last possible pattern : function call : return Something();
+            // do that in FunctionTheReturn()
+
+            // last thing to do is testing if the function name begins by "is" like "IsSomething ()" because usally that function will return a bool
+            pattern = "^(i|I)s";
+
+            if (Regex.Match (function.name, pattern).Success) { 
+                file = file.Replace (function.declaration, function.declaration.Replace (" function ", " bool "));
+                continue;
+            }
+
+
             // can't resolve anything ...
-            file = file.Replace (function.declaration, function.declaration.Replace ("function", "MISSING_RETURN_TYPE"));
+            file = file.Replace (function.declaration, function.declaration.Replace ("function ", "MISSING_RETURN_TYPE "));
 
         } // end looping function declarations
     
@@ -1333,20 +1400,15 @@ public class JSToCSharp: MonoBehaviour {
     /// </summary>
     void VariablesTheReturn () {
         pattern = "var"+oblWS+"("+commonName+optWS+"="+optWS+commonName+optWS+"\\()";
-        MatchCollection allVariableDeclarations = Regex.Matches (file, pattern);
+        List<Match> allVariableDeclarations = ReverseMatches (file, pattern);
 
         foreach (Match aVarDeclaration in allVariableDeclarations) {
-            string variableName = aVarDeclaration.Groups[3].Value;
-            string functionName = aVarDeclaration.Groups[6].Value;
-        
             // look for the function declaration that match the function name
-            pattern = commonChars+oblWS+functionName+optWS+"\\(";
-            Match theFunction = Regex.Match (file, pattern);
+            pattern = commonChars+oblWS+aVarDeclaration.Groups[6].Value+optWS+"\\("; // aVarDeclaration.Groups[6].Value is the function name
+            Match theFunction = Regex.Match (file, pattern); // quid if the same function name return sevral types of values ??
 
-            if (theFunction.Success) { // function.Groups[1].Value is the return type
-                patterns.Add ( "var("+oblWS+variableName+optWS+"="+optWS+functionName+optWS+"\\()" );
-                replacements.Add ( theFunction.Groups[1].Value+"$1" );
-            }
+            if (theFunction.Success) // function.Groups[1].Value is the return type
+                file = file.Replace (aVarDeclaration.Value, aVarDeclaration.Value.Replace ("var ", theFunction.Groups[1].Value+" "));
         }
 
         DoReplacements ();
@@ -1360,8 +1422,8 @@ public class JSToCSharp: MonoBehaviour {
     /// the returned variable couldn't be resolved before the first pass of function converting
     /// </summary>
     void FunctionsTheReturn () {
-        // look only for function where the return type is still unresolved
-        pattern = "MISSING_VAR_TYPE("+oblWS+commonName+optWS+"\\(.*\\)"+optWS+"{)"; 
+        // look only for function where the return type of the returned variable is still unresolved
+        pattern = " MISSING_VAR_TYPE("+oblWS+commonName+optWS+"\\(.*\\)"+optWS+"{)"; 
         List<Match> allFunctions = ReverseMatches (file, pattern);
 
 		foreach (Match aFunction in allFunctions) {
@@ -1380,20 +1442,55 @@ public class JSToCSharp: MonoBehaviour {
 				Match variableMatch = Regex.Match (function.text, pattern);
 
                 if (variableMatch.Success && variableMatch.Groups[1].Value != "var")
-                    file = file.Replace (function.declaration, function.declaration.Replace ("MISSING_VAR_TYPE", variableMatch.Groups[1].Value));
+                    file = file.Replace (function.declaration, function.declaration.Replace (" MISSING_VAR_TYPE ", " "+variableMatch.Groups[1].Value+" "));
 
                 else { // declaration not found in the function, maybe it's somewhere in the file
                     variableMatch = Regex.Match (file, pattern);
 
                     if (variableMatch.Success && variableMatch.Groups[1].Value != "var")
-                        file = file.Replace (function.declaration, function.declaration.Replace ("MISSING_VAR_TYPE", variableMatch.Groups[1].Value));
+                        file = file.Replace (function.declaration, function.declaration.Replace (" MISSING_VAR_TYPE ", " "+variableMatch.Groups[1].Value+" "));
                     else // no, it's really anywhere ...
                         continue; // do nothing, leave the MISSING_VAR_TYPE
                 }
 
             }
         } // end looping functions
-    }
+
+
+        // at last, look for function whose return type is still unresolved and that returns a value which comes directly from another function
+        // ie : return Mathf.Abs(-5);
+        // the "returned" function will be searched in file and in 
+        pattern = " MISSING_RETURN_TYPE("+oblWS+commonName+optWS+"\\(.*\\)"+optWS+"{)"; 
+        allFunctions = ReverseMatches (file, pattern);
+
+        foreach (Match aFunction in allFunctions) {
+            Block function = new Block (aFunction, file);
+            
+            // search only for function return pattern     bt now, most of the function with a "MISSING_RETURN_TYPE" should return a function
+            pattern = "return"+oblWS+commonName+optWS+"\\(.*\\)"+optWS+";"; 
+            Match theReturnedFunction = Regex.Match (function.text, pattern);
+
+            if (theReturnedFunction.Success) { // if the current function returns a variable
+                string returnedFunctionName = theReturnedFunction.Groups[2].Value;
+                
+                // search for the function declaration in file
+                pattern = commonChars+oblWS+returnedFunctionName+optWS+"\\(.*\\)"+optWS+";"; // theReturnedFunction.Groups[2].Value is the function name
+                Match returnedFunctionMatch = Regex.Match (file, pattern);
+
+                if (returnedFunctionMatch.Success)
+                    file = file.Replace (function.declaration, function.declaration.Replace (" MISSING_RETURN_TYPE ", " "+returnedFunctionMatch.Groups[1].Value+" "));
+
+                else { // declaration not found in the function, maybe it's in itemsAndTypes
+                    foreach (KeyValuePair<string, string> item in itemsAndTypes) {
+                        if (returnedFunctionName == item.Key) {
+                            file = file.Replace (function.declaration, function.declaration.Replace (" MISSING_RETURN_TYPE ", " "+item.Value+" "));
+                            break;
+                        }
+                    }
+                }
+            } // end if function return pattern
+        } // end looping functions
+    } // end FunctionTheReturn()
 
 
     // ----------------------------------------------------------------------------------

@@ -1,0 +1,3 @@
+# value = Corresponding type
+Vector3.zero	=	Vector3
+Mathf.Abs(		=   float
