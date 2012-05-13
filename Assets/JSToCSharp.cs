@@ -73,13 +73,15 @@ public struct Block {
 
 		endIndex = this.GetEndOfBlockIndex ();
 		
+        if (endIndex == -1)
+            return;
+
 		if (endIndex <= startIndex) {
 			Debug.LogWarning ("Block:Block() : endIndex <= startIndex. Can't get block text. match=["+match.Value+"] startIndex=["+startIndex+"] endIndex=["+endIndex+"] refText=["+refText+"].");
 			return;
 		}
 
 		text = refText.Substring (startIndex, endIndex-startIndex);
-
         isEmpty = (text.Trim() == "");
 	}
 
@@ -98,9 +100,9 @@ public struct Block {
 	/// </summary>
 	/// <returns></returns>
 	int GetEndOfBlockIndex () {
-		int openedBrackets = 1;
+        int openedBrackets = 0;
 
-		for (int i = startIndex+1; i < refText.Length; i++) {
+		for (int i = startIndex; i < refText.Length; i++) {
 			//Debug.Log ("char at index["+i+" =["+refText[i]+"]");
 			if (refText[i] == '{')
 				openedBrackets++;
@@ -114,9 +116,9 @@ public struct Block {
 		}
 
 		// no matching closing bracket has been found
-		Debug.LogError ("Block:GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning 0.  match=["+match.Value+"] startIndex=["+startIndex+"] ["+
+		Debug.LogError ("Block:GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning -1. match=["+match.Value+"] startIndex=["+startIndex+"] ["+
 			refText[startIndex-1]+"|"+refText[startIndex]+"|"+refText[startIndex+1]+"] text=["+refText+"].");
-		return 0;
+		return -1;
 	}
 }
 
@@ -559,7 +561,6 @@ public class JSToCSharp: MonoBehaviour {
         List<Match> allClasses = ReverseMatches (file, pattern);
 
         // list of functions and variable declaration that are found within a class
-        List<string> classesContent = new List<string> ();
         int itemsInClasses = 0;
         
         foreach (Match aClass in allClasses) {
@@ -640,7 +641,6 @@ public class JSToCSharp: MonoBehaviour {
 
         // we made a list of functions and variables inside classes
         // now make a list of functions and variable inside the file ...
-        List<string> fileContent = new List<string> ();
         int itemsInFile = 0;
 
         pattern = "function"+oblWS+commonName+optWS+"\\(";
@@ -1162,6 +1162,8 @@ public class JSToCSharp: MonoBehaviour {
         List<Match> allFunctions = ReverseMatches (file, pattern);
 
 		foreach (Match aFunction in allFunctions) {
+            Debug.Log ("aFunction="+aFunction.Value+" ["+file[aFunction.Index-1]+file[aFunction.Index]+file[aFunction.Index+1]+"]");
+
 			Block function = new Block (aFunction, file);
 			function.name = aFunction.Groups[2].Value;
 
@@ -1181,19 +1183,14 @@ public class JSToCSharp: MonoBehaviour {
         
             // yield / coroutine
             pattern = "yield"+oblWS+"return";
-
+            
 			if (Regex.Match (function.text, pattern).Success) { 
                 file = file.Replace (function.declaration, function.declaration.Replace ("function", "IEnumerator"));
 
                 // In C# (and Boo), a coroutine call must be wrapped by the StartCoroutine() method : StartCoroutine( CoroutineName() );
                 // The current function is a coroutine, so search for it's call in the file
-                pattern = "("+function.name+optWS+"\\(.*\\))"+optWS+";";
-                List<Match> allFunctionCalls = ReverseMatches (file, pattern);
-
-                foreach (Match aFunctionCall in allFunctionCalls) {
-					string coroutineCall = "StartCoroutine( "+aFunctionCall.Groups[1].Value+" );";
-					file = file.Replace (aFunctionCall.Value, coroutineCall);
-                }
+                patterns.Add ( "("+function.name+optWS+"\\(.*\\))"+optWS+";" );
+				replacements.Add ( "StartCoroutine( $1 );" );
 
                 continue;
             }
