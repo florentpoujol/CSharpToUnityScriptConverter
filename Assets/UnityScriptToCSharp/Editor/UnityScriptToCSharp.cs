@@ -62,10 +62,10 @@ public class UnityScriptToCSharp: EditorWindow {
     private Dictionary<string, Dictionary<string, string>> projectItems = new Dictionary<string, Dictionary<string, string>> ();
 
     // the text (File.text) of the file currently being converted
-    private string file = "";
+    //private string file = "";
 
     // the name (File.name) of the file currently being converted
-    private string fileName = "";
+    //private string fileName = "";
 
     // index (in paths) of the file currently being converted
     private int fileIndex = 0;
@@ -208,6 +208,19 @@ public class UnityScriptToCSharp: EditorWindow {
          if (GUILayout.Button ("Stop and reset", GUILayout.MaxWidth (200))) {
             Reset ();
         }
+    }
+
+
+    // ----------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Reset the value of the variable
+    /// </summary>
+    void Reset () {
+        preparationState = "Waiting";
+        convertionState = "";
+        proceedWithConvertion = false;
+        fileIndex = 0;
     }
 
 
@@ -406,20 +419,13 @@ public class UnityScriptToCSharp: EditorWindow {
     // ----------------------------------------------------------------------------------
 
 
-    void DoConvertion () {
-        
-    }
-
-
     void Update() {
-        Script _file;
+        Script file;
 
         if (proceedWithConvertion && fileIndex < filesList.Count) {
-            _file = filesList[fileIndex++];
-            file = _file.text;
-            fileName = _file.name;
-
-            ConvertFile ();
+            file = filesList[fileIndex++];
+            
+            ConvertFile (file);
             Debug.Log ("Convertion done for ["+_file.path+_file.name+".cs]." );
 
             string path = Application.dataPath+targetDirectory+_file.path;
@@ -441,8 +447,9 @@ public class UnityScriptToCSharp: EditorWindow {
     // ----------------------------------------------------------------------------------
 
     /// <summary>
-    /// 
+    /// Read the file ItemsAndTypes.txt and extract the key/value pairs in the itemsAndTypes List
     /// </summary>
+    /// <param name="getEmptyValues">Tell wether or not adding the keys without a value to the list</param>
     void GetItemsAndTypes (bool getEmptyValues) {
         itemsAndTypes.Clear ();
         
@@ -481,13 +488,6 @@ public class UnityScriptToCSharp: EditorWindow {
     }
 
 
-    void Reset () {
-        convertionState = "Resetted";
-        proceedWithConvertion = false;
-        fileIndex = 0;
-    }
-
-
     // ----------------------------------------------------------------------------------
 
     /// <summary>
@@ -497,7 +497,7 @@ public class UnityScriptToCSharp: EditorWindow {
         file = DoReplacements (file);
     }
 
-    string DoReplacements (string text) {
+    static string DoReplacements (string text) {
         for (int i = 0; i < patterns.Count; i++)
             text = Regex.Replace (text, patterns[i], replacements[i]);
 
@@ -535,7 +535,7 @@ public class UnityScriptToCSharp: EditorWindow {
     /// <summary>
     /// Main function for the convertion
     /// </summary>
-    void ConvertFile () {
+    Script ConvertFile (Script file) {
 
         // Replace ArrayList() (Array form Unity that works only for JS) by ArrayList ()
             patterns.Add ( "Array"+optWS+"\\(" );
@@ -653,7 +653,7 @@ public class UnityScriptToCSharp: EditorWindow {
     
 
         // Convert stuffs related to classes : declaration, inheritance, parent constructor call
-        Classes ();
+        file = UnityScriptToCSharp_Classes.Convert (file.newText);
     
         // Add the "new" keyword before classes instanciation where it is missing
         AddNewKeyword ();
@@ -772,6 +772,8 @@ public class UnityScriptToCSharp: EditorWindow {
 
 
         DoReplacements ();
+        
+        return file;
     }
 
 
