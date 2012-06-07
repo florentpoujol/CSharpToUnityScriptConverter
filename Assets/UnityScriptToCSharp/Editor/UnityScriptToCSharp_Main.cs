@@ -379,47 +379,76 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
             // search for class declaration pattern
             pattern = "class"+oblWS+commonName+"("+oblWS+"extends"+oblWS+commonName+")?"+optWS+"{";
             MatchCollection allClassesDeclarations = Regex.Matches (_script.text, pattern);
+            
+            MatchCollection allVariablesDeclarations; // for later use
 
             foreach (Match aClassDeclaration in allClassesDeclarations) {
                 string className = aClassDeclaration.Groups[2].Value;
 
-                ProjectItem _class = new ProjectItem (className);
+                new ProjectItem (className);
 
                 // now look for methods inside the class
                 Block classBlock = new Block (aClassDeclaration, _script.text);
 
-                pattern = "function"+oblWS+commonName+optWS+"\\((?<args>.*)\\)("+optWS+":"+optWS+"(?<returnType>"+commonChars+"))?"+optWS+"{"
+                pattern = "function"+oblWS+commonName+optWS+"\\((?<args>.*)\\)("+optWS+":"+optWS+"(?<returnType>"+commonChars+"))?"+optWS+"{";
                 MatchCollection allFunctionsDeclarations = Regex.Matches (classBlock.text, pattern);
+                List<string> functionVariablesList = new List<string> (); // list of variable fuound inside functions
 
                 foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
                     string functionName = aFunctionDeclaration.Groups[2].Value;
                     string functionType = aFunctionDeclaration.Groups["returnType"].Value; // functionType == "" if there is none
 
-                    ProjectItem function = new ProjectItem (className, [functionName, functionType]);
-                    _class.methods.Add (function);
+                    new ProjectItem (className, new string[2] {functionName, functionType});
+
 
                     // now look for variable inside the function
-                    Block functionBlock = new Block (aFunctionDeclaration, _script.text);
+                    Block functionBlock = new Block (aFunctionDeclaration, classBlock.text);
 
                     pattern = "var"+oblWS+commonName+optWS+"(:"+optWS+commonChars+optWS+")?=";
-                    MatchCollection allVariablesDeclarations = Regex.Matches (functionBlock.text, pattern);
+                    allVariablesDeclarations = Regex.Matches (functionBlock.text, pattern);
 
                     foreach (Match aVariableDeclaration in allVariablesDeclarations) {
                         string variableName = aVariableDeclaration.Groups[2].Value;
+                        string variableType = aVariableDeclaration.Groups[6].Value;
 
-                        ProjectItem variable = new ProjectItem (className, functionName, [variableName, variableType]);
-                        function.variables.Add (variable);
+                        functionVariablesList.Add (variableName);
 
-                    } // end loop variable in that class
+                        new ProjectItem (className, functionName, new string[2] {variableName, variableType});
+                    } // end loop variable in that function
+
+
+                    // now look for arguments
+                    string rawArgs = aFunctionDeclaration.Groups["args"].Value;
+
+                    if (rawArgs.Contains (":")) {
+                        string[] args = rawArgs.Split (',');
+                        
+                        for (int i=0; i < args.Length; i++) {
+                            string[] arg = args[i].Split (':');
+                            new ProjectItem (className, functionName, arg);
+                        }
+                    }
 
                 } // end loop functions in that class
 
 
-                // now look for mmbers inside thae class
+                // now look for members inside that class
+                pattern = "var"+oblWS+commonName+optWS+"(:"+optWS+commonChars+optWS+")?=";
+                allVariablesDeclarations = Regex.Matches (classBlock.text, pattern); // this will also match the var declaration inside functions
+
+                foreach (Match aVariableDeclaration in allVariablesDeclarations) {
+                    string variableName = aVariableDeclaration.Groups[2].Value;
+
+                    if (functionVariablesList.Contains (variableName)) // this variable is declared inside a function, so it can't be also declared in the class    argument can have the same name as a class variable
+                        continue;
+
+                    string variableType = aVariableDeclaration.Groups[6].Value;
+
+                    new ProjectItem (className, "", new string[2] {variableName, variableType});
+
+                } // end loop variable in that class
 
 
-                //if ( ! classesList.Contains (className))
-                //    classesList.Add (className);
 
             } // end loop classes in that file
 
@@ -428,8 +457,9 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
             //    classesList.Add (_script.name);
         }
 
+        StreamReader reader;
         // do the same but for the C# scripts in the project folder
-        paths = Directory.GetFiles (Application.dataPath+sourceDirectory.TrimEnd ('/'), "*.cs", SearchOption.AllDirectories);
+        string[] paths = Directory.GetFiles (Application.dataPath+sourceDirectory.TrimEnd ('/'), "*.cs", SearchOption.AllDirectories);
         foreach (string path in paths) {
             reader = new StreamReader (path);
             string text = reader.ReadToEnd ();

@@ -225,6 +225,7 @@ public class UnityScriptToCSharp_Variables: UnityScriptToCSharp {
 
             if (theFunction.Success) // function.Groups[1].Value is the return type
                 script.text = script.text.Replace (aVarDeclaration.Value, aVarDeclaration.Value.Replace ("var ", theFunction.Groups[1].Value+" "));
+        }
         // about the same code is run again in Function()
 
 

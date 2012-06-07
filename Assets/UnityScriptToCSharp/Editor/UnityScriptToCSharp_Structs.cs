@@ -105,21 +105,23 @@ public struct Script { // can't use FILE since it's a class in System.IO
 // ----------------------------------------------------------------------------------
 
 
-public struct ProjectItems {
-	public List<string> classes; // list of class name
-	public Dictionary<string, TypedItem> methods; // key is the classname, value is a method infos (name, type, args (with their type) and variable (with their types))
-	public Dictionary<string, TypedItem> members; // key is the classname, value the member (class variable) name
-
-	//public Dictionary<string, Dictionary<string, string>> functionVariables; // key is the classname, the value is a dictionnary key=method name
+public enum ProjectItemCategory {
+	Class,
+	Method,
+	Member,
+	Variable
+	//Argument
 }
 
-public struct ProjectItem {
+public class ProjectItem { // struct sucks sometimes
 	public static List<ProjectItem> projectItems = new List<ProjectItem> (); // list of all project items
-	public static List<ProjectItem> classes; // list of classes
+	//public static List<ProjectItem> classes; // list of classes
 
-	public List<ProjectItem> methods = new List<TypedItem> (); // list of methods if it's a class
-	public List<ProjectItem> variables = new List<TypedItem> (); // list of variables if it's a class or a method
-	public List<ProjectItem> arguments = new List<TypedItem> (); // list of arguments if it's a method
+	public List<ProjectItem> methods = new List<ProjectItem> (); // list of methods if it's a class
+	public List<ProjectItem> members = new List<ProjectItem> (); // list of variables if it's a class
+	public List<ProjectItem> variables = new List<ProjectItem> (); // list of variables if it's a method
+
+	public ProjectItemCategory category;
 
 	public string _class; // owner class if it's a ethod or a variable
 	public string method; // owner method if it's an argument or a method variable
@@ -130,17 +132,50 @@ public struct ProjectItem {
 	//--------------------
 
 
-	public ProjectItem (string classname, string[] method) {
+	
+	// a class
+	public ProjectItem (string className) { // a class
+		this.category = ProjectItemCategory.Class;
+		this.name = className;
+		projectItems.Add (this);
+	}
+
+	// a method
+	public ProjectItem (string className, string[] method) {
+		this.category = ProjectItemCategory.Method;
 		this._class = className;
 		this.name = method[0];
 		this.type = method[1];
-		
-		projectItems.add (this);
+
+		if (this.type == "")
+			this.type = "undefined";
+
+		//ProjectItem _class = GetClass (className);
+		GetClass (className).methods.Add (this);
+
+		projectItems.Add (this);
 	}
 
-	public ProjectItem (string classname) { // a class
-		this.name = name;
-		projectItems.add (this);
+	// a variable (class variable = member or method variable) or an argument
+	public ProjectItem (string className, string methodName, string[] variable) {
+		this._class = className;
+		this.method = methodName;
+		this.name = variable[0];
+		this.type = variable[1];
+
+		if (this.type == "")
+			this.type = "undefined";
+
+		if (methodName == "") {
+			this.category = ProjectItemCategory.Member;
+			GetClass (className).members.Add (this);
+		}
+		else {
+			this.category = ProjectItemCategory.Variable;
+			GetMethod (className, methodName).variables.Add (this);
+		}
+				
+		projectItems.Add (this);
 	}
 
 
@@ -148,7 +183,7 @@ public struct ProjectItem {
 
 
 	public ProjectItem GetItem (string name) {
-		for (ProjectItem item in projectItems) {
+		foreach (ProjectItem item in projectItems) {
 			if (item.name == name)
 				return item;
 		}
@@ -159,7 +194,7 @@ public struct ProjectItem {
 
 
 	public ProjectItem GetItem (string _class, string method) {
-		for (ProjectItem item in projectItems) {
+		foreach (ProjectItem item in projectItems) {
 			if (item._class == _class && item.method == method)
 				return item;
 		}
@@ -169,12 +204,36 @@ public struct ProjectItem {
 	}
 
 	public ProjectItem GetItem (string _class, string method, string name) {
-		for (ProjectItem item in projectItems) {
+		foreach (ProjectItem item in projectItems) {
 			if (item._class == _class && item.method == method && item.name == name)
 				return item;
 		}
 
-		Debug.LogError ("ProjectItem::GetItem : couldn't find the item. class=["+_class+"] method=["+method+"] name=["+name+"]");
+		Debug.LogError ("ProjectItem::GetItem() : couldn't find the item. class=["+_class+"] method=["+method+"] name=["+name+"]");
+		return null;
+	}
+
+
+
+
+	public ProjectItem GetClass (string className) {
+		foreach (ProjectItem item in projectItems) {
+			if (item.category == ProjectItemCategory.Class && item.name == className)
+				return item;
+		}
+
+		Debug.LogError ("ProjectItem::GetClass() : couldn't find the item. className=["+className+"]");
+		return null;
+	}
+
+
+	public ProjectItem GetMethod (string className, string methodName) {
+		foreach (ProjectItem item in projectItems) {
+			if (item.category == ProjectItemCategory.Method && item._class == className && item.name == methodName)
+				return item;
+		}
+
+		Debug.LogError ("ProjectItem::GetMethod() : couldn't find the item. className=["+className+"] methodName=["+methodName+"]");
 		return null;
 	}
 }
