@@ -257,60 +257,8 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
 
         //--------------------
 
-
-        // make a list of all encountered class in the project's scripts
-        foreach (Script script in scriptsList) {
-            // search for class declaration pattern
-            pattern = "class"+oblWS+commonName+"("+oblWS+"extends"+oblWS+commonName+")?"+optWS+"{";
-            MatchCollection allClassesDeclarations = Regex.Matches (script.text, pattern);
-
-            foreach (Match aClassDeclaration in allClassesDeclarations) {
-                string className = aClassDeclaration.Groups[2].Value;
-
-                if ( ! classesList.Contains (className))
-                    classesList.Add (className);
-            }
-
-            // always add the name of the script (in most cases, that's the name of the class inside the script)
-            if ( ! classesList.Contains (script.name))
-                classesList.Add (script.name);
-        }
-
-        // do the same but for the C# scripts in the project folder
-        paths = Directory.GetFiles (Application.dataPath+sourceDirectory.TrimEnd ('/'), "*.cs", SearchOption.AllDirectories);
-        foreach (string path in paths) {
-            reader = new StreamReader (path);
-            string text = reader.ReadToEnd ();
-            reader.Close ();
-
-            pattern = "class"+oblWS+commonName+"("+optWS+":"+optWS+commonName+")?"+optWS+"{";
-            MatchCollection allClassesDeclarations = Regex.Matches (text, pattern);
-
-            foreach (Match aClassDeclaration in allClassesDeclarations) {
-                string className = aClassDeclaration.Groups[2].Value;
-
-                if ( ! classesList.Contains (className))
-                    classesList.Add (className);
-            }
-        }
-
-        // do the same but for the Boo scripts in the project folder
-        paths = Directory.GetFiles (Application.dataPath+sourceDirectory.TrimEnd ('/'), "*.boo", SearchOption.AllDirectories);
-        foreach (string path in paths) {
-            reader = new StreamReader (path);
-            string text = reader.ReadToEnd ();
-            reader.Close ();
-
-            pattern = "class"+oblWS+commonName+"("+optWS+"\\("+optWS+commonName+optWS+"\\))?";
-            MatchCollection allClassesDeclarations = Regex.Matches (text, pattern);
-
-            foreach (Match aClassDeclaration in allClassesDeclarations) {
-                string className = aClassDeclaration.Groups[2].Value;
-
-                if ( ! classesList.Contains (className))
-                    classesList.Add (className);
-            }
-        }
+        GetProjectItems();
+        
 
 
         //--------------------
@@ -419,6 +367,107 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
 
 
     // ----------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Read the project's scripts and mae the list of all class, method, variable and their corresponding type
+    /// </summary>
+    void GetProjectItems () {
+
+
+        // make a list of all encountered class in the project's scripts
+        foreach (Script _script in scriptsList) {
+            // search for class declaration pattern
+            pattern = "class"+oblWS+commonName+"("+oblWS+"extends"+oblWS+commonName+")?"+optWS+"{";
+            MatchCollection allClassesDeclarations = Regex.Matches (_script.text, pattern);
+
+            foreach (Match aClassDeclaration in allClassesDeclarations) {
+                string className = aClassDeclaration.Groups[2].Value;
+
+                ProjectItem _class = new ProjectItem (className);
+
+                // now look for methods inside the class
+                Block classBlock = new Block (aClassDeclaration, _script.text);
+
+                pattern = "function"+oblWS+commonName+optWS+"\\((?<args>.*)\\)("+optWS+":"+optWS+"(?<returnType>"+commonChars+"))?"+optWS+"{"
+                MatchCollection allFunctionsDeclarations = Regex.Matches (classBlock.text, pattern);
+
+                foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
+                    string functionName = aFunctionDeclaration.Groups[2].Value;
+                    string functionType = aFunctionDeclaration.Groups["returnType"].Value; // functionType == "" if there is none
+
+                    ProjectItem function = new ProjectItem (className, [functionName, functionType]);
+                    _class.methods.Add (function);
+
+                    // now look for variable inside the function
+                    Block functionBlock = new Block (aFunctionDeclaration, _script.text);
+
+                    pattern = "var"+oblWS+commonName+optWS+"(:"+optWS+commonChars+optWS+")?=";
+                    MatchCollection allVariablesDeclarations = Regex.Matches (functionBlock.text, pattern);
+
+                    foreach (Match aVariableDeclaration in allVariablesDeclarations) {
+                        string variableName = aVariableDeclaration.Groups[2].Value;
+
+                        ProjectItem variable = new ProjectItem (className, functionName, [variableName, variableType]);
+                        function.variables.Add (variable);
+
+                    } // end loop variable in that class
+
+                } // end loop functions in that class
+
+
+                // now look for mmbers inside thae class
+
+
+                //if ( ! classesList.Contains (className))
+                //    classesList.Add (className);
+
+            } // end loop classes in that file
+
+            // always add the name of the script (in most cases, that's the name of the class inside the script)
+            //if ( ! classesList.Contains (_script.name))
+            //    classesList.Add (_script.name);
+        }
+
+        // do the same but for the C# scripts in the project folder
+        paths = Directory.GetFiles (Application.dataPath+sourceDirectory.TrimEnd ('/'), "*.cs", SearchOption.AllDirectories);
+        foreach (string path in paths) {
+            reader = new StreamReader (path);
+            string text = reader.ReadToEnd ();
+            reader.Close ();
+
+            pattern = "class"+oblWS+commonName+"("+optWS+":"+optWS+commonName+")?"+optWS+"{";
+            MatchCollection allClassesDeclarations = Regex.Matches (text, pattern);
+
+            foreach (Match aClassDeclaration in allClassesDeclarations) {
+                string className = aClassDeclaration.Groups[2].Value;
+
+                if ( ! classesList.Contains (className))
+                    classesList.Add (className);
+            }
+        }
+
+        // do the same but for the Boo scripts in the project folder
+        paths = Directory.GetFiles (Application.dataPath+sourceDirectory.TrimEnd ('/'), "*.boo", SearchOption.AllDirectories);
+        foreach (string path in paths) {
+            reader = new StreamReader (path);
+            string text = reader.ReadToEnd ();
+            reader.Close ();
+
+            pattern = "class"+oblWS+commonName+"("+optWS+"\\("+optWS+commonName+optWS+"\\))?";
+            MatchCollection allClassesDeclarations = Regex.Matches (text, pattern);
+
+            foreach (Match aClassDeclaration in allClassesDeclarations) {
+                string className = aClassDeclaration.Groups[2].Value;
+
+                if ( ! classesList.Contains (className))
+                    classesList.Add (className);
+            }
+        }
+    }
+
+
+
+
 
     /// <summary>
     /// Read the file ItemsAndTypes.txt and extract the key/value pairs in the itemsAndTypes List

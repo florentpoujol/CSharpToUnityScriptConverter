@@ -125,18 +125,23 @@ public struct ProjectItem {
 	public string method; // owner method if it's an argument or a method variable
 	public string name;
 	public string type;
-	public string isArgument;
 
 
 	//--------------------
 
 
-	public ProjectItem (string name, string type) {
-		this.name = name;
-		this.type = type;
+	public ProjectItem (string classname, string[] method) {
+		this._class = className;
+		this.name = method[0];
+		this.type = method[1];
+		
+		projectItems.add (this);
 	}
 
-	public ProjectItem (string name): this (name, "undefined") {}
+	public ProjectItem (string classname) { // a class
+		this.name = name;
+		projectItems.add (this);
+	}
 
 
 	//--------------------

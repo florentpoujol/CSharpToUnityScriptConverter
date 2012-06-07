@@ -1,8 +1,7 @@
-_title_mode=
-Instantiate=
-FindClosestCar=
-FindClosestEnemy=
-steam_sound_delay=
-GetSphereSize=
-angle=
+_title_mode=int
+FindClosestCar=GameObject
+FindClosestEnemy=GameObject
+steam_sound_delay=float
+GetSphereSize=float
+angle=float
 GetRotation=
