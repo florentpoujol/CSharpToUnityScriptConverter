@@ -39,6 +39,12 @@ public class UnityScriptToCSharp: EditorWindow {
     // a list of classes that exists in the pool of files that will be converted
     protected static List<string> classesList = new List<string> ();
 
+    // a list of items (variable or functions) and their coresponding type
+    protected static Dictionary<string, string> itemsAndTypes = new Dictionary<string, string> ();
+
+    // list of classes and their items (variable or function) and corresponding type
+    protected static Dictionary<string, Dictionary<string, string>> projectItems = new Dictionary<string, Dictionary<string, string>> ();
+
 
     // ----------------------------------------------------------------------------------
 
@@ -51,8 +57,11 @@ public class UnityScriptToCSharp: EditorWindow {
     }
 
     protected static string DoReplacements (string text) {
-        for (int i = 0; i < patterns.Count; i++)
+        for (int i = 0; i < patterns.Count; i++) {
             text = Regex.Replace (text, patterns[i], replacements[i]);
+
+
+        }
 
         patterns.Clear ();
         replacements.Clear ();

@@ -222,7 +222,7 @@ public class UnityScriptToCSharp_Classes: UnityScriptToCSharp {
     /// Add the keyword public when no visibility (or just static) is set (the default visibility is public in JS but private in C#)
     /// Works also for functions, classes and enums
     /// </summary>
-    private static void AddVisibility () {
+    public static void AddVisibility () {
         // the default visibility for variable and functions is public in JS but private in C# => add the keyword public when no visibility (or just static) is set 
         patterns.Add ( "([;{}\\]]+"+optWS+")((var|function|enum|class)"+oblWS+")" );
         replacements.Add ( "$1public $3" );

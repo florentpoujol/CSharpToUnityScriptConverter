@@ -1,4 +1,5 @@
 
+using UnityEngine; // Debug
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -12,7 +13,7 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
     /// Convert function declarations
     /// Try to resolve the return type (if any) when there is none declared with the look of what is returned
     /// </summary>
-    void Functions () {
+    public static void Functions () {
         // UnityScript allow arugments without types, when they are not needed
         // just remove them
         //patterns.Add ( "(function"+oblWS+commonName+optWS+")(\\(|,){1}"+optWS+"[a-zA-z\\.]+"+optWS+"(\\)|,){1}" );
@@ -37,21 +38,17 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
 
         // look for all JS functions that has no explicit return type
         pattern = " function"+oblWS+commonName+optWS+"\\(.*\\)"+optWS+"{"; 
-        List<Match> allFunctions = ReverseMatches (file, pattern);
+        List<Match> allFunctions = ReverseMatches (script.text, pattern);
 
 		foreach (Match aFunction in allFunctions) {
-            //Debug.Log ("aFunction="+aFunction.Value+" ["+file[aFunction.Index-1]+file[aFunction.Index]+file[aFunction.Index+1]+"]");
-
-			Block function = new Block (aFunction, file);
-			function.name = aFunction.Groups[2].Value;
-
-
+			Block function = new Block (aFunction, script.text);
+			
             // look for return keyword patterns
             pattern = "return"+oblWS+".+;";
 
-            // if there is none, add ""
-			if ( ! Regex.Match (function.text, pattern).Success) { // no return keyword : add "void" return type
-                file = file.Replace (function.declaration, function.declaration.Replace (" function ", " void ")); 
+            // if there is none, add "void" return type
+			if ( ! Regex.Match (function.text, pattern).Success) {
+                script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " void ")); 
                 continue;
             }
 
@@ -63,10 +60,10 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
             pattern = "yield"+oblWS+"return";
             
 			if (Regex.Match (function.text, pattern).Success) { 
-                file = file.Replace (function.declaration, function.declaration.Replace (" function ", " IEnumerator "));
+                script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " IEnumerator "));
 
                 // In C# (and Boo), a coroutine call must be wrapped by the StartCoroutine() method : StartCoroutine( CoroutineName() );
-                // The current function is a coroutine, so search for it's call in the file
+                // The current function is a coroutine, so search for it's call in the script.text
                 patterns.Add ( "("+function.name+optWS+"\\(.*\\))"+optWS+";" );
 				replacements.Add ( "StartCoroutine( $1 );" );
 
@@ -84,25 +81,25 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
 				
                 // bool
                 if (Regex.Match (variableName, "^(true|false)$").Success) { 
-                    file = file.Replace (function.declaration, function.declaration.Replace (" function ", " bool "));
+                    script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " bool "));
                     continue;
                 }
 
                 // float
                 if (Regex.Match (variableName, "^-?[0-9]+\\.{1}[0-9]+(f|F){1}$").Success) { 
-                    file = file.Replace (function.declaration, function.declaration.Replace (" function ", " float "));
+                    script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " float "));
                     continue;
                 }
 
 				// double
 				if (Regex.Match (variableName, "^-?[0-9]+\\.{1}[0-9]+(f|F){0}$").Success) {
-					file = file.Replace (function.declaration, function.declaration.Replace (" function ", " double "));
+					script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " double "));
 					continue;
 				}
 
                 // int
                 if (Regex.Match (variableName, "^-?[0-9]+$").Success) { 
-                    file = file.Replace (function.declaration, function.declaration.Replace (" function ", " int "));
+                    script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " int "));
                     continue;
                 }
 
@@ -113,28 +110,28 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
 				variableMatch = Regex.Match (function.text, pattern);
 
 				if (variableMatch.Success && variableMatch.Groups[1].Value != "var")
-                    file = file.Replace (function.declaration, function.declaration.Replace (" function ", " "+variableMatch.Groups[1].Value+" "));
+                    script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " "+variableMatch.Groups[1].Value+" "));
 
-                else { // declaration not found in the function, maybe it's somewhere in the file, or in itemsAndTypes
-					variableMatch = Regex.Match (file, pattern);
+                else { // declaration not found in the function, maybe it's somewhere in the script.text, or in itemsAndTypes
+					variableMatch = Regex.Match (script.text, pattern);
 
 					if (variableMatch.Success && variableMatch.Groups[1].Value != "var")
-						file = file.Replace (function.declaration, function.declaration.Replace (" function ", " "+variableMatch.Groups[1].Value+" "));
-                    else { // no it's nowhere in the file either
+						script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " "+variableMatch.Groups[1].Value+" "));
+                    else { // no it's nowhere in the script.text either
                         bool isFinded = false;
 
                         // now check if it's in itemsAndTypes
                         foreach (KeyValuePair<string, string> item in itemsAndTypes) {
                             if (variableName == item.Key) {
-                                file = file.Replace (function.declaration, function.declaration.Replace (" function ", " "+item.Value+" "));
+                                script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " "+item.Value+" "));
                                 isFinded = true;
                                 break;
                             }
                         }
 
                         if ( ! isFinded) // no, it's really anywhere ...
-                            file = file.Replace (function.declaration, function.declaration.Replace (" function ", " MISSING_VAR_TYPE "));
-                    } // end if found in the file
+                            script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " MISSING_VAR_TYPE "));
+                    } // end if found in the script.text
                 } // end if found in the function
 
                 continue;
@@ -152,14 +149,14 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
                 pattern = "(\"|'){1}"+commonChars+"(\"|'){1}"+optWS+"\\["+optWS+"[0-9]+"+optWS+"\\]";
 
                 if (Regex.Match (variableName, pattern).Success)
-                    file = file.Replace (function.declaration, function.declaration.Replace (" function ", " char "));
+                    script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " char "));
 
 
                 // string
                 pattern = "(\"|'){1}"+commonChars+"(\"|'){1}";
 
                 if (Regex.Match (variableName, pattern).Success)
-                    file = file.Replace (function.declaration, function.declaration.Replace (" function ", " string "));
+                    script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " string "));
 
                 continue;
             }
@@ -170,7 +167,7 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
             Match returnNewInstanceMatch = Regex.Match (function.text, pattern);
 
 			if (returnNewInstanceMatch.Success) {
-                file = file.Replace (function.declaration, function.declaration.Replace (" function ", " "+returnNewInstanceMatch.Groups[3].Value+" "));
+                script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " "+returnNewInstanceMatch.Groups[3].Value+" "));
                 continue;
             }
 
@@ -179,7 +176,7 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
             pattern = "return"+optWS+";";
 
             if (Regex.Match (function.text, pattern).Success) { 
-                file = file.Replace (function.declaration, function.declaration.Replace (" function ", " void "));
+                script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " void "));
                 continue;
             }
 
@@ -191,13 +188,13 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
             pattern = "^(i|I)s";
 
             if (Regex.Match (function.name, pattern).Success) { 
-                file = file.Replace (function.declaration, function.declaration.Replace (" function ", " bool "));
+                script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " bool "));
                 continue;
             }
 
 
             // can't resolve anything ...
-            file = file.Replace (function.declaration, function.declaration.Replace (" function ", " MISSING_RETURN_TYPE "));
+            script.text = script.text.Replace (function.declaration, function.declaration.Replace (" function ", " MISSING_RETURN_TYPE "));
 
         } // end looping function declarations
     
@@ -209,7 +206,7 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
 
         // classes constructors gets a void return type that has to be removed
         pattern = "class"+oblWS+commonName;
-        MatchCollection allClasses = Regex.Matches (file, pattern);
+        MatchCollection allClasses = Regex.Matches (script.text, pattern);
 
         foreach (Match aClass in allClasses) {
             // look for constructors
@@ -235,13 +232,13 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
     /// Try to resolve the return type of function where it wasn't possible before mostly because the type of 
     /// the returned variable couldn't be resolved before the first pass of function converting
     /// </summary>
-    void FunctionsTheReturn () {
+    public static void FunctionsTheReturn () {
         // look only for function where the return type of the returned variable is still unresolved
         pattern = " MISSING_VAR_TYPE("+oblWS+commonName+optWS+"\\(.*\\)"+optWS+"{)"; 
-        List<Match> allFunctions = ReverseMatches (file, pattern);
+        List<Match> allFunctions = ReverseMatches (script.text, pattern);
 
         foreach (Match aFunction in allFunctions) {
-            Block function = new Block (aFunction, file);
+            Block function = new Block (aFunction, script.text);
             // here, function.newText will actually be the new declaration, and not the new function content
             
             // search only for variable return pattern     all functions with a "MISSING_VAR_TYPE" should return a variable anyway
@@ -256,29 +253,28 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
                 Match variableMatch = Regex.Match (function.text, pattern);
 
                 if (variableMatch.Success && variableMatch.Groups[1].Value != "var")
-                    file = file.Replace (function.declaration, function.declaration.Replace (" MISSING_VAR_TYPE ", " "+variableMatch.Groups[1].Value+" "));
+                    script.text = script.text.Replace (function.declaration, function.declaration.Replace (" MISSING_VAR_TYPE ", " "+variableMatch.Groups[1].Value+" "));
 
-                else { // declaration not found in the function, maybe it's somewhere in the file
-                    variableMatch = Regex.Match (file, pattern);
+                else { // declaration not found in the function, maybe it's somewhere in the script.text
+                    variableMatch = Regex.Match (script.text, pattern);
 
                     if (variableMatch.Success && variableMatch.Groups[1].Value != "var")
-                        file = file.Replace (function.declaration, function.declaration.Replace (" MISSING_VAR_TYPE ", " "+variableMatch.Groups[1].Value+" "));
+                        script.text = script.text.Replace (function.declaration, function.declaration.Replace (" MISSING_VAR_TYPE ", " "+variableMatch.Groups[1].Value+" "));
                     else // no, it's really anywhere ...
                         continue; // do nothing, leave the MISSING_VAR_TYPE
                 }
-
             }
         } // end looping functions
 
 
         // at last, look for function whose return type is still unresolved and that returns a value which comes directly from another function
         // ie : return Mathf.Abs(-5);
-        // the "returned" function will be searched in file and in 
+        // the "returned" function will be searched in script.text and in 
         pattern = " MISSING_RETURN_TYPE("+oblWS+commonName+optWS+"\\(.*\\)"+optWS+"{)"; 
-        allFunctions = ReverseMatches (file, pattern);
+        allFunctions = ReverseMatches (script.text, pattern);
 
         foreach (Match aFunction in allFunctions) {
-            Block function = new Block (aFunction, file);
+            Block function = new Block (aFunction, script.text);
             
             // search only for function return pattern     bt now, most of the function with a "MISSING_RETURN_TYPE" should return a function
             pattern = "return"+oblWS+commonName+optWS+"\\(.*\\)"+optWS+";"; 
@@ -288,17 +284,17 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
                 string returnedFunctionName = theReturnedFunction.Groups[2].Value;
                 Debug.Log ("returned function="+returnedFunctionName);
                 
-                // search for the function declaration in file
+                // search for the function declaration in script.text
                 pattern = commonChars+oblWS+returnedFunctionName+optWS+"\\(.*\\)"+optWS+"{";
-                Match returnedFunctionMatch = Regex.Match (file, pattern);
+                Match returnedFunctionMatch = Regex.Match (script.text, pattern);
 
                 if (returnedFunctionMatch.Success)
-                    file = file.Replace (function.declaration, function.declaration.Replace (" MISSING_RETURN_TYPE ", " "+returnedFunctionMatch.Groups[1].Value+" "));
+                    script.text = script.text.Replace (function.declaration, function.declaration.Replace (" MISSING_RETURN_TYPE ", " "+returnedFunctionMatch.Groups[1].Value+" "));
 
                 else { // declaration not found in the function, maybe it's in itemsAndTypes
                     foreach (KeyValuePair<string, string> item in itemsAndTypes) {
                         if (returnedFunctionName == item.Key) {
-                            file = file.Replace (function.declaration, function.declaration.Replace (" MISSING_RETURN_TYPE ", " "+item.Value+" "));
+                            script.text = script.text.Replace (function.declaration, function.declaration.Replace (" MISSING_RETURN_TYPE ", " "+item.Value+" "));
                             break;
                         }
                     }

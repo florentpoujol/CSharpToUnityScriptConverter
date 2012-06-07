@@ -6,7 +6,7 @@ public class UnityScriptToCSharp_Variables: UnityScriptToCSharp {
 	/// <summary>
     /// Search for and convert variables declarations
     /// </summary>
-    void Variables () {
+    public static void Variables () {
         // add an f at the end of a float (and double) value 
         patterns.Add ( "([0-9]+\\.{1}[0-9]+)(f|F){0}" );
         replacements.Add ( "$1f" );
@@ -196,12 +196,12 @@ public class UnityScriptToCSharp_Variables: UnityScriptToCSharp {
 
 
         // var declaration vithout a type and the value comes from a function :
-        // The type can be resolved if the function exists in itemsAndTypes (see below) or if the function declaration is done in the file, 
-        // As UnityScript allows not to specify which type returns a void, wait until the functions declarations are processed (in Functions(), below Properties()) to try to convert those variables
+        // The type can be resolved if the function exists in itemsAndTypes (see below) or if the function declaration is done in the script.text, 
+        // As UnityScript allows not to specify which type returns a function, wait until the functions declarations are processed (in UnityScriptToCSharp_Functions.Functions()) to try to convert those variables
 
         // meanwhile, check for values and function calls that are within itemsAndTypes
         foreach (KeyValuePair<string, string> item in itemsAndTypes) {
-            if (file.Contains (item.Key)) { // it just reduce the number of elements in patterns and replacements lists
+            if (script.text.Contains (item.Key)) { // it just reduce the number of elements in patterns and replacements lists
                 
                 // if the item is a method
                 patterns.Add ( "var("+oblWS+commonName+optWS+"="+optWS+item.Key+optWS+"(\\(.*\\)"+optWS+")?;)" );
@@ -218,7 +218,7 @@ public class UnityScriptToCSharp_Variables: UnityScriptToCSharp {
         //--------------------
 
 
-        //casting while using Instanciate method
+        //casting while using the Instanciate method
         patterns.Add ( "("+commonName+oblWS+commonName+optWS+"="+optWS+")(Instantiate"+optWS+"\\()" );
         replacements.Add ( "$1($2)$7" );
 
@@ -239,7 +239,7 @@ public class UnityScriptToCSharp_Variables: UnityScriptToCSharp {
 
 
         DoReplacements ();
-    } // end VariablesDeclarations ()
+    } // end Variables()
 
 
     // ----------------------------------------------------------------------------------
@@ -247,7 +247,7 @@ public class UnityScriptToCSharp_Variables: UnityScriptToCSharp {
     /// <summary>
     /// Convert Properties declarations
     /// </summary>
-    void Properties () {
+    public static void Properties () {
         // change string return type to string, works also for functions (properties in JS are functions)
         patterns.Add ( "(\\)"+optWS+":"+optWS+")String" );
         replacements.Add ( "$1string" );
@@ -265,9 +265,9 @@ public class UnityScriptToCSharp_Variables: UnityScriptToCSharp {
         // first, get all property getters (if a property exists, I assume that a getter always exists for it)
         pattern = "(?<visibility>public|private|protected)"+oblWS+"function"+oblWS+"get"+oblWS+"(?<propName>"+commonName+")"+optWS+"\\("+optWS+"\\)"+optWS+":"+optWS+"(?<returnType>"+commonChars+")"+optWS+
         "{"+optWS+"return"+oblWS+"(?<varName>"+commonName+")"+optWS+";"+optWS+"}";
-        List<Match> allGetters = ReverseMatches (file, pattern);
+        List<Match> allGetters = ReverseMatches (script.text, pattern);
         
-        string unModifiedFile = file;
+        string unModifiedScript = script.text;
 
         foreach (Match aGetter in allGetters) {
             string propName = aGetter.Groups["propName"].Value;
@@ -282,7 +282,7 @@ public class UnityScriptToCSharp_Variables: UnityScriptToCSharp {
 
             // now look for the corresponding setter
             pattern = "(public|private|protected)"+oblWS+"function"+oblWS+"set"+oblWS+propName+".*}";
-            Match theSetter = Regex.Match (unModifiedFile, pattern);
+            Match theSetter = Regex.Match (unModifiedScript, pattern);
 
             if (theSetter.Success)
                 property += "\t\t"+theSetter.Groups[1].Value+" set { "+variableName+" = value; }"+EOL; // setter
@@ -290,11 +290,11 @@ public class UnityScriptToCSharp_Variables: UnityScriptToCSharp {
             property +="\t}"+EOL; // property closing bracket
 
 
-            // now do the modifs in the file
-            file = file.Replace (aGetter.Value, property); // replace getter by property
+            // now do the modifs in the script
+            script.text = script.text.Replace (aGetter.Value, property); // replace getter by property
 
             if (theSetter.Success)
-                file = file.Replace (theSetter.Value, ""); // remove setter if it existed
+                script.text = script.text.Replace (theSetter.Value, ""); // remove setter if it existed
         }
     } // end Properties ()
 
@@ -305,20 +305,17 @@ public class UnityScriptToCSharp_Variables: UnityScriptToCSharp {
     /// <summary> 
     /// Now that all functions have a return type, try to convert the few variables whose value are set from a function
     /// </summary>
-    void VariablesTheReturn () {
+    public static void VariablesTheReturn () {
         pattern = "var"+oblWS+"("+commonName+optWS+"="+optWS+commonName+optWS+"\\()";
-        List<Match> allVariableDeclarations = ReverseMatches (file, pattern);
+        List<Match> allVariableDeclarations = ReverseMatches (script.text, pattern);
 
         foreach (Match aVarDeclaration in allVariableDeclarations) {
             // look for the function declaration that match the function name
             pattern = commonChars+oblWS+aVarDeclaration.Groups[6].Value+optWS+"\\("; // aVarDeclaration.Groups[6].Value is the function name
-            Match theFunction = Regex.Match (file, pattern); // quid if the same function name return sevral types of values ??
+            Match theFunction = Regex.Match (script.text, pattern); // quid if the same function name return sevral types of values ??
 
             if (theFunction.Success) // function.Groups[1].Value is the return type
-                file = file.Replace (aVarDeclaration.Value, aVarDeclaration.Value.Replace ("var ", theFunction.Groups[1].Value+" "));
+                script.text = script.text.Replace (aVarDeclaration.Value, aVarDeclaration.Value.Replace ("var ", theFunction.Groups[1].Value+" "));
         }
-
-        DoReplacements ();
     }
-
-}
+} // end class UnityScriptToCSharp_Variables

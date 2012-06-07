@@ -50,11 +50,7 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
 
     
 
-    // a list of items (variable or functions) and their coresponding type
-    private Dictionary<string, string> itemsAndTypes = new Dictionary<string, string> ();
-
-    // list of classes and their items (variable or function) and corresponding type
-    private Dictionary<string, Dictionary<string, string>> projectItems = new Dictionary<string, Dictionary<string, string>> ();
+    
 
     // the text (script.text) of the file currently being converted
     //private string file = "";
@@ -242,6 +238,7 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
         }
 
         string[] paths = Directory.GetFiles (Application.dataPath+sourceDirectory, "*.js", SearchOption.AllDirectories); // only JS scripts
+        string _path;
         StreamReader reader;
         scriptsList.Clear ();
 
@@ -251,8 +248,8 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
             string text = reader.ReadToEnd ();
             reader.Close ();
 
-            path = path.Replace (Application.dataPath+sourceDirectory, ""); // just keep the relative path from the source directory
-            scriptsList.Add (new Script (path, text));
+            _path = path.Replace (Application.dataPath+sourceDirectory, ""); // just keep the relative path from the source directory
+            scriptsList.Add (new Script (_path, text));
         }
         
 
@@ -318,7 +315,7 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
 
 
         // append the content of UnityClasses.txt to classesList
-        string _path = Application.dataPath+"/UnityScriptToCSharp/UnityClasses.txt";
+        _path = Application.dataPath+"/UnityScriptToCSharp/UnityClasses.txt";
         if (File.Exists (_path)) { // StreamReader will throw an FileNotFoundException if the file is not found
             reader = new StreamReader (_path);
 
@@ -370,10 +367,10 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
         //writer.WriteLine ("# all keys below are values that need to be associated with a type.");
         List<string> addedValues = new List<string> ();
 
-        foreach (Script file in scriptsList) {
+        foreach (Script _script in scriptsList) {
             // search for variable declaration pattern
             pattern = "var"+oblWS+commonName+optWS+"="+optWS+"([a-zA-Z_]{1}"+commonName+")("+optWS+"\\(.*\\))?"+optWS+";";
-            MatchCollection allVarDeclarations = Regex.Matches (script.text, pattern);
+            MatchCollection allVarDeclarations = Regex.Matches (_script.text, pattern);
 
             foreach (Match aVarDeclaration in allVarDeclarations) {
                 string value = aVarDeclaration.Groups[5].Value;
@@ -394,7 +391,7 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
 
             // search for variable return pattern
             pattern = "return"+oblWS+"([A-Z]{1}"+commonName+")("+optWS+"\\(.*\\))?"+optWS+";"; // why [A-Z] => see coment below       but why only look for var in other class or function call ?=> because that's where I can't resolve the type
-            MatchCollection allReturnStatements = Regex.Matches (script.text, pattern);
+            MatchCollection allReturnStatements = Regex.Matches (_script.text, pattern);
 
             foreach (Match aReturnStatement in allReturnStatements) {
                 string value = aReturnStatement.Groups[2].Value;
@@ -597,19 +594,19 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
 
         // convert variables declarations
         // it will always resolve the variable type unless when the value is returned from a function (see VariablesTheReturn() void below)
-        //Variables ();
+        UnityScriptToCSharp_Variables.Variables ();
 
         // convert properties declarations
-        //Properties ();
+        UnityScriptToCSharp_Variables.Properties ();
 
         // convert void declarations, including arguments declaration
-        //Functions ();
+        UnityScriptToCSharp_Functions.Functions ();
    
         // convert variable declaration where the value is returned from a void now that almost all functions got their returned type resolved
-       // VariablesTheReturn ();
+        UnityScriptToCSharp_Variables.VariablesTheReturn ();
 
         // functionSec
-        //FunctionsTheReturn ();
+        UnityScriptToCSharp_Functions.FunctionsTheReturn ();
 
 
         // Assembly imports
