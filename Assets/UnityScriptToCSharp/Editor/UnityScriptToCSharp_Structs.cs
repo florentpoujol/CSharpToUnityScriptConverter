@@ -41,7 +41,7 @@ public struct Block {
             return;
 
 		if (endIndex <= startIndex) {
-			Debug.LogWarning ("Block:Block() : endIndex <= startIndex. Can't get block text. match=["+match.Value+"] startIndex=["+startIndex+"] endIndex=["+endIndex+"] refText=["+refText+"].");
+			Debug.LogWarning ("Block::Block() : endIndex <= startIndex. Can't get block text. match=["+match.Value+"] startIndex=["+startIndex+"] endIndex=["+endIndex+"] refText=["+refText+"].");
 			return;
 		}
 
@@ -72,11 +72,13 @@ public struct Block {
 		}
 
 		// no matching closing bracket has been found
-		Debug.LogError ("Block:GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning -1. match=["+match.Value+"] startIndex=["+startIndex+"] ["+
+		Debug.LogError ("Block::GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning -1. match=["+match.Value+"] startIndex=["+startIndex+"] ["+
 			refText[startIndex-1]+"|"+refText[startIndex]+"|"+refText[startIndex+1]+"] text=["+refText+"].");
 		return -1;
 	}
 }
+
+
 
 public struct Script { // can't use FILE since it's a class in System.IO
 	public string path;
@@ -88,8 +90,8 @@ public struct Script { // can't use FILE since it's a class in System.IO
 		path = _path.Remove (_path.Length-3); // remove ".js"
 		
 		int lastIndexof = path.LastIndexOf ("\\");
-        name = path.Substring (lastIndexof+1);
-        path = path.Replace (name, "");
+        name = path.Substring (lastIndexof+1); // isolate the name
+        path = path.Replace (name, "");// the path end by a slash
 		
 		text = _text;
 		newText = "";
