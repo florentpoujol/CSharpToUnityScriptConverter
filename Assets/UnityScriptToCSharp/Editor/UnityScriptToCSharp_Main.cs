@@ -61,6 +61,7 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
     // index (in paths) of the file currently being converted
     private int fileIndex = 0;
 
+    private bool preparationsDone = false;
     private bool proceedWithConvertion = false;
 
 
@@ -77,10 +78,10 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
 
 
 
-    [MenuItem ("Window/UnityScript To C# Converter")]
+    [MenuItem ("Script Converter/UnityScript To C#")]
     static void ShowWindow () {
-        UnityScriptToCSharp window = (UnityScriptToCSharp)EditorWindow.GetWindow (typeof(UnityScriptToCSharp));
-        window.title = "UniScript to C#";       
+        UnityScriptToCSharp_Main window = (UnityScriptToCSharp_Main)EditorWindow.GetWindow (typeof(UnityScriptToCSharp_Main));
+        window.title = "US to C#";
     }
 
     
@@ -106,13 +107,13 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
 
         GUILayout.Space (20);
 
-        if (GUILayout.Button ("(2) Perfrom actual convertion", GUILayout.MaxWidth (200))) {
+        if (preparationsDone && GUILayout.Button ("(2) Perfrom actual convertion", GUILayout.MaxWidth (200))) {
             GetItemsAndTypes ();
 
             // loop throught files and convert
             convertionState = "Converting : 0%";
             
-            if ( ! targetDirectory.StartsWith ("\\"))
+            if ( ! targetDirectory.StartsWith ("\\") || ! targetDirectory.StartsWith ("/"))
                 targetDirectory = "/"+targetDirectory;
             
             proceedWithConvertion = true; // allow the convertion in Update()
@@ -234,6 +235,7 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
 
         if ( ! Directory.Exists (Application.dataPath+sourceDirectory)) {
             preparationState = "Abording ! Source directory does not exists !";
+            Debug.LogError ("UnityScript to C# converter : Abording preparation work because the source directory ["+sourceDirectory+"] does not exists !");
             return;
         }
 
@@ -412,6 +414,7 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
         writer.Close ();
 // You may want to edit the \"UnityScriptToCSharp/MyClasses.txt\" file before to proceed with the actual convertion of the files
         preparationState = "Preparation done. Added "+addedValues.Count+" entries to ItemsAndTypes.txt. Ready to convert "+scriptsList.Count+" scripts.";
+        preparationsDone = true;
     }
 
 

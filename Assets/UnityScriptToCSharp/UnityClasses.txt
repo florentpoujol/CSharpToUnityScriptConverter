@@ -224,3 +224,6 @@ iPhoneInput
 iPhoneSettings
 iPhoneUtils
 iPhone
+
+# ok that's not a class but it prevent Instancita to appear in ItemsAndTypes since it's return type depends on the context
+Instanciate

@@ -28,7 +28,7 @@ public class UnityScriptToCSharp: EditorWindow {
     protected static List<string> replacements = new List<string> ();
 	protected static string pattern;
 	
-    protected static string EOL = "\r\n"; // works also with on Windows 7
+    protected static string EOL = "\r"; // works also with on Windows 7
 
 
     // a list of structure that contains all needed infos about the files to be converted

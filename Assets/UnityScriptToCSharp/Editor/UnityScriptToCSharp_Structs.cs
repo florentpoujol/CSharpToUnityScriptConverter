@@ -1,5 +1,6 @@
 
 using UnityEngine;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 public struct Block {
@@ -79,6 +80,8 @@ public struct Block {
 }
 
 
+// ----------------------------------------------------------------------------------
+
 
 public struct Script { // can't use FILE since it's a class in System.IO
 	public string path;
@@ -95,5 +98,78 @@ public struct Script { // can't use FILE since it's a class in System.IO
 		
 		text = _text;
 		newText = "";
+	}
+}
+
+
+// ----------------------------------------------------------------------------------
+
+
+public struct ProjectItems {
+	public List<string> classes; // list of class name
+	public Dictionary<string, TypedItem> methods; // key is the classname, value is a method infos (name, type, args (with their type) and variable (with their types))
+	public Dictionary<string, TypedItem> members; // key is the classname, value the member (class variable) name
+
+	//public Dictionary<string, Dictionary<string, string>> functionVariables; // key is the classname, the value is a dictionnary key=method name
+}
+
+public struct ProjectItem {
+	public static List<ProjectItem> projectItems = new List<ProjectItem> (); // list of all project items
+	public static List<ProjectItem> classes; // list of classes
+
+	public List<ProjectItem> methods = new List<TypedItem> (); // list of methods if it's a class
+	public List<ProjectItem> variables = new List<TypedItem> (); // list of variables if it's a class or a method
+	public List<ProjectItem> arguments = new List<TypedItem> (); // list of arguments if it's a method
+
+	public string _class; // owner class if it's a ethod or a variable
+	public string method; // owner method if it's an argument or a method variable
+	public string name;
+	public string type;
+	public string isArgument;
+
+
+	//--------------------
+
+
+	public ProjectItem (string name, string type) {
+		this.name = name;
+		this.type = type;
+	}
+
+	public ProjectItem (string name): this (name, "undefined") {}
+
+
+	//--------------------
+
+
+	public ProjectItem GetItem (string name) {
+		for (ProjectItem item in projectItems) {
+			if (item.name == name)
+				return item;
+		}
+
+		Debug.LogError ("ProjectItem::GetItem : couldn't find the item. name=["+name+"]");
+		return null;
+	}
+
+
+	public ProjectItem GetItem (string _class, string method) {
+		for (ProjectItem item in projectItems) {
+			if (item._class == _class && item.method == method)
+				return item;
+		}
+
+		Debug.LogError ("ProjectItem::GetItem : couldn't find the item. class=["+_class+"] method=["+method+"]");
+		return null;
+	}
+
+	public ProjectItem GetItem (string _class, string method, string name) {
+		for (ProjectItem item in projectItems) {
+			if (item._class == _class && item.method == method && item.name == name)
+				return item;
+		}
+
+		Debug.LogError ("ProjectItem::GetItem : couldn't find the item. class=["+_class+"] method=["+method+"] name=["+name+"]");
+		return null;
 	}
 }
