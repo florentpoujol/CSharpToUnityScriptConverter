@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 
 // ----------------------------------------------------------------------------------
 
-
+/*
 public enum ProjectItemCategory {
 	Class,
 	Method,
@@ -140,4 +140,4 @@ public class ProjectItem { // structs anoy me sometimes
 		Debug.LogError ("ProjectItem::GetMethod() : couldn't find the item. className=["+className+"] methodName=["+methodName+"]");
 		return null;
 	}
-}
+}*/

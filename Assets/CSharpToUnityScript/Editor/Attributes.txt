@@ -1,0 +1,22 @@
+# Runtime Classes
+AddComponentMenu
+ContextMenu
+ExecuteInEditMode
+HideInInspector
+ImageEffectOpaque
+ImageEffectTransformsToLDR
+System.NonSerialized
+NotConvertedAttribute
+NotRenamedAttribute
+RPC
+RequireComponent
+Serializable
+SerializeField
+
+# Editor Classes
+CanEditMultipleObjects
+CustomEditor
+DrawGizmo
+MenuItem
+PostProcessAttribute
+PreferenceItem

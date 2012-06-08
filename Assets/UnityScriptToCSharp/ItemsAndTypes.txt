@@ -1,7 +1,5 @@
-_title_mode=int
-FindClosestCar=GameObject
-FindClosestEnemy=GameObject
-steam_sound_delay=float
-GetSphereSize=float
-angle=float
-GetRotation=
+
+ReturnType=
+ReturnBoolean1=
+ReturnString1=
+_Parent=

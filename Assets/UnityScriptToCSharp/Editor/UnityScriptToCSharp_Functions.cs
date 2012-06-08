@@ -275,7 +275,7 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
  
             if (theReturnedFunction.Success) { // if the current function returns a variable
                 string returnedFunctionName = theReturnedFunction.Groups[2].Value;
-                Debug.Log ("returned function="+returnedFunctionName);
+                //Debug.Log ("returned function="+returnedFunctionName);
                 
                 // search for the function declaration in script.text
                 pattern = commonChars+oblWS+returnedFunctionName+optWS+"\\(.*\\)"+optWS+"{";
