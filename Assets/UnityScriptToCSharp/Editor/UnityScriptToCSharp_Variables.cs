@@ -212,22 +212,8 @@ public class UnityScriptToCSharp_Variables: UnityScriptToCSharp {
                 //replacements.Add ( item.Value+"$1" );
             }
         }
-
-        DoReplacements ();
-
-        pattern = "var"+oblWS+"("+commonName+optWS+"="+optWS+commonName+optWS+"\\()";
-        List<Match> allVariableDeclarations = ReverseMatches (script.text, pattern);
-
-        foreach (Match aVarDeclaration in allVariableDeclarations) {
-            // look for the function declaration that match the function name
-            pattern = commonChars+oblWS+aVarDeclaration.Groups[6].Value+optWS+"\\("; // aVarDeclaration.Groups[6].Value is the function name
-            Match theFunction = Regex.Match (script.text, pattern); // quid if the same function name return sevral types of values ??
-
-            if (theFunction.Success) // function.Groups[1].Value is the return type
-                script.text = script.text.Replace (aVarDeclaration.Value, aVarDeclaration.Value.Replace ("var ", theFunction.Groups[1].Value+" "));
-        }
         // about the same code is run again in Function()
-
+        
 
         //--------------------
 

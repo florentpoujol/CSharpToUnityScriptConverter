@@ -113,13 +113,13 @@ public enum ProjectItemCategory {
 	//Argument
 }
 
-public class ProjectItem { // struct sucks sometimes
+public class ProjectItem { // structs anoy me sometimes
 	public static List<ProjectItem> projectItems = new List<ProjectItem> (); // list of all project items
 	//public static List<ProjectItem> classes; // list of classes
 
 	public List<ProjectItem> methods = new List<ProjectItem> (); // list of methods if it's a class
 	public List<ProjectItem> members = new List<ProjectItem> (); // list of variables if it's a class
-	public List<ProjectItem> variables = new List<ProjectItem> (); // list of variables if it's a method
+	public List<ProjectItem> variables = new List<ProjectItem> (); // list of variables and arguments if it's a method
 
 	public ProjectItemCategory category;
 
@@ -141,11 +141,11 @@ public class ProjectItem { // struct sucks sometimes
 	}
 
 	// a method
-	public ProjectItem (string className, string[] method) {
+	public ProjectItem (string className, string methodName, string methodType) {
 		this.category = ProjectItemCategory.Method;
 		this._class = className;
-		this.name = method[0];
-		this.type = method[1];
+		this.name = methodName;
+		this.type = methodType;
 
 		if (this.type == "")
 			this.type = "undefined";
@@ -157,11 +157,11 @@ public class ProjectItem { // struct sucks sometimes
 	}
 
 	// a variable (class variable = member or method variable) or an argument
-	public ProjectItem (string className, string methodName, string[] variable) {
+	public ProjectItem (string className, string methodName, string variableName, string variableType) {
 		this._class = className;
 		this.method = methodName;
-		this.name = variable[0];
-		this.type = variable[1];
+		this.name = variableName;
+		this.type = variableType;
 
 		if (this.type == "")
 			this.type = "undefined";

@@ -214,13 +214,6 @@ public class UnityScriptToCSharp_Functions: UnityScriptToCSharp {
             replacements.Add ( "$2" );
         }
 
-
-        
-
-
-
-
-
         DoReplacements ();
     } // end Functions ()
 

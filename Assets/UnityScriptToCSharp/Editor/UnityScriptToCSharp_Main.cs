@@ -113,7 +113,7 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
             // loop throught files and convert
             convertionState = "Converting : 0%";
             
-            if ( ! targetDirectory.StartsWith ("\\") || ! targetDirectory.StartsWith ("/"))
+            if ( ! targetDirectory.StartsWith ("/"))
                 targetDirectory = "/"+targetDirectory;
             
             proceedWithConvertion = true; // allow the convertion in Update()
@@ -257,9 +257,60 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
 
         //--------------------
 
-        GetProjectItems();
-        
 
+        // make a list of classes that exists in the project's files
+        foreach (Script _script in scriptsList) {
+            pattern = "class"+oblWS+commonName+"("+optWS+":"+optWS+commonName+")?"+optWS+"{";
+            MatchCollection allClassesDeclarations = Regex.Matches (_script.text, pattern);
+
+            foreach (Match aClassDeclaration in allClassesDeclarations) {
+                string className = aClassDeclaration.Groups[2].Value;
+
+                if ( ! classesList.Contains (className))
+                    classesList.Add (className);
+            }
+
+            // always ad the name of the file as a class 
+            if ( ! classesList.Contains (_script.name))
+                    classesList.Add (_script.name);
+        }
+
+        // do the same but for the C# scripts in the project folder
+        paths = Directory.GetFiles (Application.dataPath+sourceDirectory.TrimEnd ('/'), "*.cs", SearchOption.AllDirectories);
+        foreach (string path in paths) {
+            reader = new StreamReader (path);
+            string text = reader.ReadToEnd();
+            reader.Close();
+
+            pattern = "class"+oblWS+commonName+"("+optWS+":"+optWS+commonName+")?"+optWS+"{";
+            MatchCollection allClassesDeclarations = Regex.Matches (text, pattern);
+
+            foreach (Match aClassDeclaration in allClassesDeclarations) {
+                string className = aClassDeclaration.Groups[2].Value;
+
+                if ( ! classesList.Contains (className))
+                    classesList.Add (className);
+            }
+        }
+
+        // do the same but for the Boo scripts in the project folder
+        paths = Directory.GetFiles (Application.dataPath+sourceDirectory.TrimEnd ('/'), "*.boo", SearchOption.AllDirectories);
+        foreach (string path in paths) {
+            reader = new StreamReader (path);
+            string text = reader.ReadToEnd ();
+            reader.Close ();
+
+            pattern = "class"+oblWS+commonName+"("+optWS+"\\("+optWS+commonName+optWS+"\\))?";
+            MatchCollection allClassesDeclarations = Regex.Matches (text, pattern);
+
+            foreach (Match aClassDeclaration in allClassesDeclarations) {
+                string className = aClassDeclaration.Groups[2].Value;
+
+                if ( ! classesList.Contains (className))
+                    classesList.Add (className);
+            }
+        }
+    
 
         //--------------------
 
@@ -366,134 +417,8 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
     }
 
 
-    // ----------------------------------------------------------------------------------
-
-    /// <summary>
-    /// Read the project's scripts and mae the list of all class, method, variable and their corresponding type
-    /// </summary>
-    void GetProjectItems () {
 
 
-        // make a list of all encountered class in the project's scripts
-        foreach (Script _script in scriptsList) {
-            // search for class declaration pattern
-            pattern = "class"+oblWS+commonName+"("+oblWS+"extends"+oblWS+commonName+")?"+optWS+"{";
-            MatchCollection allClassesDeclarations = Regex.Matches (_script.text, pattern);
-            
-            MatchCollection allVariablesDeclarations; // for later use
-
-            foreach (Match aClassDeclaration in allClassesDeclarations) {
-                string className = aClassDeclaration.Groups[2].Value;
-
-                new ProjectItem (className);
-
-                // now look for methods inside the class
-                Block classBlock = new Block (aClassDeclaration, _script.text);
-
-                pattern = "function"+oblWS+commonName+optWS+"\\((?<args>.*)\\)("+optWS+":"+optWS+"(?<returnType>"+commonChars+"))?"+optWS+"{";
-                MatchCollection allFunctionsDeclarations = Regex.Matches (classBlock.text, pattern);
-                List<string> functionVariablesList = new List<string> (); // list of variable fuound inside functions
-
-                foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
-                    string functionName = aFunctionDeclaration.Groups[2].Value;
-                    string functionType = aFunctionDeclaration.Groups["returnType"].Value; // functionType == "" if there is none
-
-                    new ProjectItem (className, new string[2] {functionName, functionType});
-
-
-                    // now look for variable inside the function
-                    Block functionBlock = new Block (aFunctionDeclaration, classBlock.text);
-
-                    pattern = "var"+oblWS+commonName+optWS+"(:"+optWS+commonChars+optWS+")?=";
-                    allVariablesDeclarations = Regex.Matches (functionBlock.text, pattern);
-
-                    foreach (Match aVariableDeclaration in allVariablesDeclarations) {
-                        string variableName = aVariableDeclaration.Groups[2].Value;
-                        string variableType = aVariableDeclaration.Groups[6].Value;
-
-                        functionVariablesList.Add (variableName);
-
-                        new ProjectItem (className, functionName, new string[2] {variableName, variableType});
-                    } // end loop variable in that function
-
-
-                    // now look for arguments
-                    string rawArgs = aFunctionDeclaration.Groups["args"].Value;
-
-                    if (rawArgs.Contains (":")) {
-                        string[] args = rawArgs.Split (',');
-                        
-                        for (int i=0; i < args.Length; i++) {
-                            string[] arg = args[i].Split (':');
-                            new ProjectItem (className, functionName, arg);
-                        }
-                    }
-
-                } // end loop functions in that class
-
-
-                // now look for members inside that class
-                pattern = "var"+oblWS+commonName+optWS+"(:"+optWS+commonChars+optWS+")?=";
-                allVariablesDeclarations = Regex.Matches (classBlock.text, pattern); // this will also match the var declaration inside functions
-
-                foreach (Match aVariableDeclaration in allVariablesDeclarations) {
-                    string variableName = aVariableDeclaration.Groups[2].Value;
-
-                    if (functionVariablesList.Contains (variableName)) // this variable is declared inside a function, so it can't be also declared in the class    argument can have the same name as a class variable
-                        continue;
-
-                    string variableType = aVariableDeclaration.Groups[6].Value;
-
-                    new ProjectItem (className, "", new string[2] {variableName, variableType});
-
-                } // end loop variable in that class
-
-
-
-            } // end loop classes in that file
-
-            // always add the name of the script (in most cases, that's the name of the class inside the script)
-            //if ( ! classesList.Contains (_script.name))
-            //    classesList.Add (_script.name);
-        }
-
-        StreamReader reader;
-        // do the same but for the C# scripts in the project folder
-        string[] paths = Directory.GetFiles (Application.dataPath+sourceDirectory.TrimEnd ('/'), "*.cs", SearchOption.AllDirectories);
-        foreach (string path in paths) {
-            reader = new StreamReader (path);
-            string text = reader.ReadToEnd ();
-            reader.Close ();
-
-            pattern = "class"+oblWS+commonName+"("+optWS+":"+optWS+commonName+")?"+optWS+"{";
-            MatchCollection allClassesDeclarations = Regex.Matches (text, pattern);
-
-            foreach (Match aClassDeclaration in allClassesDeclarations) {
-                string className = aClassDeclaration.Groups[2].Value;
-
-                if ( ! classesList.Contains (className))
-                    classesList.Add (className);
-            }
-        }
-
-        // do the same but for the Boo scripts in the project folder
-        paths = Directory.GetFiles (Application.dataPath+sourceDirectory.TrimEnd ('/'), "*.boo", SearchOption.AllDirectories);
-        foreach (string path in paths) {
-            reader = new StreamReader (path);
-            string text = reader.ReadToEnd ();
-            reader.Close ();
-
-            pattern = "class"+oblWS+commonName+"("+optWS+"\\("+optWS+commonName+optWS+"\\))?";
-            MatchCollection allClassesDeclarations = Regex.Matches (text, pattern);
-
-            foreach (Match aClassDeclaration in allClassesDeclarations) {
-                string className = aClassDeclaration.Groups[2].Value;
-
-                if ( ! classesList.Contains (className))
-                    classesList.Add (className);
-            }
-        }
-    }
 
 
 
@@ -786,3 +711,110 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
 
     } // end Convert()
 } // end of class UnityScriptToCSharp_Main
+
+
+ /*// ----------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Read the project's scripts and map the list of all class, method, variable and their corresponding type
+    /// </summary>
+    void MapProjectItems () {
+
+
+        // make a list of all encountered class in the project's scripts
+        foreach (Script _script in scriptsList) {
+            // search for class declaration pattern
+            pattern = "class"+oblWS+commonName+"("+oblWS+"extends"+oblWS+commonName+")?"+optWS+"{";
+            MatchCollection allClassesDeclarations = Regex.Matches (_script.text, pattern);
+            
+            MatchCollection allVariablesDeclarations; // for later use
+            bool isMappingComplete = false; // tell wether the mapping is complete or not
+            // it won't be complete if the script is MonoBehaviour derived script without a class declaration
+
+            foreach (Match aClassDeclaration in allClassesDeclarations) {
+                string className = aClassDeclaration.Groups[2].Value;
+
+                if (className == _script.name)
+                    isMappingComplete = true;
+
+                new ProjectItem (className);
+
+
+                // now look for methods inside the class
+                Block classBlock = new Block (aClassDeclaration, _script.text);
+
+                pattern = "function"+oblWS+commonName+optWS+"\\((?<args>.*)\\)("+optWS+":"+optWS+"(?<returnType>"+commonChars+"))?"+optWS+"{";
+                MatchCollection allFunctionsDeclarations = Regex.Matches (classBlock.text, pattern);
+                List<string> functionVariablesList = new List<string> (); // list of variable fuound inside functions
+
+                foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
+                    string functionName = aFunctionDeclaration.Groups[2].Value;
+                    string functionType = aFunctionDeclaration.Groups["returnType"].Value; // functionType == "" if there is none
+
+                    new ProjectItem (className, functionName, functionType);
+
+
+                    // now look for variable inside the function
+                    Block functionBlock = new Block (aFunctionDeclaration, classBlock.text);
+
+                    pattern = "var"+oblWS+commonName+optWS+"(:"+optWS+commonChars+optWS+")?=";
+                    allVariablesDeclarations = Regex.Matches (functionBlock.text, pattern);
+
+                    foreach (Match aVariableDeclaration in allVariablesDeclarations) {
+                        string variableName = aVariableDeclaration.Groups[2].Value;
+                        string variableType = aVariableDeclaration.Groups[6].Value;
+
+                        functionVariablesList.Add (variableName);
+
+                        new ProjectItem (className, functionName, variableName, variableType);
+                    } // end loop variable in that function
+
+
+                    // now look for arguments
+                    string rawArgs = aFunctionDeclaration.Groups["args"].Value;
+
+                    if (rawArgs.Contains (":")) {
+                        string[] args = rawArgs.Split (',');
+                        
+                        for (int i=0; i < args.Length; i++) {
+                            string[] arg = args[i].Split (':');
+                            new ProjectItem (className, functionName, arg[0].Trim(), arg[1].Trim());
+                        }
+                    }
+
+                } // end loop functions in that class
+
+
+                // now look for members inside that class
+                pattern = "var"+oblWS+commonName+optWS+"(:"+optWS+commonChars+optWS+")?=";
+                allVariablesDeclarations = Regex.Matches (classBlock.text, pattern); // this will also match the var declaration inside functions
+
+                foreach (Match aVariableDeclaration in allVariablesDeclarations) {
+                    string variableName = aVariableDeclaration.Groups[2].Value;
+
+                    if (functionVariablesList.Contains (variableName)) // this variable is declared inside a function, so it can't be also declared in the class    argument can have the same name as a class variable
+                        continue;
+
+                    string variableType = aVariableDeclaration.Groups[6].Value;
+
+                    new ProjectItem (className, "", variableName, variableType);
+
+                } // end loop variable in that class
+
+            } // end loop classes in that file
+
+
+            //--------------------
+
+
+            // if the script is a MonoBehaviour derived script without a class declaration, some members or function are still not mapped
+            if ( ! isMappingComplete) {
+                // do everything al avoer again
+            }
+
+
+        }
+
+        
+    } // end MapProjectItems
+    */
