@@ -32,13 +32,7 @@ public class UnityScriptToCSharp_Variables: UnityScriptToCSharp {
             // array with type declaration (with or without value setting)
             // arrays with type declaration without space    "string[]" instead of "string [ ]"" are already converted because [ and ] are among commonChars
 
-                // string 
-                patterns.Add ( "var"+oblWS+commonName+optWS+":"+optWS+"String"+optWS+"\\["+optWS+"\\]"+optWS+"(=|;)" );
-                replacements.Add ( "string[] $2$7$8" );
-
-                // bool
-                patterns.Add ( "var"+oblWS+commonName+optWS+":"+optWS+"boolean"+optWS+"\\["+optWS+"\\]"+optWS+"(=|;)" );
-                replacements.Add ( "bool[] $2$7$8" );
+                
 
                 // general case
                 patterns.Add ( "var"+oblWS+commonName+optWS+":"+optWS+commonName+optWS+"\\["+optWS+"\\]"+optWS+"(=|;)" );

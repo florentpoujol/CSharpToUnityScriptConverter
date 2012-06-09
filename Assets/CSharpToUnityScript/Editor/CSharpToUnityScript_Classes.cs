@@ -15,7 +15,7 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
     public static void Classes () {
         // classes declarations with inheritance
         patterns.Add ( "(class"+oblWS+commonName+optWS+"):"+optWS+"("+commonName+optWS+"{)" );
-        replacements.Add ( "$1extends$6" );
+        replacements.Add ( "$1extends $6" );
 
         DoReplacements ();
 
@@ -81,7 +81,7 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
 
 
         // Attributes
-        string path = Application.dataPath+"/CSharpToUnityScript/Edior/Attributes.txt";
+        string path = Application.dataPath+"/CSharpToUnityScript/Editor/Attributes.txt";
         if ( File.Exists ( path) ) {
             StreamReader reader = new StreamReader ( path );
             List<string> attributesList = new List<string> ();
@@ -99,19 +99,19 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
 
             foreach ( string attr in attributesList ) {
                 if ( attr == "RPC" ) {
-                    patterns.Add ( "["+optWS+attr+optWS+"]" );
+                    patterns.Add ( "\\["+optWS+"RPC"+optWS+"\\]" );
                     replacements.Add ( "@RPC" );
                     continue;
                 }
 
                 if ( attr == "RequireComponent" ) {
-                    patterns.Add ( "["+optWS+attr+optWS+"\\("+optWS+"typeof"+optWS+"\\((?<type>"+commonName+")\\)"+optWS+"\\)"+optWS+"]" );
-                    replacements.Add ( "@script RequireComponent(${type})" );
+                    patterns.Add ( "\\["+optWS+"RequireComponent"+optWS+"\\("+optWS+"typeof"+optWS+"\\("+commonName+"\\)"+optWS+"\\)"+optWS+"\\]" );
+                    replacements.Add ( "@script RequireComponent($6)" );
                     continue;
                 }
 
-                patterns.Add ( "["+optWS+attr+optWS+"(?<parenthesis>\\(.*\\))?"+optWS+"]" );
-                replacements.Add ( "@script $2${parenthesis}" );
+                patterns.Add ( "\\["+optWS+attr+optWS+"(\\(.*\\))?"+optWS+"\\]" );
+                replacements.Add ( "@script "+attr+"$3" );
             }
         }
         else
@@ -126,7 +126,7 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
 
         // base. => this.      
         patterns.Add ( "base"+optWS+"\\." );
-        replacements.Add ( "supe$1." );
+        replacements.Add ( "super$1." );
 
 
         // Assembly imports
@@ -146,37 +146,37 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
     /// </summary>
     public static void AddVisibility () {
         // the default visibility for variable and functions is public in JS but private in C# => add the keyword public when no visibility (or just static) is set 
-        patterns.Add ( "([;{}\\]]+"+optWS+")((var|function|enum|class)"+oblWS+")" );
-        replacements.Add ( "$1public $3" );
+        /* patterns.Add ( "([;{}\\]]+"+optWS+")((var|function|enum|class)"+oblWS+")" );
+        replacements.Add ( "$1private $3" );
 
-        patterns.Add ( "(\\*/"+optWS+")((var|function|enum|class)"+oblWS+")" );
-        replacements.Add ( "$1public $3" );
+        patterns.Add ( "(\\*"+optWS+")((var|function|enum|class)"+oblWS+")" ); // add a / after \\*
+        replacements.Add ( "$1private $3" );
 
         patterns.Add ( "(//.*"+optWS+")((var|function|enum|class)"+oblWS+")" );
-        replacements.Add ( "$1public $3" );
+        replacements.Add ( "$1private $3" );
 
         patterns.Add ( "((\\#else|\\#endif)"+oblWS+")((var|function|enum|class)"+oblWS+")" );
-        replacements.Add ( "$1public $4" );
+        replacements.Add ( "$1private $4" );
 
 
         // static
         patterns.Add ( "([;{}\\]]+"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );
-        replacements.Add ( "$1public static $4" );
+        replacements.Add ( "$1private static $4" );
 
-        patterns.Add ( "(\\*/"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );
-        replacements.Add ( "$1public static $4" );
+        patterns.Add ( "(\\*"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );  // add a / after \\*
+        replacements.Add ( "$1private static $4" );
 
         patterns.Add ( "(//.*"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );
-        replacements.Add ( "$1public static $4" );
+        replacements.Add ( "$1private static $4" );
 
         patterns.Add ( "((\\#else|\\#endif)"+oblWS+")((var|function)"+oblWS+")" );
-        replacements.Add ( "$public static $4" );
+        replacements.Add ( "$1private static $4" );
 
-        DoReplacements ();
+        DoReplacements ();*/
 
 
         // all variables gets a public or static public visibility but this shouldn't happend inside functions, so remove that
-
+/*
         pattern = "function"+oblWS+commonName+optWS+"\\(.*\\)"+optWS+"(:"+optWS+commonChars+optWS+")?{";
         List<Match> allFunctions = ReverseMatches (script.text, pattern);
 
@@ -193,6 +193,8 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
 
             function.newText = DoReplacements (function.text);
             script.text = script.text.Replace (function.text, function.newText);
+
         } // end for
+        */
     } // end AddVisibility ()
 }

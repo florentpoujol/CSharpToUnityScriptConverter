@@ -59,7 +59,7 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
     //private string fileName = "";
 
     // index (in paths) of the file currently being converted
-    private int fileIndex = 0;
+    private int scriptIndex = 0;
 
     private bool preparationsDone = false;
     private bool proceedWithConvertion = false;
@@ -95,97 +95,59 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
 
         GUILayout.Space (20);
 
+        if ( GUILayout.Button ( "Convert", GUILayout.MaxWidth ( 200 ) ) ) {
+            Reset();
+
+            if ( ! sourceDirectory.StartsWith ("/"))
+                sourceDirectory = "/"+sourceDirectory;
+
+            if ( ! Directory.Exists (Application.dataPath+sourceDirectory)) {
+                preparationState = "Abording ! Source directory does not exists !";
+                Debug.LogError ("UnityScript to C# converter : Abording preparation work because the source directory ["+sourceDirectory+"] does not exists !");
+                return;
+            }
+
+            string[] paths = Directory.GetFiles (Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories); // only C# scripts in the whole hyerarchie of the source directory
+            string _path;
+            scriptsList.Clear ();
+            scriptIndex = 0;
 
 
-        GUILayout.Space (20);
+            // fill scriptsList
+            foreach (string path in paths) {
+                StreamReader reader = new StreamReader (path);
+                string text = reader.ReadToEnd ();
+                reader.Close ();
 
-        if (GUILayout.Button ("(1) Do preparation work", GUILayout.MaxWidth (200))) {
-            DoPreparations ();
-        }
-
-        GUILayout.Label (preparationState);
-
-        GUILayout.Space (20);
-
-        if (preparationsDone && GUILayout.Button ("(2) Perfrom actual convertion", GUILayout.MaxWidth (200))) {
-            GetItemsAndTypes ();
-
-            // loop throught files and convert
-            convertionState = "Converting : 0%";
+                _path = path.Replace (Application.dataPath+sourceDirectory, ""); // just keep the relative path from the source directory
+                scriptsList.Add (new Script (_path, text));
+            }
             
-            if ( ! targetDirectory.StartsWith ("/"))
+
+            if ( !targetDirectory.StartsWith ( "/" ) )
                 targetDirectory = "/"+targetDirectory;
             
-            if (scriptsList.Count > 0)
-                proceedWithConvertion = true; // allow the convertion in Update()
+            if ( scriptsList.Count > 0 )
+                proceedWithConvertion = true;
+            else
+                Debug.Log ( "Nothing to convert" );
         }
 
-        GUILayout.Label (convertionState);
 
-
-        /*GUILayout.BeginHorizontal ();
-
-            if (GUILayout.Button ("Stop and reset")) {
-                Reset ();
-            }
-
-            if (GUILayout.Button ("Do preparation work")) {
-                DoPreparations ();
-            }
-
-
-            if (GUILayout.Button ("Begin actual convertion")) {
-                GetItemsAndTypes ();
-
-                // loop throught files and convert
-                convertionState = "Converting : 0%";
-                
-                if ( ! targetDirectory.StartsWith ("\\"))
-                    targetDirectory = "/"+targetDirectory;
-                
-                proceedWithConvertion = true;
-            }
-
-
-
-        GUILayout.EndHorizontal ();
-
-        GUILayout.Space (20);
-
-        GUILayout.BeginHorizontal ();
-            GUILayout.FlexibleSpace ();
-            GUILayout.Label ("State of the convertion : ");
-            GUILayout.FlexibleSpace ();
-        GUILayout.EndHorizontal ();
-
-        GUILayout.Space (20);
-
-        GUILayout.BeginHorizontal ();
-            GUILayout.FlexibleSpace ();
-            GUILayout.Label (convertionState);
-            GUILayout.FlexibleSpace ();
-        GUILayout.EndHorizontal ();
-
-        GUILayout.Space (20);*/
-
-        GUILayout.Label ("fileList.Count = "+scriptsList.Count);
-        GUILayout.Label ("fileIndex = "+fileIndex);
-        GUILayout.Label ("proceed with convertion ? "+proceedWithConvertion);
-
-         if (GUILayout.Button ("Stop and reset", GUILayout.MaxWidth (200))) {
+        if ( GUILayout.Button ( "Reset/Abord", GUILayout.MaxWidth ( 200 ) ) ) {
             Reset ();
         }
     }
 
+    void Reset () {
+        proceedWithConvertion = false;
+        scriptsList.Clear ();
+        scriptIndex = 0;
+    }
 
-    // ----------------------------------------------------------------------------------
-
-    /// <summary>
-    /// Call for the convertion and write the new .cs scripts, once proceedWithConvertion=true
-    /// </summary>
-    void Update() {
-        if (proceedWithConvertion && fileIndex < scriptsList.Count) {
-            script = scriptsList[fileIndex++];
+    void Update () {
+        if (proceedWithConvertion) {
+            script = scriptsList[scriptIndex++];
             
             ConvertFile ();
             Debug.Log ("Convertion done for ["+script.path+script.name+".cs]." );
@@ -194,240 +156,22 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
             //Debug.Log (path);
             Directory.CreateDirectory (path); // make sure the directory exist, or create it
 
-            StreamWriter writer = new StreamWriter (path+script.name+".cs");
+            StreamWriter writer = new StreamWriter (path+script.name+".js");
             writer.Write (script.text);
             writer.Flush ();
             writer.Close ();
 
-            convertionState = "Converting : "+(fileIndex+0.0 / scriptsList.Count+0.0 * 100.0)+"%";
+            //convertionState = "Converting : "+(scriptIndex+0.0 / scriptsList.Count+0.0 * 100.0)+"%";
 
-            if (fileIndex == scriptsList.Count-1) {
-                convertionState = "Convertion done !";
+            if (scriptIndex == scriptsList.Count-1) {
+                //convertionState = "Convertion done !";
                 proceedWithConvertion = false;
+                scriptIndex = 0;
             }
         }
     }
 
-
-    // ----------------------------------------------------------------------------------
-
-    /// <summary>
-    /// Reset the value of the variable
-    /// </summary>
-    void Reset () {
-        preparationState = "Waiting";
-        convertionState = "";
-        proceedWithConvertion = false;
-        fileIndex = 0;
-        scriptsList.Clear ();
-    }
-
-
-    // ----------------------------------------------------------------------------------
-
-    /// <summary>
-    /// - Read all files and fill the "scriptsList" list
-    /// - Make a list of all classes  (1) in the file "UnityClases",  (2) in the file "MyClasses" and  (3) encountered in the the project's scripts then fill the "classesList" list
-    /// </summary>
-    void DoPreparations () {
-        preparationState = "Preparing ...";
-
-        // get the path of all fles to be converted
-        if ( ! sourceDirectory.StartsWith ("/"))
-            sourceDirectory = "/"+sourceDirectory;
-
-        if ( ! Directory.Exists (Application.dataPath+sourceDirectory)) {
-            preparationState = "Abording ! Source directory does not exists !";
-            Debug.LogError ("UnityScript to C# converter : Abording preparation work because the source directory ["+sourceDirectory+"] does not exists !");
-            return;
-        }
-
-        string[] paths = Directory.GetFiles (Application.dataPath+sourceDirectory, "*.js", SearchOption.AllDirectories); // only JS scripts
-        string _path;
-        StreamReader reader;
-        scriptsList.Clear ();
-
-        // fill scriptsList
-        foreach (string path in paths) {
-            reader = new StreamReader (path);
-            string text = reader.ReadToEnd ();
-            reader.Close ();
-
-            _path = path.Replace (Application.dataPath+sourceDirectory, ""); // just keep the relative path from the source directory
-            scriptsList.Add (new Script (_path, text));
-        }
-        
-
-        //--------------------
-/*
-
-        // make a list of classes that exists in the project's files
-        foreach (Script _script in scriptsList) {
-            pattern = "class"+oblWS+commonName+"("+optWS+":"+optWS+commonName+")?"+optWS+"{";
-            MatchCollection allClassesDeclarations = Regex.Matches (_script.text, pattern);
-
-            foreach (Match aClassDeclaration in allClassesDeclarations) {
-                string className = aClassDeclaration.Groups[2].Value;
-
-                if ( ! classesList.Contains (className))
-                    classesList.Add (className);
-            }
-
-            // always ad the name of the file as a class 
-            if ( ! classesList.Contains (_script.name))
-                    classesList.Add (_script.name);
-        }
-
-        // do the same but for the C# scripts in the project folder
-        paths = Directory.GetFiles (Application.dataPath+sourceDirectory.TrimEnd ('/'), "*.cs", SearchOption.AllDirectories);
-        foreach (string path in paths) {
-            reader = new StreamReader (path);
-            string text = reader.ReadToEnd();
-            reader.Close();
-
-            pattern = "class"+oblWS+commonName+"("+optWS+":"+optWS+commonName+")?"+optWS+"{";
-            MatchCollection allClassesDeclarations = Regex.Matches (text, pattern);
-
-            foreach (Match aClassDeclaration in allClassesDeclarations) {
-                string className = aClassDeclaration.Groups[2].Value;
-
-                if ( ! classesList.Contains (className))
-                    classesList.Add (className);
-            }
-        }
-
-        // do the same but for the Boo scripts in the project folder
-        paths = Directory.GetFiles (Application.dataPath+sourceDirectory.TrimEnd ('/'), "*.boo", SearchOption.AllDirectories);
-        foreach (string path in paths) {
-            reader = new StreamReader (path);
-            string text = reader.ReadToEnd ();
-            reader.Close ();
-
-            pattern = "class"+oblWS+commonName+"("+optWS+"\\("+optWS+commonName+optWS+"\\))?";
-            MatchCollection allClassesDeclarations = Regex.Matches (text, pattern);
-
-            foreach (Match aClassDeclaration in allClassesDeclarations) {
-                string className = aClassDeclaration.Groups[2].Value;
-
-                if ( ! classesList.Contains (className))
-                    classesList.Add (className);
-            }
-        }
     
-
-        //--------------------
-
-
-        // append the content of UnityClasses.txt to classesList
-        _path = Application.dataPath+"/CSharpToUnityScript/UnityClasses.txt";
-        if (File.Exists (_path)) { // StreamReader will throw an FileNotFoundException if the file is not found
-            reader = new StreamReader (_path);
-
-            while (true) {
-                string className = reader.ReadLine ();
-                if (className == null)
-                    break;
-
-                if (className.Trim () == "" || className.StartsWith ("#")) // an epty line or a comment
-                    continue;
-
-                if ( ! classesList.Contains (className))
-                    classesList.Add (className);
-            }
-
-            reader.Close ();
-        }
-
-        // append the content of MyClasses.txt to classesList
-        _path = Application.dataPath+"/CSharpToUnityScript/MyClasses.txt";
-        if (File.Exists (_path)) {
-            reader = new StreamReader (_path);
-
-            while (true) {
-                string className = reader.ReadLine ();
-                if (className == null)
-                    break;
-
-                if (className.Trim () == "" || className.StartsWith ("#")) // an epty line or a comment
-                    continue;
-
-                if ( ! classesList.Contains (className))
-                    classesList.Add (className);
-            }
-
-            reader.Close ();
-        }
-
-
-        //--------------------
-        
-
-        // read all the files again and look for variable declaration without type where the value is another variable that is not declared somewhere in the project
-        // => add the value to the itemsAndTypes.txt file
-        // the script can't resolve itself the type of these variable, unless the user associate an item with a type in this file
-        GetItemsAndTypes (true);
-
-        StreamWriter writer = new StreamWriter (Application.dataPath+"/CSharpToUnityScript/ItemsAndTypes.txt", true);
-        //writer.WriteLine ("# all keys below are values that need to be associated with a type.");
-        List<string> addedValues = new List<string> ();
-
-        foreach (Script _script in scriptsList) {
-            // search for variable declaration pattern
-            pattern = "var"+oblWS+commonName+optWS+"="+optWS+"([a-zA-Z_]{1}"+commonName+")("+optWS+"\\(.*\\))?"+optWS+";";
-            MatchCollection allVarDeclarations = Regex.Matches (_script.text, pattern);
-
-            foreach (Match aVarDeclaration in allVarDeclarations) {
-                string value = aVarDeclaration.Groups[5].Value;
-
-                // value can't be a , a class instanciation, a char, a string, a numeric value
-                // it must then be a variable name, a function call or a boolean
-                if (value == "true" || value == "false")
-                    continue;
-                
-                if (addedValues.Contains (value) || itemsAndTypes.ContainsKey (value) || value.Contains ("GetComponent") || value.Contains (".") || classesList.Contains (value) || collections.Contains (value) || genericCollections.Contains (value))
-                    continue;
-                else {
-                    addedValues.Add (value);
-                    writer.WriteLine (value+"=");
-                }
-            }
-
-
-            // search for variable return pattern
-            pattern = "return"+oblWS+"([A-Z]{1}"+commonName+")("+optWS+"\\(.*\\))?"+optWS+";"; // why [A-Z] => see coment below       but why only look for var in other class or function call ?=> because that's where I can't resolve the type
-            MatchCollection allReturnStatements = Regex.Matches (_script.text, pattern);
-
-            foreach (Match aReturnStatement in allReturnStatements) {
-                string value = aReturnStatement.Groups[2].Value;
-
-                // value can't be a class instanciation, a char, a string, a numeric value, a variable name nor a boolean (because the first letter is uppercase)
-                // it must then be a variable from another class or a function call (from this class or another)
-                
-                if (addedValues.Contains (value) || itemsAndTypes.ContainsKey (value) || value.Contains ("GetComponent") || value.Contains (".") || classesList.Contains (value) || collections.Contains (value) || genericCollections.Contains (value))
-                    continue;
-                else {
-                    addedValues.Add (value);
-                    writer.WriteLine (value+"=");
-                }
-            }
-        }
-
-        writer.Flush ();
-        writer.Close ();
-// You may want to edit the \"CSharpToUnityScript/MyClasses.txt\" file before to proceed with the actual convertion of the files
-*/
-        preparationState = "Preparation done. Added  entries to ItemsAndTypes.txt. Ready to convert "+scriptsList.Count+" scripts.";
-        preparationsDone = true;
-    }
-
-
-
-
-
-
-
-
-
     /// <summary>
     /// Read the file ItemsAndTypes.txt and extract the key/value pairs in the itemsAndTypes List
     /// </summary>
@@ -560,7 +304,7 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
 
         // convert variables declarations
         // it will always resolve the variable type unless when the value is returned from a function (see VariablesTheReturn() void below)
-       /* CSharpToUnityScript_Variables.Variables ();
+        CSharpToUnityScript_Variables.Variables ();
 
         // convert properties declarations
         CSharpToUnityScript_Variables.Properties ();
@@ -569,13 +313,13 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
         CSharpToUnityScript_Functions.Functions ();
    
         // convert variable declaration where the value is returned from a void now that almost all functions got their returned type resolved
-        CSharpToUnityScript_Variables.VariablesTheReturn ();
+        //CSharpToUnityScript_Variables.VariablesTheReturn ();
 
         // functionSec
-        CSharpToUnityScript_Functions.FunctionsTheReturn ();*/
+        //CSharpToUnityScript_Functions.FunctionsTheReturn ();*/
 
 
-        
+        script.text = "#pragma strict"+EOL+script.text;
 
 
 
@@ -633,7 +377,7 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
 			//replacements.Add ( "$1string");*/
 
 
-        DoReplacements();
+        //DoReplacements();
 
     } // end Convert()
 } // end of class CSharpToUnityScript_Main

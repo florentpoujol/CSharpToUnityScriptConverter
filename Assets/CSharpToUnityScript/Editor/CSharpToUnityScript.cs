@@ -132,8 +132,9 @@ public class CSharpToUnityScript : EditorWindow {
     protected static List<string> patterns = new List<string> ();
     protected static List<string> replacements = new List<string> ();
 	protected static string pattern;
+    protected static string replacement;
 	
-    protected static string EOL = "\r"; // works also with on Windows 7
+    protected static string EOL = "\n"; // works also with on Windows 7    
 
 
     // a list of structure that contains all needed infos about the files to be converted
@@ -162,14 +163,21 @@ public class CSharpToUnityScript : EditorWindow {
     }
 
     protected static string DoReplacements (string text) {
+        try {
+        //Debug.LogWarning (patterns.Count+" "+replacements.Count+" "+i);
         for (int i = 0; i < patterns.Count; i++) {
+            //Debug.LogWarning (i+" | pattern="+patterns[i]+" | replacement="+replacements[i]);
             text = Regex.Replace (text, patterns[i], replacements[i]);
-
-
         }
 
         patterns.Clear ();
         replacements.Clear ();
+        }
+        catch (System.OutOfMemoryException e) {
+            Debug.LogError (patterns.Count+" "+replacements.Count+" "+e);
+            Debug.Log (text.Substring(100));
+        }
+
         return text;
     }
 
