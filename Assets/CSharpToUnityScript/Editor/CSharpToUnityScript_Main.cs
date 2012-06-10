@@ -146,7 +146,7 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
     }
 
     void Update () {
-        if (proceedWithConvertion) {
+        if (proceedWithConvertion && scriptIndex < scriptsList.Count) {
             script = scriptsList[scriptIndex++];
             
             ConvertFile ();
@@ -163,7 +163,7 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
 
             //convertionState = "Converting : "+(scriptIndex+0.0 / scriptsList.Count+0.0 * 100.0)+"%";
 
-            if (scriptIndex == scriptsList.Count-1) {
+            if (scriptIndex >= scriptsList.Count-1) {
                 //convertionState = "Convertion done !";
                 proceedWithConvertion = false;
                 scriptIndex = 0;
@@ -302,6 +302,9 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
         // works also for functions
         CSharpToUnityScript_Classes.AddVisibility ();
 
+        // convert void declarations, including arguments declaration
+        CSharpToUnityScript_Functions.Functions ();
+        
         // convert variables declarations
         // it will always resolve the variable type unless when the value is returned from a function (see VariablesTheReturn() void below)
         CSharpToUnityScript_Variables.Variables ();
@@ -309,8 +312,7 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
         // convert properties declarations
         CSharpToUnityScript_Variables.Properties ();
 
-        // convert void declarations, including arguments declaration
-        CSharpToUnityScript_Functions.Functions ();
+        
    
         // convert variable declaration where the value is returned from a void now that almost all functions got their returned type resolved
         //CSharpToUnityScript_Variables.VariablesTheReturn ();
@@ -319,7 +321,7 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
         //CSharpToUnityScript_Functions.FunctionsTheReturn ();*/
 
 
-        script.text = "#pragma strict"+EOL+script.text;
+        //script.text = "#pragma strict"+EOL+script.text;
 
 
 

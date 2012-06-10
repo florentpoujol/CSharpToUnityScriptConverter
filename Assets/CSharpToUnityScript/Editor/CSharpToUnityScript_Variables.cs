@@ -11,28 +11,58 @@ public class CSharpToUnityScript_Variables: CSharpToUnityScript {
     /// </summary>
     public static void Variables () {
         
-        // var declaration with value   general case
+        // "= aVar as AType" => "= aVar";
+        // "as aType" might appear in other location
+        patterns.Add ( commonName+oblWS+"as"+oblWS+commonChars+optWS+";" );
+        replacements.Add ( "$1;" );
+
+        // var declaration with value
         patterns.Add ( commonChars+oblWS+commonName+optWS+"(=.*;)" );
         replacements.Add ( "var $3: $1$4$5" );
 
-         // var declaration without value   also works in for loop
-        patterns.Add ( commonChars+oblWS+commonName+optWS+"(;|in)" );
-        replacements.Add ( "var $3: $1$4$5" );
+        // var declaration without value   
+        patterns.Add ( commonChars+oblWS+commonName+optWS+";" ); 
+        replacements.Add ( "var $3: $1$4;" );
 
-        // pathcing
-            // assembly imports got converted
+        // var declaration in foreach loop 
+        patterns.Add ( commonChars+oblWS+commonName+"("+oblWS+"in"+oblWS+")" );
+        replacements.Add ( "var $3: $1$4" );
+
+
+        // pathcing   converting var declaration leads to some garbage
+           // assembly imports
            patterns.Add ( "var"+oblWS+commonName+optWS+":"+optWS+"import"+optWS+";" ); // will mess up if a custom class is named "import"...
            replacements.Add ( "import $2;" );
 
+           // returned values
+           patterns.Add ( "var"+oblWS+commonName+optWS+":"+optWS+"return"+optWS+";" ); // will mess up if a custom class is named "import"...
+           replacements.Add ( "return $2;" );
+
+           // "else aVar = aValue;" got converted in  "var aVar: else = aValue;"
+           patterns.Add ( "var"+oblWS+commonName+optWS+":"+optWS+"else"+optWS+"=" ); // will mess up if a custom class is named "import"...
+           replacements.Add ( "else $1 =" );
 
 
-        // string 
-        patterns.Add ( "(var"+oblWS+commonName+optWS+":"+optWS+")string(("+optWS+"\\["+optWS+"\\])?"+optWS+"(=|;))" );
-        replacements.Add ( "$1String$6" );
+        // public Type var, var, var;
+
+
+        // casting
+        // we can make it a little more secure by checking that the to commonChars are the same
+        patterns.Add ( "(var"+oblWS+commonName+optWS+":"+optWS+commonChars+optWS+"="+optWS+")\\("+optWS+commonChars+optWS+"\\)("+optWS+commonName+optWS+";)" );
+        replacements.Add ( "$1$12" );
+
+        patterns.Add ( "((\\(|=)"+optWS+")\\("+optWS+commonChars+optWS+"\\)("+optWS+commonName+")" ); // match if and loop without brackets !!
+        replacements.Add ( "$1$7" );
+
+
+
+        // string  works var declaraion with or without value (the same is run after that the function argument are converted)
+        patterns.Add ( "("+commonName+optWS+":"+optWS+")string(("+optWS+"\\["+optWS+"\\])?"+optWS+"(=|;))" );
+        replacements.Add ( "$1String$5" );
 
         // bool
-        patterns.Add ( "(var"+oblWS+commonName+optWS+":"+optWS+")bool(("+optWS+"\\["+optWS+"\\])?"+optWS+"(=|;))" );
-        replacements.Add ( "$1boolean$6" );
+        patterns.Add ( "("+commonName+optWS+":"+optWS+")bool(("+optWS+"\\["+optWS+"\\])?"+optWS+"(=|;))" );
+        replacements.Add ( "$1boolean$5" );
 
 
         // arrays
@@ -46,8 +76,14 @@ public class CSharpToUnityScript_Variables: CSharpToUnityScript {
         patterns.Add ( "'[a-zA-z0-9]{1}'" );
         replacements.Add ( "$0[0]" );
 
+
         // remove f to Float values
         // actually not needed, in works with the f
+        patterns.Add ( "([0-9]{1}(\\.[0-9]{1})?)(f|F)" );
+        replacements.Add ( "$1" );
+
+
+
 
 
         DoReplacements ();

@@ -99,9 +99,9 @@ public class CSharpToUnityScript : EditorWindow {
         public Script (string _path, string _text) {
             path = _path.Remove (_path.Length-3); // remove ".js"
             
-            int lastIndexof = path.LastIndexOf ("\\");
-            name = path.Substring (lastIndexof+1); // isolate the name
-            path = path.Replace (name, "");// the path end by a slash
+            int lastIndexOf = path.LastIndexOf ("\\");
+            name = path.Substring (lastIndexOf+1); // isolate the name
+            path = path.Replace (name, "");// the path ends by a slash
             
             text = _text;
             newText = "";
@@ -113,11 +113,14 @@ public class CSharpToUnityScript : EditorWindow {
 
 
 	// regex that include most common expressions but arrays and generic collections
-    protected static string commonName = "([A-Za-z0-9\\-_\\.]+)";
+    protected static string commonName = "([A-Za-z0-9_\\.]+)";
 
     // same as common name but includes also arrays and generic collections  
-    protected static string commonChars = "([A-Za-z0-9<>,'\"\\-_\\[\\]\\.]+)"; // 
-    protected static string commonCharsWithoutComma = "([A-Za-z0-9<>'\"\\-_\\[\\]\\.]+)"; 
+    protected static string commonChars = "([A-Za-z0-9<>,'\"_\\[\\]\\.]+)"; // 
+    protected static string commonCharsWithoutComma = "([A-Za-z0-9<>'\"_\\[\\]\\.]+)"; 
+
+    protected static string argumentsChars = "([A-Za-z0-9<>,_\\[\\]\\s]*)"; // characters seen in function arguments
+
 
     // white spaces (and/or tabs, and/or new line)
     protected static string optWS = "(\\s*)"; // optionnal white space   0 or more white space
@@ -188,6 +191,8 @@ public class CSharpToUnityScript : EditorWindow {
     /// Do a Regex.Matches but return the result in the inverse order
     /// </summary>
     protected static List<Match> ReverseMatches (string text, string pattern) {
+        //Debug.Log ("Reversematch patern="+pattern+" | text="+text.Substring(50));
+
         MatchCollection matches = Regex.Matches (text, pattern);
         Stack stack = new Stack ();
 
