@@ -1,5 +1,3 @@
-
-
 using UnityEngine;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -22,13 +20,14 @@ public class CSharpToUnityScript_Functions: CSharpToUnityScript {
         pattern = "(?<returnType>"+commonChars+")"+oblWS+"(?<functionName>"+commonName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)"; // match two words followed by a set of parenthesis followed by an opening curly bracket
         List<Match> allFunctionsDeclarations = ReverseMatches (script.text, pattern);
 
-        Debug.Log ("functions="+allFunctionsDeclarations.Count);
+        
 
         foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
             string returnType = aFunctionDeclaration.Groups["returnType"].Value;
             string functionName = aFunctionDeclaration.Groups["functionName"].Value;
             
-            Debug.Log ("returnType="+returnType+" | functionName="+functionName);
+
+            //Debug.Log ("returnType="+returnType+" | functionName="+functionName);
 
             if ( returnType == "else" && functionName == "if") // do not match else if () statement
                 continue;
@@ -96,11 +95,52 @@ public class CSharpToUnityScript_Functions: CSharpToUnityScript {
         replacements.Add ( "$1boolean$5" );
 
 
-        
-
-
         DoReplacements ();
+
+
+        // loop through function and search for variable declaration that happend several times
+        // leave only the first declaration
+
+        pattern = "function"+oblWS+commonName+optWS+"\\("+argumentsChars+"\\)("+optWS+":"+optWS+commonChars+")?"+optWS+"{"; 
+        allFunctionsDeclarations = ReverseMatches (script.text, pattern);
+
+        foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
+            Block functionBlock = new Block (aFunctionDeclaration, script.text);
+
+            pattern = "var"+oblWS+"(?<varName>"+commonName+")"+optWS+":"+optWS+"(?<varType>"+commonChars+")"+optWS+"(?<ending>(=|;))"; // don't match var declaration in foreach loop
+            List<Match> allVariablesDeclarations = ReverseMatches (functionBlock.text, pattern);
+
+            foreach (Match aVariableDeclaration in allVariablesDeclarations) {
+                string varName = aVariableDeclaration.Groups["varName"].Value;
+                string varType = aVariableDeclaration.Groups["varType"].Value.Replace ("[]", "" );//Replace ("[", "\\[").Replace ("]", "\\]")
+                string ending = aVariableDeclaration.Groups["ending"].Value; 
+
+                // how many time this variable is (still) declared in the function ?
+                pattern = "var"+oblWS+varName+optWS+":"+optWS+varType;
+                int declarationsCount = Regex.Matches (functionBlock.newText, pattern).Count;
+
+                if (declarationsCount <= 1) // no need to go forward with this particular variable
+                    continue;
+                
+                // it's at least the second time that variable is declared in the function
+                // that will throw an error in the Unity console
+                // so replace the declaration by the var name, if a value is set at the same time (var aVar: aType = whatever;), or just delete the declaration (var aVar: aType;)
+                
+                // here I can't replace the declaration in functionBlock with String.Replace because it could match sevral declaration at the same time
+                // I have to use Insert and Remove, that's why the function and variable declaration are looped backward
+
+                // remove old declaration
+                functionBlock.newText = functionBlock.newText.Remove (aVariableDeclaration.Index, aVariableDeclaration.Length);
+
+                // add the new one (if needed)
+                if (ending == "=")
+                    functionBlock.newText = functionBlock.newText.Insert (aVariableDeclaration.Index, varName+" "+ending);
+
+                //varList.Add (varName, declarationsCount--);
+            } // end loop variable declarations
+
+            // replace old function text by new one in script.text
+            script.text = script.text.Replace (functionBlock.text, functionBlock.newText);
+        } // end lopp function declarations
     } // end Functions()
-
-
 } // end class CSharpToUnityScript_Functions

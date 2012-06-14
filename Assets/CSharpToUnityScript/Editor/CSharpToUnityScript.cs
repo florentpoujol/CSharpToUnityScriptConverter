@@ -55,6 +55,7 @@ public class CSharpToUnityScript : EditorWindow {
 
             text = refText.Substring (startIndex, endIndex-startIndex);
             isEmpty = (text.Trim() == "");
+            newText = text;
         }
 
 
@@ -119,7 +120,7 @@ public class CSharpToUnityScript : EditorWindow {
     protected static string commonChars = "([A-Za-z0-9<>,'\"_\\[\\]\\.]+)"; // 
     protected static string commonCharsWithoutComma = "([A-Za-z0-9<>'\"_\\[\\]\\.]+)"; 
 
-    protected static string argumentsChars = "([A-Za-z0-9<>,_\\[\\]\\s]*)"; // characters seen in function arguments
+    protected static string argumentsChars = "([A-Za-z0-9<>,:_\\[\\]\\s]*)"; // characters seen in function arguments
 
 
     // white spaces (and/or tabs, and/or new line)
@@ -154,6 +155,8 @@ public class CSharpToUnityScript : EditorWindow {
     // list of classes and their items (variable or function) and corresponding type
     protected static Dictionary<string, Dictionary<string, string>> projectItems = new Dictionary<string, Dictionary<string, string>> ();
 
+    protected static List<string> importedAssemblies = new List<string> ();
+    
 
     // ----------------------------------------------------------------------------------
 

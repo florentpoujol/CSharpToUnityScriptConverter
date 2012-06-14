@@ -298,13 +298,8 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
         CSharpToUnityScript_Classes.Classes ();
 
 
-        // add the keyword public when no visibility (or just static) is set (the default visibility in JS is public but private in C#)
-        // works also for functions
-        CSharpToUnityScript_Classes.AddVisibility ();
-
-        // convert void declarations, including arguments declaration
-        CSharpToUnityScript_Functions.Functions ();
         
+
         // convert variables declarations
         // it will always resolve the variable type unless when the value is returned from a function (see VariablesTheReturn() void below)
         CSharpToUnityScript_Variables.Variables ();
@@ -312,13 +307,15 @@ public class CSharpToUnityScript_Main: CSharpToUnityScript {
         // convert properties declarations
         CSharpToUnityScript_Variables.Properties ();
 
-        
-   
-        // convert variable declaration where the value is returned from a void now that almost all functions got their returned type resolved
-        //CSharpToUnityScript_Variables.VariablesTheReturn ();
+        // convert void declarations, including arguments declaration
+        CSharpToUnityScript_Functions.Functions ();
+    
+        // add the keyword public when no visibility (or just static) is set (the default visibility in JS is public but private in C#)
+        // works also for functions
+        CSharpToUnityScript_Classes.AddVisibility ();
 
-        // functionSec
-        //CSharpToUnityScript_Functions.FunctionsTheReturn ();*/
+
+        
 
 
         //script.text = "#pragma strict"+EOL+script.text;

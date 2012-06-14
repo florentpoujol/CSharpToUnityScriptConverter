@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 
 public class GemSpawner : MonoBehaviour {
-	public Transform gem1, gem2, gem3, gem4;
+	/*public Transform gem1, gem2, gem3, gem4;
 	public float spread = 5;
 
 	void Update () {
@@ -14,5 +14,5 @@ public class GemSpawner : MonoBehaviour {
 			((Transform)Instantiate (gem3)).position = transform.position + Random.insideUnitSphere * spread;
 		if (Input.GetKey ("4"))
 			((Transform)Instantiate (gem4)).position = transform.position + Random.insideUnitSphere * spread;
-	}
+	}*/
 }

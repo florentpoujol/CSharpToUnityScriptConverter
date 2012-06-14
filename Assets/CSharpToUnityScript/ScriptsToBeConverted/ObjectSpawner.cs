@@ -14,7 +14,7 @@ public class MovingObject{
 }
 
 [System.Serializable]
-public enum DirectionEnum{left = -1, right= 1}
+public enum DirectionEnum{left = 2, right= 1}
 
 public class ObjectSpawner : MonoBehaviour {
 

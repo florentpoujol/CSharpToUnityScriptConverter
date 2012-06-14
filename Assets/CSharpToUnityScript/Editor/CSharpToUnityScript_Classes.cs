@@ -130,8 +130,28 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
 
 
         // Assembly imports
-        patterns.Add ( "using("+oblWS+commonName+optWS+";)" );
-        replacements.Add ( "import$1");
+            patterns.Add ( "using("+oblWS+commonName+optWS+";)" );
+            replacements.Add ( "import$1");
+
+            DoReplacements ();
+            // in UnityScript, each assembly has to be imported once per project, or it will throw a warning in he Unity console for each duplicate assembly import !
+            // so keep track of the assemblies already imported in the project (in one of the previous file) and comment out the duplicate
+            pattern = "import"+oblWS+commonName+optWS+";";
+            List<Match> allImports = ReverseMatches (script.text, pattern);
+
+
+            foreach (Match import in allImports) {
+                string assembly = import.Groups[2].Value;
+
+                if (importedAssemblies.Contains (assembly)) {
+                    script.text = script.text.Insert (import.Index, "//");
+                    //Debug.Log ( "inserting comment on import " );
+                }
+                else {
+                    importedAssemblies.Add (assembly);
+                    //Debug.Log ("registering import "+assembly);
+                }
+            }
 
 
         DoReplacements ();

@@ -35,12 +35,12 @@ public class CSharpToUnityScript_Variables: CSharpToUnityScript {
            replacements.Add ( "import $2;" );
 
            // returned values
-           patterns.Add ( "var"+oblWS+commonName+optWS+":"+optWS+"return"+optWS+";" ); // will mess up if a custom class is named "import"...
+           patterns.Add ( "var"+oblWS+commonName+optWS+":"+optWS+"return"+optWS+";" );
            replacements.Add ( "return $2;" );
 
            // "else aVar = aValue;" got converted in  "var aVar: else = aValue;"
-           patterns.Add ( "var"+oblWS+commonName+optWS+":"+optWS+"else"+optWS+"=" ); // will mess up if a custom class is named "import"...
-           replacements.Add ( "else $1 =" );
+           patterns.Add ( "var"+oblWS+commonName+optWS+":"+optWS+"else"+optWS+"=" );
+           replacements.Add ( "else $2 =" );
 
 
         // public Type var, var, var;
@@ -56,7 +56,7 @@ public class CSharpToUnityScript_Variables: CSharpToUnityScript {
 
 
 
-        // string  works var declaraion with or without value (the same is run after that the function argument are converted)
+        // string      works with var declaraion with or without value (the same is run after that the function argument are converted)
         patterns.Add ( "("+commonName+optWS+":"+optWS+")string(("+optWS+"\\["+optWS+"\\])?"+optWS+"(=|;))" );
         replacements.Add ( "$1String$5" );
 
