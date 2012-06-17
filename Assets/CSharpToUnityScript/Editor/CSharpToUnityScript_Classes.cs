@@ -15,7 +15,7 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
     public static void Classes () {
         // classes declarations with inheritance
         patterns.Add ( "(class"+oblWS+commonName+optWS+"):"+optWS+"("+commonName+optWS+"{)" );
-        replacements.Add ( "$1extends $6" );
+        replacements.Add ( "$1 extends $6" );
 
         DoReplacements ();
 
@@ -23,7 +23,7 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
         // now convert parent and alternate constructor call
 
         // loop the classes declarations in the file
-        pattern = "class"+oblWS+commonName+"("+oblWS+"extends"+oblWS+commonName+")?"+optWS+"{";
+        pattern = "class"+oblWS+"(?<blockName>"+commonName+")("+oblWS+"extends"+oblWS+commonName+")?"+optWS+"{";
         List<Match> allClasses = ReverseMatches ( script.text, pattern );
         
         foreach ( Match aClass in allClasses ) {
@@ -36,7 +36,7 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
 
             // look for constructors in the class that call the parent constructor
             if ( classBlock.declaration.Contains ( "extends" ) ) { // if the class declaration doesn't contains "extends", a constructor has no parent to call
-    			pattern = "public"+optWS+classBlock.name+optWS+"\\(.*\\)(?<base>"+optWS+":"+optWS+"base"+optWS+"\\((?<args>.*)\\))"+optWS+"{";
+    			pattern = "public"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\(.*\\)(?<base>"+optWS+":"+optWS+"base"+optWS+"\\((?<args>.*)\\))"+optWS+"{";
                 allConstructors = ReverseMatches ( classBlock.text, pattern ); // all constructors in that class
                 //classBlock.newText = classBlock.text;
 
@@ -55,7 +55,7 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
 
 
             // look for constructors in the class that call others constructors (in the same class)
-            pattern = "public"+optWS+classBlock.name+optWS+"\\(.*\\)(?<this>"+optWS+":"+optWS+"this"+optWS+"\\((?<args>.*)\\))"+optWS+"{";
+            pattern = "public"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\(.*\\)(?<this>"+optWS+":"+optWS+"this"+optWS+"\\((?<args>.*)\\))"+optWS+"{";
             allConstructors = ReverseMatches ( classBlock.text, pattern ); // all constructors in that class
             classBlock.newText = classBlock.text;
 
@@ -104,9 +104,21 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
                     continue;
                 }
 
+                if ( attr == "HideInInspector" ) {
+                    patterns.Add ( "\\["+optWS+"HideInInspector"+optWS+"\\]" );
+                    replacements.Add ( "@HideInInspector" );
+                    continue;
+                }
+
                 if ( attr == "RequireComponent" ) {
                     patterns.Add ( "\\["+optWS+"RequireComponent"+optWS+"\\("+optWS+"typeof"+optWS+"\\("+commonName+"\\)"+optWS+"\\)"+optWS+"\\]" );
-                    replacements.Add ( "@script RequireComponent($6)" );
+                    replacements.Add ( "@script RequireComponent($5)" );
+                    continue;
+                }
+
+                if ( attr == "DrawGizmo" ) {
+                    patterns.Add ( "\\["+optWS+"DrawGizmo"+optWS+"(\\(.*\\))"+optWS+"\\]" );
+                    replacements.Add ( "@DrawGizmo$3" );
                     continue;
                 }
 
@@ -121,7 +133,7 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
         // struct
         // in JS, the way to define struct is to makes a public class inherits from System.ValueType (or just a regular class)
         patterns.Add ( "struct"+oblWS+commonName+optWS+"{" );
-        replacements.Add ( "class $2 {" );
+        replacements.Add ( "class $2 extends System.ValueType {" );
 
 
         // base. => this.      
@@ -165,8 +177,8 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
     /// Works also for functions, classes and enums
     /// </summary>
     public static void AddVisibility () {
-        // the default visibility for variable and functions is public in JS but private in C# => add the keyword public when no visibility (or just static) is set 
-        /* patterns.Add ( "([;{}\\]]+"+optWS+")((var|function|enum|class)"+oblWS+")" );
+        // the default visibility for variable and functions is public in JS but private in C# => add the keyword private when no visibility (or just static) is set 
+        patterns.Add ( "([;{}\\]]+"+optWS+")((var|function|enum|class)"+oblWS+")" );
         replacements.Add ( "$1private $3" );
 
         patterns.Add ( "(\\*"+optWS+")((var|function|enum|class)"+oblWS+")" ); // add a / after \\*
@@ -192,12 +204,12 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
         patterns.Add ( "((\\#else|\\#endif)"+oblWS+")((var|function)"+oblWS+")" );
         replacements.Add ( "$1private static $4" );
 
-        DoReplacements ();*/
+        DoReplacements ();
 
 
         // all variables gets a public or static public visibility but this shouldn't happend inside functions, so remove that
-/*
-        pattern = "function"+oblWS+commonName+optWS+"\\(.*\\)"+optWS+"(:"+optWS+commonChars+optWS+")?{";
+
+        pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\(.*\\)("+optWS+":"+optWS+commonChars+")?"+optWS+"{";
         List<Match> allFunctions = ReverseMatches (script.text, pattern);
 
         foreach (Match aFunction in allFunctions) {
@@ -206,15 +218,13 @@ public class CSharpToUnityScript_Classes: CSharpToUnityScript {
             if (function.isEmpty)
                 continue;
 
-            patterns.Add ( "public"+oblWS+"(static"+oblWS+"var)" );
+            patterns.Add ( "private"+oblWS+"(static"+oblWS+"var)" );
             replacements.Add ( "$2" );
-            patterns.Add ( "(static"+oblWS+")?public"+oblWS+"var" );
+            patterns.Add ( "(static"+oblWS+")?private"+oblWS+"var" );
             replacements.Add ( "$1var" );
 
             function.newText = DoReplacements (function.text);
             script.text = script.text.Replace (function.text, function.newText);
-
-        } // end for
-        */
+        }
     } // end AddVisibility ()
 }

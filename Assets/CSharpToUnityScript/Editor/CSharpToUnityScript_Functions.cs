@@ -17,13 +17,13 @@ public class CSharpToUnityScript_Functions: CSharpToUnityScript {
         // patterns.Add ( commonChars+oblWS+commonName+optWS+"(\\(.*\\))"+optWS+"{" ); // here I don't care if the method is public, private, static, abstract or whatever since a signature is always composed of a type followed by the name of the method
         // replacements.Add ( "function $3$5: $1 {" );
 
-        pattern = "(?<returnType>"+commonChars+")"+oblWS+"(?<functionName>"+commonName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)"; // match two words followed by a set of parenthesis followed by an opening curly bracket
+        pattern = "(?<returnType>"+commonChars+")"+oblSpaces+"(?<functionName>"+commonName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)"; // match two words followed by a set of parenthesis followed by an opening curly bracket
         List<Match> allFunctionsDeclarations = ReverseMatches (script.text, pattern);
 
         
 
         foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
-            string returnType = aFunctionDeclaration.Groups["returnType"].Value;
+            string returnType = aFunctionDeclaration.Groups["returnType"].Value.Replace ("[", Regex.Escape ("["));
             string functionName = aFunctionDeclaration.Groups["functionName"].Value;
             
 
@@ -101,7 +101,7 @@ public class CSharpToUnityScript_Functions: CSharpToUnityScript {
         // loop through function and search for variable declaration that happend several times
         // leave only the first declaration
 
-        pattern = "function"+oblWS+commonName+optWS+"\\("+argumentsChars+"\\)("+optWS+":"+optWS+commonChars+")?"+optWS+"{"; 
+        pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\("+argumentsChars+"\\)("+optWS+":"+optWS+commonChars+")?"+optWS+"{"; 
         allFunctionsDeclarations = ReverseMatches (script.text, pattern);
 
         foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
@@ -112,7 +112,8 @@ public class CSharpToUnityScript_Functions: CSharpToUnityScript {
 
             foreach (Match aVariableDeclaration in allVariablesDeclarations) {
                 string varName = aVariableDeclaration.Groups["varName"].Value;
-                string varType = aVariableDeclaration.Groups["varType"].Value.Replace ("[]", "" );//Replace ("[", "\\[").Replace ("]", "\\]")
+                string varType = aVariableDeclaration.Groups["varType"].Value.Replace ("[", Regex.Escape ("["));;
+                //varType = varType.Escape ("[");
                 string ending = aVariableDeclaration.Groups["ending"].Value; 
 
                 // how many time this variable is (still) declared in the function ?

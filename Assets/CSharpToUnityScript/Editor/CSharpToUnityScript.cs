@@ -15,27 +15,42 @@ public class CSharpToUnityScript : EditorWindow {
         public int endIndex; // index of the opening and closing bracket of block in reftext
         public string refText; //
 
-        public string name; // name of the function or class
-        public string declaration; // full block's declaration (up util the opening bracket) usually the match's value
+        public string name; // name of the block (Block is used only with functions or classes)
+        public string type;
+        public string declaration; // full block's declaration (up util the opening bracket). Usually the match's value
         public string newDeclaration;
         public string text; // text inside the block between the opening and closing bracket
         public string newText;
 
         public bool isEmpty; // tell wether text is empty or not
 
+
         // ----------------------------------------------------------------------------------
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="match"></param>
-        /// <param name="refText"></param>
-        public Block (Match match, string refText) {
-            this.match = match;
+        /// <param name="p_match"></param>
+        /// <param name="p_refText"></param>
+        public Block (Match p_match, string p_refText) {
+            match = p_match;
+            refText = p_refText;
+
             declaration = match.Value;
             newDeclaration = "";
-            name = match.Groups[2].Value; // can't do that now, it depends of the regex, or I coult use match.Groups["name"]
-            this.refText = refText;
+            
+            name = match.Groups[2].Value;
+
+            try {
+                name = match.Groups["blockName"].Value;
+            }
+            catch {}
+
+            type = "";
+            try {
+                type = match.Groups["blockType"].Value;
+            }
+            catch {}
             
             startIndex = match.Index + match.Length - 1;
             endIndex = 0;
@@ -43,7 +58,7 @@ public class CSharpToUnityScript : EditorWindow {
             newText = "";
             isEmpty = true;
 
-            endIndex = this.GetEndOfBlockIndex ();
+            endIndex = GetEndOfBlockIndex ();
             
             if (endIndex == -1)
                 return;
@@ -62,7 +77,7 @@ public class CSharpToUnityScript : EditorWindow {
         // ----------------------------------------------------------------------------------
 
         /// <summary>
-        /// 
+        /// Look for the block's closing curcly bracket, given the index in refText (startIndex) of the opening bracket
         /// </summary>
         int GetEndOfBlockIndex () {
             int openedBrackets = 0;
@@ -117,19 +132,19 @@ public class CSharpToUnityScript : EditorWindow {
     protected static string commonName = "([A-Za-z0-9_\\.]+)";
 
     // same as common name but includes also arrays and generic collections  
-    protected static string commonChars = "([A-Za-z0-9<>,'\"_\\[\\]\\.]+)"; // 
-    protected static string commonCharsWithoutComma = "([A-Za-z0-9<>'\"_\\[\\]\\.]+)"; 
+    protected static string commonChars = "([A-Za-z0-9<>,'\"_\\[\\]\\.]{2,})"; // 
+    protected static string commonCharsWithoutComma = "([A-Za-z0-9<>'\"_\\[\\]\\.]{2,})"; // for use with variable or type as function argument
 
     protected static string argumentsChars = "([A-Za-z0-9<>,:_\\[\\]\\s]*)"; // characters seen in function arguments
-
 
     // white spaces (and/or tabs, and/or new line)
     protected static string optWS = "(\\s*)"; // optionnal white space   0 or more white space
     protected static string oblWS = "(\\s+)"; // obligatory white space  1 or more white space
+    protected static string oblSpaces = "( +)"; // space only not tab, cariage return...
 
-    protected static string  collections = "(ArrayList|BitArray|CaseInsensitiveComparer|Comparer|Hashtable|Queue|SortedList|Stack|StructuralComparisons|DictionnaryEntry"+
+    protected static string collections = "(ArrayList|BitArray|CaseInsensitiveComparer|Comparer|Hashtable|Queue|SortedList|Stack|StructuralComparisons|DictionnaryEntry"+
         "|ICollection|IComparer|IDictionary|IDictionaryEnumerator|IEnumerable|IEnumerator|IEqualityComparer|IHashCodeProvider|IList|IStructuralComparable|IStructuralEquatable)";
-    protected static string  genericCollections = "(Comparer|Dictionary|HashSet|KeyedByTypeCollection|LinkedList|LinkedListNode|List|Queue|SortedDictionary|SortedList|SortedSet|Stack|SynchronizedCollection"+
+    protected static string genericCollections = "(Comparer|Dictionary|HashSet|KeyedByTypeCollection|LinkedList|LinkedListNode|List|Queue|SortedDictionary|SortedList|SortedSet|Stack|SynchronizedCollection"+
         "|SynchronizedKeyedCollection|SynchronizedReadOnlyCollection|ISet)";
 
     // list of the patterns and corresponding replacements to be processed by DoReplacements()
@@ -138,12 +153,17 @@ public class CSharpToUnityScript : EditorWindow {
 	protected static string pattern;
     protected static string replacement;
 	
+    // end of line
     protected static string EOL = "\n"; // works also with on Windows 7    
 
 
-    // a list of structure that contains all needed infos about the files to be converted
+    //--------------------
+
+
+    // a list of structure that contains all needed infos about the script to be converted
     protected static List<Script> scriptsList = new List<Script> ();
 
+    // the script currently being converted
     protected static Script script;
     
     // a list of classes that exists in the pool of files that will be converted
@@ -169,17 +189,22 @@ public class CSharpToUnityScript : EditorWindow {
     }
 
     protected static string DoReplacements (string text) {
-        try {
-        //Debug.LogWarning (patterns.Count+" "+replacements.Count+" "+i);
-        for (int i = 0; i < patterns.Count; i++) {
-            //Debug.LogWarning (i+" | pattern="+patterns[i]+" | replacement="+replacements[i]);
-            text = Regex.Replace (text, patterns[i], replacements[i]);
+        if (patterns.Count != replacements.Count) {
+            Debug.LogError ("Patterns and replacements count mismatch : patterns.Count="+patterns.Count+" replacements.Count="+replacements.Count);
+            return text;
         }
 
-        patterns.Clear ();
-        replacements.Clear ();
+        try { // some regex throws nasty exceptions
+            //Debug.LogWarning (patterns.Count+" "+replacements.Count+" "+i);
+            for (int i = 0; i < patterns.Count; i++) {
+                //Debug.LogWarning (i+" | pattern="+patterns[i]+" | replacement="+replacements[i]);
+                text = Regex.Replace (text, patterns[i], replacements[i]);
+            }
+
+            patterns.Clear ();
+            replacements.Clear ();
         }
-        catch (System.OutOfMemoryException e) {
+        catch (System.Exception e) {
             Debug.LogError (patterns.Count+" "+replacements.Count+" "+e);
             Debug.Log (text.Substring(100));
         }
@@ -211,13 +236,4 @@ public class CSharpToUnityScript : EditorWindow {
 
         return newMatches;
     }
-
-
-
-
-    // ----------------------------------------------------------------------------------
-
-
-
-
-}
+} // end of CSharpToUnityScript class
