@@ -1,0 +1,558 @@
+/// <summary>
+/// CSharpToUnityScriptConverter class for Unity3D
+///
+/// This class handle the convertion of code from C# to UnityScript.
+/// Used by the "C# to UnityScript" extension for Unity3D.
+///
+/// Created by Florent POUJOL aka Lion on Unity's forums
+/// florent.poujol@gmail.com
+/// http://www.florent-poujol.fr/en
+/// Profile on Unity's forums : http://forum.unity3d.com/members/23148-Lion
+/// </summary>
+
+
+/// <summary>
+/// Use instructions :
+/// 
+/// Put this script anywhere in your project asset folder and attach it to a GameObject
+///
+/// Create a folder "[your project]/Assets/ScriptsToBeConverted".
+/// You may put in this folder any .js file (and the folder they may be in) to be converted.
+/// 
+/// Run the scene. One script is converted per frame, but the convertion of one script may often takes longer than 1/60 seconds. The convertion speed is///approximately* 20 files/seconds.
+/// A label on the "Game" view shows the overall progress of the convertion and each convertion is logged in the console.
+/// When it's complete, refresh the project tab for the new files/folder to be shown (right-click on the "Project" tab, then click on "Refresh" (or hit Ctrl+R on Windows)) 
+///
+/// Upon convertion, a folder "[your project]/Assets/ConvertedScripts" is created with all converted scripts (and their folder hyerarchie)
+/// </summary>
+
+
+// ----------------------------------------------------------------------------------
+
+
+using UnityEngine;
+using UnityEditor; // EditorGUILayout
+using System.Collections;
+using System.Collections.Generic;
+using System.Text.RegularExpressions; // Directory.GetFiles() Directory.CreateDirectory() StreamReader  StreamWriter
+using System.IO; // Regex.Replace(), Match, Matches, MatchCollection...
+
+
+// ----------------------------------------------------------------------------------
+
+
+public class CSharpToUnityScriptConverter: RegexUtilities {
+
+    // a list of classes that exists in the pool of files that will be converted
+    private List<string> classesList = new List<string> ();
+
+    // a list of items (variable or functions) and their coresponding type
+    private Dictionary<string, string> itemsAndTypes = new Dictionary<string, string> ();
+
+    // list of classes and their items (variable or function) and corresponding type
+    private Dictionary<string, Dictionary<string, string>> projectItems = new Dictionary<string, Dictionary<string, string>> ();
+
+    private List<string> importedAssemblies = new List<string> ();
+
+    
+    // ----------------------------------------------------------------------------------
+
+
+    /// <summary>
+    /// Constructor and main method
+    /// </summary>
+    public CSharpToUnityScriptConverter (string inputCode) : base (inputCode) {
+        // GENERIC COLLECTIONS
+
+        // Add a dot before the opening chevron  List.<float>
+        patterns.Add (genericCollections+optWS+"<" );
+        replacements.Add ("$1$2.<" );
+
+        // Add a whitespace between two closing chevron   Dictionary.<string,List<string> > 
+        patterns.Add ("("+genericCollections+optWS+"<.+)>>" );
+        replacements.Add ("$1> >" );
+
+
+        // LOOPS
+
+        // foreach ( in ) > for ( in )
+        patterns.Add ("foreach("+optWS+"\\(.+in"+oblWS+".+\\))" );
+        replacements.Add ("for$1" );
+
+
+        // GETCOMPONENT (& Co)
+
+        // GetComponent<T>() => GetComponent.<T>()
+        patterns.Add ("((GetComponent|GetComponents|GetComponentInChildren|GetComponentsInChildren)"+optWS+")(?<type><"+optWS+commonChars+optWS+">)" );
+        replacements.Add ("$1.${type}" );
+
+
+        // ABSTRACT (remove the keyword)
+        patterns.Add ("((public|private|protected|static)"+oblWS+")abstract"+oblWS);
+        replacements.Add ("$1");
+
+
+        // YIELDS
+
+        /*patterns.Add ("yield"+optWS+";" );
+        replacements.Add ("yield return 0;" );
+
+        // yield return  ;
+        patterns.Add ( "yield("+oblWS+commonChars+optWS+";)" );
+        replacements.Add ("yield return $2;" );
+    
+        // yield return new WaitForSeconds(3.5f);
+        patterns.Add ("yield"+oblWS+commonChars+optWS+"\\(" );
+        replacements.Add ("yield return new $2$3(" );
+
+        patterns.Add ("yield return new" );
+        replacements.Add ("yield return new" );*/
+
+
+
+        DoReplacements ();
+    
+
+        // CLASSES
+        Classes ();
+
+        
+        // VARIABLES
+        CSharpToUnityScriptConverter_Variables varConverter = new CSharpToUnityScriptConverter_Variables (convertedCode);
+        convertedCode = varConverter.Variables ();
+        
+        // FUNCTIONS
+        Functions ();
+        
+        // PROPERTIES
+        // why after Functions() ?
+        varConverter.convertedCode = convertedCode;
+        convertedCode = varConverter.Properties ();
+        
+        // VISIBILITY
+        AddVisibility ();
+
+
+        // #region
+        patterns.Add ("\\#(region|REGION)"+oblSpaces+commonName+"("+oblSpaces+commonName+")*");
+        replacements.Add ("");
+        patterns.Add ("\\#(endregion|ENDREGION)");
+        replacements.Add ("");
+
+        // define
+        patterns.Add ("\\#(define|DEFINE)"+oblSpaces+commonName+"("+oblSpaces+commonName+")*");
+        replacements.Add ("");
+
+
+        DoReplacements ();
+
+        //convertedCode = "#pragma strict"+EOL+convertedCode;
+
+    } // end of method CSharpToUnityScriptConverter
+
+
+    // ----------------------------------------------------------------------------------
+
+    /// <summary> 
+    /// Convert stuffs related to classes : declaration, inheritance, parent constructor call, Assembly imports
+    /// </summary>
+    public void Classes () {
+        // classes declarations with inheritance
+        patterns.Add ("(class"+oblWS+commonName+optWS+"):"+optWS+"("+commonName+optWS+"{)");
+        replacements.Add ("$1 extends $6" );
+
+        DoReplacements ();
+
+
+        // now convert parent and alternate constructor call
+
+        // loop the classes declarations in the file
+        pattern = "class"+oblWS+"(?<blockName>"+commonName+")("+oblWS+"extends"+oblWS+commonName+")?"+optWS+"{";
+        List<Match> allClasses = ReverseMatches ( convertedCode, pattern );
+        
+        foreach ( Match aClass in allClasses ) {
+            Block classBlock = new Block ( aClass, convertedCode );
+            
+            if ( classBlock.isEmpty )
+                continue;
+
+            List<Match> allConstructors;
+
+            // look for constructors in the class that call the parent constructor
+            if ( classBlock.declaration.Contains ( "extends" ) ) { // if the class declaration doesn't contains "extends", a constructor has no parent to call
+                pattern = "public"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\(.*\\)(?<base>"+optWS+":"+optWS+"base"+optWS+"\\((?<args>.*)\\))"+optWS+"{";
+                allConstructors = ReverseMatches ( classBlock.text, pattern ); // all constructors in that class
+                //classBlock.newText = classBlock.text;
+
+                foreach ( Match aConstructor in allConstructors ) {
+                    Block constructorBlock = new Block ( aConstructor, classBlock.text );
+
+                    // first task : add "super();" to the constructor's body
+                   constructorBlock.newText = constructorBlock.text+EOL+"super("+aConstructor.Groups["args"]+");";
+                   classBlock.newText = classBlock.text.Replace ( constructorBlock.text, constructorBlock.newText );
+
+                   // second tacks : remove ":base()" in the constructor declaration
+                   constructorBlock.newDeclaration = constructorBlock.declaration.Replace ( aConstructor.Groups["base"].Value, "" );
+                   classBlock.newText = classBlock.text.Replace ( constructorBlock.declaration, constructorBlock.newDeclaration );
+                }
+            }
+
+
+            // look for constructors in the class that call others constructors (in the same class)
+            pattern = "public"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\(.*\\)(?<this>"+optWS+":"+optWS+"this"+optWS+"\\((?<args>.*)\\))"+optWS+"{";
+            allConstructors = ReverseMatches ( classBlock.text, pattern ); // all constructors in that class
+            classBlock.newText = classBlock.text;
+
+            foreach ( Match aConstructor in allConstructors ) {
+                Block constructorBlock = new Block ( aConstructor, classBlock.text );
+
+                // first task : add "classname();" to the constructor's body
+               constructorBlock.newText = constructorBlock.text+EOL+classBlock.name+"("+aConstructor.Groups["args"]+");";
+               classBlock.newText = classBlock.text.Replace ( constructorBlock.text, constructorBlock.newText );
+
+               // second tacks : remove ":this()" in the constructor declaration
+               constructorBlock.newDeclaration = constructorBlock.declaration.Replace ( aConstructor.Groups["this"].Value, "" );
+               classBlock.newText = classBlock.text.Replace ( constructorBlock.declaration, constructorBlock.newDeclaration );
+            }
+            
+            // we won't do more search/replace for this class 
+            // now replace in convertedCode, the old classBlock.text by the new
+            convertedCode = convertedCode.Replace ( classBlock.text, classBlock.newText );
+        } // end looping through classes in that file
+
+
+        //--------------------
+
+
+        // Attributes
+        string path = Application.dataPath+"/CSharpToUnityScript/Editor/Attributes.txt";
+        if ( File.Exists ( path) ) {
+            StreamReader reader = new StreamReader ( path );
+            List<string> attributesList = new List<string> ();
+
+            while ( true ) {
+                string line = reader.ReadLine ();
+                if ( line == null )
+                    break;
+
+                if ( line.StartsWith ( "#" ) || line.Trim () == "" )
+                    continue;
+
+                attributesList.Add ( line.Trim () );
+            }
+
+            foreach ( string attr in attributesList ) {
+                if ( attr == "RPC" ) {
+                    patterns.Add ("\\["+optWS+"RPC"+optWS+"\\]" );
+                    replacements.Add ("@RPC" );
+                    continue;
+                }
+
+                if ( attr == "HideInInspector" ) {
+                    patterns.Add ("\\["+optWS+"HideInInspector"+optWS+"\\]" );
+                    replacements.Add ("@HideInInspector" );
+                    continue;
+                }
+
+                if ( attr == "RequireComponent" ) {
+                    patterns.Add ("\\["+optWS+"RequireComponent"+optWS+"\\("+optWS+"typeof"+optWS+"\\("+commonName+"\\)"+optWS+"\\)"+optWS+"\\]" );
+                    replacements.Add ("@script RequireComponent($5)" );
+                    continue;
+                }
+
+                if ( attr == "DrawGizmo" ) {
+                    patterns.Add ("\\["+optWS+"DrawGizmo"+optWS+"(\\(.*\\))"+optWS+"\\]" );
+                    replacements.Add ("@DrawGizmo$3" );
+                    continue;
+                }
+
+                patterns.Add ("\\["+optWS+attr+optWS+"(\\(.*\\))?"+optWS+"\\]" );
+                replacements.Add ("@script "+attr+"$3" );
+            }
+        }
+        else
+            Debug.LogError ("Attributes.txt does not exist, not converting attributes !");
+
+        
+        // struct
+        // in JS, the way to define struct is to makes a public class inherits from System.ValueType (or just a regular class)
+        patterns.Add ("struct"+oblWS+commonName+optWS+"{" );
+        replacements.Add ("class $2 extends System.ValueType {" );
+
+
+        // base. => this.      
+        patterns.Add ("base"+optWS+"\\." );
+        replacements.Add ("super$1." );
+
+
+        // Assembly imports
+            patterns.Add ("using("+oblWS+commonName+optWS+";)" );
+            replacements.Add ("import$1");
+
+            DoReplacements ();
+            // in UnityScript, each assembly has to be imported once per project, or it will throw a warning in he Unity console for each duplicate assembly import !
+            // so keep track of the assemblies already imported in the project (in one of the previous file) and comment out the duplicate
+            pattern = "import"+oblWS+commonName+optWS+";";
+            List<Match> allImports = ReverseMatches (convertedCode, pattern);
+
+
+            foreach (Match import in allImports) {
+                string assembly = import.Groups[2].Value;
+
+                if (importedAssemblies.Contains (assembly)) {
+                    convertedCode = convertedCode.Insert (import.Index, "//");
+                    //Debug.Log ( "inserting comment on import " );
+                }
+                else {
+                    importedAssemblies.Add (assembly);
+                    //Debug.Log ("registering import "+assembly);
+                }
+            }
+
+
+        DoReplacements ();
+    } // end of method Classes
+
+
+    // ----------------------------------------------------------------------------------
+
+    /// <summary> 
+    /// Convert stuffs related to functions : declaration
+    /// </summary>
+    public void Functions () {
+        
+        // function declaration ...
+        // using a simple pattern/replacement regex as below match way too much things it shouldn't
+        // So I need to check each match before allowing the replacement
+
+        // patterns.Add ( commonChars+oblWS+commonName+optWS+"(\\(.*\\))"+optWS+"{" ); // here I don't care if the method is public, private, static, abstract or whatever since a signature is always composed of a type followed by the name of the method
+        // replacements.Add ( "function $3$5: $1 {" );
+
+        pattern = "(?<returnType>"+commonChars+")"+oblSpaces+"(?<functionName>"+commonName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)"; // match two words followed by a set of parenthesis followed by an opening curly bracket
+        List<Match> allFunctionsDeclarations = ReverseMatches (convertedCode, pattern);
+
+        
+
+        foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
+            string returnType = aFunctionDeclaration.Groups["returnType"].Value.Replace ("[", Regex.Escape ("["));
+            string functionName = aFunctionDeclaration.Groups["functionName"].Value;
+            
+
+            //Debug.Log ("returnType="+returnType+" | functionName="+functionName);
+
+            if ( returnType == "else" && functionName == "if") // do not match else if () statement
+                continue;
+
+            if ( returnType == "new" ) // do not match class instanciatton inside an if statement   ie : new Rect ()) {}  => it shouldn't anymore anyway, thanks to argumentsChars instead of ".*"
+                continue;
+
+            // if we are there, it's really a function declaration that has to be converted
+            patterns.Add ( "("+returnType+")"+oblWS+"("+functionName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)" ); 
+            // I can't use aFunctionDeclaration.Value as the pattern because square brackets that may be found in the argments (if some args ar arrays) wouldn't be escaped and would cause an exception
+
+            switch ( returnType ) {
+                case "void" : replacements.Add ( "function $3$5$7" ); continue;
+                case "string" : replacements.Add ( "function $3$5: String$7" ); continue;
+                case "string[]" : replacements.Add ( "function $3$5: String[]$7" ); continue; 
+                case "bool" : replacements.Add ( "function $3$5: boolean$7" ); continue; 
+                case "bool[]" : replacements.Add ( "function $3$5: boolean[]$7" ); continue; 
+                case "public" /* it's a constructor */ : replacements.Add ( "$1 function $3$5$7" ); continue;
+            }
+            
+            
+            
+
+            // if we are there, it's that the functiondeclaration has nothing special
+            replacements.Add ( "function $3$5: $1$7" );
+        }
+
+
+
+
+        /*patterns.Add ( ": void"+optWS+"{" );
+        replacements.Add ( "" );
+
+        patterns.Add ( ": string(("+optWS+"\\["+optWS+"\\])?"+optWS+"{)" );
+        replacements.Add ( ": String$1" );
+
+        patterns.Add ( ": bool(("+optWS+"\\["+optWS+"\\])?"+optWS+"{)" );
+        replacements.Add ( ": boolean$1" );*/
+
+
+        // remove out keyword in arguments
+        patterns.Add ( "(,|\\()"+optWS+"out("+oblWS+commonName+")" );
+        replacements.Add ( "$1$3" );
+
+        // remove ref keyword in arguments  => let in so it will throw an error and the dev can figure out what to do 
+        patterns.Add ( "(,|\\()"+optWS+"ref("+oblWS+commonCharsWithoutComma+")" );
+        replacements.Add ( "$1$3" );
+
+
+        // arguments declaration      if out and ref keyword where not removed before this point it would also convert them ("out hit" in Physics.Raycast() calls) or prevent the convertion ("ref aType aVar" as function argument)
+        patterns.Add ( "(\\(|,){1}"+optWS+commonCharsWithoutComma+oblWS+commonName+optWS+"(\\)|,){1}" );
+        replacements.Add ( "$1$2$5: $3$6$7" );
+        // as regex doesn't overlap themselves, only half of the argument have been converted
+        // I need to run the regex  a second time
+        patterns.Add ( "(\\(|,){1}"+optWS+commonCharsWithoutComma+oblWS+commonName+optWS+"(\\)|,){1}" );
+        replacements.Add ( "$1$2$5: $3$6$7" );
+
+
+        // string
+        patterns.Add ( "("+commonName+optWS+":"+optWS+")string(("+optWS+"\\["+optWS+"\\])?"+optWS+"(,|\\)))" );
+        replacements.Add ( "$1String$5" );
+
+        // bool
+        patterns.Add ( "("+commonName+optWS+":"+optWS+")bool(("+optWS+"\\["+optWS+"\\])?"+optWS+"(,|\\)))" );
+        replacements.Add ( "$1boolean$5" );
+
+
+        DoReplacements ();
+
+
+        // loop through function and search for variable declaration that happend several times
+        // leave only the first declaration
+
+        pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\("+argumentsChars+"\\)("+optWS+":"+optWS+commonChars+")?"+optWS+"{"; 
+        allFunctionsDeclarations = ReverseMatches (convertedCode, pattern);
+
+        foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
+            Block functionBlock = new Block (aFunctionDeclaration, convertedCode);
+
+            pattern = "var"+oblWS+"(?<varName>"+commonName+")"+optWS+":"+optWS+"(?<varType>"+commonChars+")"+optWS+"(?<ending>(=|;))"; // don't match var declaration in foreach loop
+            List<Match> allVariablesDeclarations = ReverseMatches (functionBlock.text, pattern);
+
+            foreach (Match aVariableDeclaration in allVariablesDeclarations) {
+                string varName = aVariableDeclaration.Groups["varName"].Value;
+                string varType = aVariableDeclaration.Groups["varType"].Value.Replace ("[", Regex.Escape ("["));
+                //varType = varType.Escape ("[");
+                string ending = aVariableDeclaration.Groups["ending"].Value; 
+
+                // how many time this variable is (still) declared in the function ?
+                pattern = "var"+oblWS+varName+optWS+":"+optWS+varType;
+                int declarationsCount = Regex.Matches (functionBlock.newText, pattern).Count;
+
+                if (declarationsCount <= 1) // no need to go forward with this particular variable
+                    continue;
+                
+                // it's at least the second time that variable is declared in the function
+                // that will throw an error in the Unity console
+                // so replace the declaration by the var name, if a value is set at the same time (var aVar: aType = whatever;), or just delete the declaration (var aVar: aType;)
+                
+                // here I can't replace the declaration in functionBlock with String.Replace because it could match sevral declaration at the same time
+                // I have to use Insert and Remove, that's why the function and variable declaration are looped backward
+
+                // remove old declaration
+                functionBlock.newText = functionBlock.newText.Remove (aVariableDeclaration.Index, aVariableDeclaration.Length);
+
+                // add the new one (if needed)
+                if (ending == "=")
+                    functionBlock.newText = functionBlock.newText.Insert (aVariableDeclaration.Index, varName+" "+ending);
+
+                //varList.Add (varName, declarationsCount--);
+            } // end loop variable declarations
+
+            // replace old function text by new one in convertedCode
+            convertedCode = convertedCode.Replace (functionBlock.text, functionBlock.newText);
+        } // end lopp function declarations
+    } // end of method Functions
+
+
+    // ----------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Add the keyword public when no visibility (or just static) is set (the default visibility is public in JS but private in C#)
+    /// Works also for functions, classes and enums
+    /// </summary>
+    public void AddVisibility () {
+        // the default visibility for variable and functions is public in JS but private in C# => add the keyword private when no visibility (or just static) is set 
+        patterns.Add ("([;{}\\]]+"+optWS+")((var|function|enum|class)"+oblWS+")" );
+        replacements.Add ("$1private $3" );
+
+        patterns.Add ("(\\*"+optWS+")((var|function|enum|class)"+oblWS+")" ); // add a / after \\*
+        replacements.Add ("$1private $3" );
+
+        patterns.Add ("(//.*"+optWS+")((var|function|enum|class)"+oblWS+")" );
+        replacements.Add ("$1private $3" );
+
+        patterns.Add ("((\\#else|\\#endif)"+oblWS+")((var|function|enum|class)"+oblWS+")" );
+        replacements.Add ("$1private $4" );
+
+
+        // static
+        patterns.Add ("([;{}\\]]+"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );
+        replacements.Add ("$1private static $4" );
+
+        patterns.Add ("(\\*"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );  // add a / after \\*
+        replacements.Add ("$1private static $4" );
+
+        patterns.Add ("(//.*"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );
+        replacements.Add ("$1private static $4" );
+
+        patterns.Add ("((\\#else|\\#endif)"+oblWS+")((var|function)"+oblWS+")" );
+        replacements.Add ("$1private static $4" );
+
+        DoReplacements ();
+
+
+        // all variables gets a public or static public visibility but this shouldn't happend inside functions, so remove that
+
+        pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\(.*\\)("+optWS+":"+optWS+commonChars+")?"+optWS+"{";
+        List<Match> allFunctions = ReverseMatches (convertedCode, pattern);
+
+        foreach (Match aFunction in allFunctions) {
+            Block function = new Block (aFunction, convertedCode);
+
+            if (function.isEmpty)
+                continue;
+
+            patterns.Add ("private"+oblWS+"(static"+oblWS+"var)" );
+            replacements.Add ("$2" );
+            patterns.Add ("(static"+oblWS+")?private"+oblWS+"var" );
+            replacements.Add ("$1var" );
+
+            function.newText = DoReplacements (function.text);
+            convertedCode = convertedCode.Replace (function.text, function.newText);
+        }
+    } // end AddVisibility ()
+} // end of class CSharpToUnityScript_Main
+
+
+/*/// <summary>
+    /// Read the file ItemsAndTypes.txt and extract the key/value pairs in the itemsAndTypes List
+    /// </summary>
+    /// <param name="getEmptyValues">Tell wether or not adding the keys without a value to the list</param>
+    void GetItemsAndTypes (bool getEmptyValues) {
+        itemsAndTypes.Clear ();
+        
+        string path = Application.dataPath+"/CSharpToUnityScript/ItemsAndTypes.txt";
+
+        if ( ! File.Exists (path))
+            return;
+
+        // read ItemsAndTypes.txt
+        StreamReader reader = new StreamReader (path);
+
+        while (true) {
+            string line = reader.ReadLine ();
+            if (line == null)
+                break;
+
+            if (line.Trim () == "" || line.StartsWith ("#") || ! line.Contains ("=")) // an empty line, a comment, or a line that does not contains an equal sign (that would cause errors below)
+                continue;
+
+            string[] items = line.Split ('='); // item[0] is the item/value    item[1] is the type
+
+            if ( ! itemsAndTypes.ContainsKey (items[0].Trim ())) {
+                if ( ! getEmptyValues && items[1].Trim () != "")
+                    itemsAndTypes.Add (items[0].Trim (), items[1].Trim ());
+                else
+                    itemsAndTypes.Add (items[0].Trim (), items[1].Trim ());
+            }    
+        }
+
+        reader.Close ();
+    }
+
+    void GetItemsAndTypes () {
+        GetItemsAndTypes (false);
+    }*/

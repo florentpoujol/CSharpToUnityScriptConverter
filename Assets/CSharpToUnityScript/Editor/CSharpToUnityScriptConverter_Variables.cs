@@ -4,16 +4,23 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 
-public class CSharpToUnityScript_Variables: CSharpToUnityScript {
-	                                      
+public class CSharpToUnityScriptConverter_Variables: RegexUtilities {
+
+    public CSharpToUnityScriptConverter_Variables (string inputCode) : base (inputCode) {}
+
+    //--------------------
+
     /// <summary> 
-    /// Convert stuffs related to functions : declaration
+    /// Convert stuffs related to variable declarations
     /// </summary>
-    public static void Variables () {
+    public string Variables () {
         
         // multiple inline var declaration of the same type : "Type varName, varName = foo;"
-        pattern = "(?<type>"+commonChars+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+commonCharsWithoutComma+optWS+")?,"+optWS+".*);"; // won't match if the value is a mehod or a class instanciation or a dictionnary
-        List<Match> allDeclarations = ReverseMatches (script.text, pattern);
+        pattern = "(?<type>"+commonChars+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+commonCharsWithoutComma+optWS+")?,"+optWS+allButParenthesis+");"; 
+        pattern = "(?<type>"+commonChars+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+commonCharsWithoutComma+optWS+")?,"+optWS+allButParenthesis+");"; 
+        // won't match if the value is a mehod or a class instanciation or a dictionnary
+        // it matches argument when calling a method
+        List<Match> allDeclarations = ReverseMatches (convertedCode, pattern);
 
         foreach (Match aDeclaration in allDeclarations){
             // split the varlist using the coma
@@ -32,17 +39,26 @@ public class CSharpToUnityScript_Variables: CSharpToUnityScript {
                     newSyntax += "var "+varName.Trim ()+" :"+type+";"+EOL;
             }
 
-            script.text = script.text.Replace (aDeclaration.Value, newSyntax);
+            convertedCode = convertedCode.Replace (aDeclaration.Value, newSyntax);
         }
 
-
+ 
         // " as AType;" => ";"
         // "as aType" might appear in other location
         patterns.Add ( oblWS+"as"+oblWS+commonChars+optWS+";" );
         replacements.Add ( ";" );
 
         // var declaration with value
-        patterns.Add ( commonChars+oblWS+commonName+optWS+"(=.*;)" );
+        patterns.Add ( commonChars+oblWS+commonName+optWS+"(="+optWS+"(@\")?.*;)" );
+        replacements.Add ( "var $3: $1$4$5" );
+
+        // remove @ in  'string aVariable = @"a string";"
+        //patterns.Add ( "(="+optWS+")@("+optWS+"\")" );
+        //replacements.Add ( "$1$3" );
+
+
+        // var declaration with value
+        patterns.Add ( commonChars+oblWS+commonName+optWS+"(="+optWS+".*;)" );
         replacements.Add ( "var $3: $1$4$5" );
 
         // var declaration without value   
@@ -119,6 +135,8 @@ public class CSharpToUnityScript_Variables: CSharpToUnityScript {
 
 
         DoReplacements ();
+
+        return convertedCode;
     } // end Functions()
 
 
@@ -127,11 +145,11 @@ public class CSharpToUnityScript_Variables: CSharpToUnityScript {
     /// <summary>
     /// Convert Properties declarations
     /// </summary>
-    public static void Properties () {
+    public string Properties () {
             
         // find properties
         pattern = "((?<visibility>public|private|protected)"+oblWS+")?(?<blockType>"+commonChars+")"+oblWS+"(?<blockName>"+commonName+")"+optWS+"{";
-        List<Match> allProperties = ReverseMatches (script.text, pattern);
+        List<Match> allProperties = ReverseMatches (convertedCode, pattern);
 
         foreach (Match aProp in allProperties) {
             string[] types = {"enum", "class", "extends", "new", "else"};
@@ -147,8 +165,8 @@ public class CSharpToUnityScript_Variables: CSharpToUnityScript {
                 continue;
 
 
-            Block PropBlock = new Block (aProp, script.text);
-            Debug.Log ("property : "+aProp.Value+" | "+PropBlock.text);
+            Block PropBlock = new Block (aProp, convertedCode);
+            //Debug.Log ("property : "+aProp.Value+" | "+PropBlock.text);
 
             string property = "";
             string visibility = "";
@@ -203,10 +221,12 @@ public class CSharpToUnityScript_Variables: CSharpToUnityScript {
                 }
             }
 
-            Debug.Log ("new prop : "+property);
+            //Debug.Log ("new prop : "+property);
             string cSharpProperty = aProp.Value.Replace ("{", PropBlock.text);
 
-            script.text = script.text.Replace (cSharpProperty, property); // replace property block by the new(s) function(s)
+            convertedCode = convertedCode.Replace (cSharpProperty, property); // replace property block by the new(s) function(s)
         } // end lopping on properties
+
+        return convertedCode;
     } // end of method Properties()
 } // end of class CSharpToUnityScript_Functions
