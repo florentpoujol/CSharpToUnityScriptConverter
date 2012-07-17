@@ -1,0 +1,123 @@
+import UnityEngine;
+import System.Collections;
+
+
+
+
+public class aaTest extends MonoBehaviour {
+
+
+	// CLASSES
+	public aaTest (aTruc: String): base (aTruc)
+	{
+		
+	}
+
+
+	// VARIABLES
+
+	// multiple variable declaration
+	private var aVar9: double= 3.5, aVar10, aVar11=5.0 ;
+	private var aVar1: String = "un ; private var aVar2: espace",;
+	private var avar: Class = new Class(), avar2 = new Class (untruc);
+	
+
+	// VAR DECLARATION WITHOUT VALUE
+	private var avar: boolean;
+	private var avar: String;
+	private var avar: Dictionary.<String, boolean>;
+
+
+	// VAR DECLARATION WITH VALUE
+	private var var1: String = "mach ; in";
+	private var var3: String = @'machin'+	' machin chose'	;
+	private var var4: boolean = false;
+	private var var6: float[] = [3.5, 0];
+	private var avar: double = Method (machin);
+	private var var7: Class = new Class (parma, param);
+
+	
+	// VAR DECLARATION IN FOREACH LOOP
+	for (var avar: String in avars)
+	for (var avar: KeyValuePair.<String, boolean> in dico)
+
+	// PATCHING garbage correction
+	import System.Collections.Generics;
+
+	private function Method(): String { return avar; }
+
+	else avar = value;
+
+	// CASTING
+
+
+	// ARRAYS
+	private var avar: String[];
+	private var avar: String[] = new string[5];
+
+	private var avar: String[] = new string[] { "machin", "machin"};
+	private var avar: boolean[] = [ false, true];
+
+	float[] avar = new float[] { 0.0,
+		3.5,
+		5};
+	int[] avar = new int[] { 0,
+		3,
+		5};
+
+
+	// PROPERTIES
+	private var prop1: private int = 5;
+	public function get Prop1(): int {
+	return prop1;
+}
+public function set Prop1(value: int) {
+	prop1 = value;
+}
+
+
+	private var prop2: private int;
+	public function get Prop2(): int { return prop2*2; 
+		}
+
+
+	private var prop3: private string;
+	public function set Prop3(value: String) { 
+			prop3 = value+" ";
+		}
+
+
+	private var prop4: private double;
+	public function get Prop4(): double { return prop4; }
+protected function set Prop4(value: double) {
+			aVar9 = aVar10 + value;
+		}
+
+
+
+	// Use this for initialization
+	private function Start() {
+		
+		var aVar2: string aVar1,;
+
+		int aVar5, aVar6 , aVar7 ,aVar8;
+
+		var aVar3: boolean=var aVar4: true ,;
+
+		
+	}
+	
+	// Update is called once per frame
+	private function DoSomething(args: String[]) {
+	
+	}
+
+	public override function ToString(): String {
+		return "ToString()";
+	}
+}
+
+private class AStruct extends System.ValueType {
+	gbase.machin
+	super.machin
+}

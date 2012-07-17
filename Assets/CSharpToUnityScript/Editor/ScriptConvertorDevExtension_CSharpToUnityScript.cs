@@ -6,15 +6,15 @@ using System.Collections;
 
 class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow { 
 
-	[MenuItem ("Window/ScriptConvertorDevelopementExtension_CSharpToUnityScript")]
+	[MenuItem ("Script Converters/Dev. extension")]
     static void ShowWindow () {
         ScriptConvertorDevExtension_CSharpToUnityScript window = (ScriptConvertorDevExtension_CSharpToUnityScript)EditorWindow.GetWindow (typeof(ScriptConvertorDevExtension_CSharpToUnityScript));
         window.title = "ScriptConvertorDevExtension_CSharpToUnityScript";
     }
     
-    string m_scriptName = "aaTest";
+    public string m_scriptName = "aaTest";
     //public DateTime m_scriptLastWriteTime = DateTime.Now.ToLocalTime ();
-    string m_scriptRelativePath = "/CSharpToUnityScript/ScriptsToBeConverted/";
+    public string m_scriptRelativePath = "/CSharpToUnityScript/aaTest/";
 
     // the interval (in second) time between two project checking
 	// can be set in the extension's window
@@ -22,11 +22,28 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
 	public DateTime m_lastCheckTime = DateTime.Now.ToLocalTime ();
 
     // script's extension in the source language 
-	string m_sourceScriptExtension = ".cs";
+	public string m_sourceScriptExtension = ".cs";
 
 	// script's extension in the target language 
 	// must be .cs .js or .boo
-	string m_targetScriptExtension = ".js";
+	public string m_targetScriptExtension = ".js_";
+
+
+	// ----------------------------------------------------------------------------------
+
+
+	void OnGUI () {
+
+		m_scriptRelativePath = EditorGUILayout.TextField ("Script relative path : ", m_scriptRelativePath);
+		m_scriptName = EditorGUILayout.TextField ("Script name : ", m_scriptName);
+		m_sourceScriptExtension = EditorGUILayout.TextField ("Source extension : ", m_sourceScriptExtension);
+		m_targetScriptExtension = EditorGUILayout.TextField ("Target extension : ", m_targetScriptExtension);
+
+		CSharpToUnityScriptConverter.convertMultipleVarDeclaration = GUILayout.Toggle(CSharpToUnityScriptConverter.convertMultipleVarDeclaration, "ConvertMultipleVarDeclaration");
+
+		if (GUILayout.Button ("Force Conversion", GUILayout.MinHeight (100)))
+    		Convert (true);
+    }
 
 
     void Update () {
@@ -35,12 +52,6 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
 
 			Convert (false);
 		}
-    }
-
-
-    void OnGUI () {
-		if (GUILayout.Button ("Force Conversion"))
-    		Convert (true);
     }
 
 

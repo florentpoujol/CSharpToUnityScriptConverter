@@ -125,6 +125,7 @@ public class RegexUtilities {
 
 	// most common characters used in names. Does not match arrays or generic collections
     protected string commonName = "([A-Za-z0-9_\\.]+)";
+    protected string commonNameWithSpace = "([A-Za-z0-9_\\. ]+)"; // Allows to have space in expression like "System . Something"
 
     // any numerical value (including the "f" for the float in C#)
     protected string number =       "(-?[0-9]+(\\.{1}[0-9]+(f|F)?)?)";
@@ -142,6 +143,7 @@ public class RegexUtilities {
     protected string commonChars = "([A-Za-z0-9<>,'\"_\\[\\]\\.]+)"; // 
     protected string commonCharsWithSpace = "([A-Za-z0-9<>,'\"_\\[\\]\\. ]+)"; // generic collections likes dictionnaries may have a space after the come, for instance
     protected string commonCharsWithoutComma = "([A-Za-z0-9<>'\"_\\[\\]\\.]+)"; // for use with variable or type as method parameter
+    protected string commonCharsWoCommaWSpace = "([A-Za-z0-9<>'\"_\\[\\]\\. ]+)";
 
     // characters seen in method parameters
     protected string argumentsChars = "([A-Za-z0-9<>,:_\\[\\]\\s\\n]*)"; 
@@ -161,7 +163,7 @@ public class RegexUtilities {
 
     protected string collections = "(ArrayList|BitArray|CaseInsensitiveComparer|Comparer|Hashtable|Queue|SortedList|Stack|StructuralComparisons|DictionnaryEntry"+
         "|ICollection|IComparer|IDictionary|IDictionaryEnumerator|IEnumerable|IEnumerator|IEqualityComparer|IHashCodeProvider|IList|IStructuralComparable|IStructuralEquatable)";
-    protected string genericCollections = "(Comparer|Dictionary|HashSet|KeyedByTypeCollection|LinkedList|LinkedListNode|List|Queue|SortedDictionary|SortedList|SortedSet|Stack|SynchronizedCollection"+
+    protected string genericCollections = "(Comparer|Dictionary|KeyValuePair|HashSet|KeyedByTypeCollection|LinkedList|LinkedListNode|List|Queue|SortedDictionary|SortedList|SortedSet|Stack|SynchronizedCollection"+
         "|SynchronizedKeyedCollection|SynchronizedReadOnlyCollection|ISet)";
     
 

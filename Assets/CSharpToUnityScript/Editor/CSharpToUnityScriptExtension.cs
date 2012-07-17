@@ -9,6 +9,9 @@ using System.IO; // StreamReader/Writer
 
 public class CSharpToUnityScriptExtension : EditorWindow {
 
+    /// <summary>
+    /// Structure that store some information about a particular script
+    /// </summary>
     public struct Script {
         // relative path
         public string relativePath;
@@ -20,12 +23,18 @@ public class CSharpToUnityScriptExtension : EditorWindow {
             relativePath = p_relativePath.Replace (".cs", "").Replace ("\\", "/");
 
             int lastSlashIndex = relativePath.LastIndexOf ("/");
-            name = relativePath.Substring (lastSlashIndex);
-            relativePath = relativePath.Substring (0, lastSlashIndex);
+
+            if (lastSlashIndex == -1) { // no slash found => the file is a the root of the source directory, so relativePath is it's name
+                name = relativePath;
+                relativePath = "";
+            }
+            else {
+                name = relativePath.Substring (lastSlashIndex);
+                relativePath = relativePath.Substring (0, lastSlashIndex);
+            }
         }
     }
 
-    // you can edit blow a few variable to fit your needs
 
     // the directory where to get the scripts to be converted
     private string m_sourceDirectory = "/CSharpToUnityScript/ScriptsToBeConverted/";
@@ -33,25 +42,28 @@ public class CSharpToUnityScriptExtension : EditorWindow {
     // the directory where to put the converted scripts
     private string m_targetDirectory = "/CSharpToUnityScript/ConvertedScripts/";
 
-    // do not edit anything below this point
-
-    // ----------------------------------------------------------------------------------
-
-
     // a list of structure that contains all needed infos about the script to be converted
     protected List<Script> m_scriptsToConvertList = new List<Script> ();
 
 
     // ----------------------------------------------------------------------------------
 
-
-    [MenuItem ("Script Converter/C# To UnityScript")]
+    /// <summary>
+    /// Method that will be called when the extension will be openen in the Unity editor
+    // The MenuItem attribute defineds which menu item will trigger the call to this method
+    /// </summary>
+    [MenuItem ("Script Converters/C# To UnityScript")]
     static void ShowWindow () {
         CSharpToUnityScriptExtension window = (CSharpToUnityScriptExtension)EditorWindow.GetWindow (typeof (CSharpToUnityScriptExtension));
-        window.title = "C#>UnityScript";
+        window.title = "C# to UnityScript";
     }
 
-    
+
+    // ----------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Draw the GUI
+    /// </summary>
     void OnGUI () {
         GUILayout.Label ("The two paths below are relative to the \"Assets\" directory");
 
@@ -59,8 +71,9 @@ public class CSharpToUnityScriptExtension : EditorWindow {
         m_targetDirectory = EditorGUILayout.TextField ("Target directory : ", m_targetDirectory);
         GUILayout.Label ("A copy of the content of the source directory will be created inside the target directory with the converted scripts.");
 
-        GUILayout.Space (20);
+        GUILayout.Space (10);
 
+        GUILayout.BeginHorizontal ();
         if (GUILayout.Button ("Convert", GUILayout.MaxWidth (200))) {
             if (m_scriptsToConvertList.Count > 0)
                 return;
@@ -90,28 +103,36 @@ public class CSharpToUnityScriptExtension : EditorWindow {
             if (!m_targetDirectory.StartsWith ("/"))
                 m_targetDirectory = "/"+m_targetDirectory;
             
-            if (m_scriptsToConvertList.Count > 0)
+            if (m_scriptsToConvertList.Count > 0) {
                 Debug.Log ("Proceeding with the conversion of "+m_scriptsToConvertList.Count+" scripts.");
-                //proceedWithConvertion = true;
+                CSharpToUnityScriptConverter.importedAssemblies.Clear ();
+            }
             else
                 Debug.Log ("No Scripts to convert.");
         }
 
 
         if (GUILayout.Button ("Reset/Abord", GUILayout.MaxWidth (200))) {
+            Debug.LogWarning ("Abording conversion ! Refreshing project.");
             m_scriptsToConvertList.Clear ();
             AssetDatabase.Refresh ();
         }
+        GUILayout.EndHorizontal ();
+
+        GUILayout.Space (10);
+
+        if (m_scriptsToConvertList.Count > 0)
+            GUILayout.Label ("Still "+m_scriptsToConvertList.Count+" scripts to convert.");
     }
 
 
     // ----------------------------------------------------------------------------------
 
     /// <summaray>
-    ///
+    /// Called 100 times per second
+    /// Perform the conversion, one file per frame
     /// </summary>
     void Update () {
-        //if (proceedWithConvertion && scriptIndex < m_scriptsToConvertList.Count) {
         if (m_scriptsToConvertList.Count > 0) {
             Script m_scriptInConversion = m_scriptsToConvertList[0];
             
@@ -131,10 +152,13 @@ public class CSharpToUnityScriptExtension : EditorWindow {
             Debug.Log ("Converted "+m_scriptInConversion.relativePath+m_scriptInConversion.name);
 
             m_scriptsToConvertList.RemoveAt (0);
+            Repaint(); // update the GUI
 
             // auto refresh the project once all files have been converted
-            if (m_scriptsToConvertList.Count <= 0) 
+            if (m_scriptsToConvertList.Count <= 0) {
+                Debug.LogWarning ("Conversion done ! Refreshing project.");
                 AssetDatabase.Refresh ();
+            }
         }
     }
 } // end of class CSharpToUnityScriptExtension

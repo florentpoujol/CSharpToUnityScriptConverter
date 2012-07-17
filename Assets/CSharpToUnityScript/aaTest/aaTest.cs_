@@ -1,0 +1,123 @@
+using UnityEngine;
+using System. Collections ;
+
+interface Int1 {}
+interface Int2 {}
+
+public class aaTest: MonoBehaviour {
+
+
+	// CLASSES
+	public aaTest (string aTruc): base (aTruc)
+	{
+		
+	}
+
+
+	// VARIABLES
+
+	// multiple variable declaration
+	double aVar9= 3.5f, aVar10, aVar11=5.0 ;
+	string aVar1 = "un ; espace", aVar2;
+	Class avar = new Class(), avar2 = new Class (untruc);
+	
+
+	// VAR DECLARATION WITHOUT VALUE
+	bool avar;
+	string avar;
+	Dictionary<string, bool> avar;
+
+
+	// VAR DECLARATION WITH VALUE
+	string var1 = "mach ; in";
+	string var3 = @'machin'+	' machin chose'	;
+	bool var4 = false;
+	float[] var6 = {3.5f, 0f};
+	double avar = Method (machin);
+	Class var7 = new Class (parma, param);
+
+	
+	// VAR DECLARATION IN FOREACH LOOP
+	foreach (string avar in avars)
+	foreach (KeyValuePair<string, bool> avar in dico)
+
+	// PATCHING garbage correction
+	import System. Collections . Generics;
+
+	string Method() { return avar; }
+
+	else
+		avar = value;
+
+	// CASTING
+
+
+	// ARRAYS
+	string[] avar;
+	string[] avar = new string[5];
+
+	string[] avar = new string[] { "machin", "machin"};
+	bool[] avar = { false, true};
+
+	float[] avar = new float[] { 0.0f,
+		3.5f,
+		5f};
+	int[] avar = new int[] { 0,
+		3,
+		5};
+
+
+	// PROPERTIES
+	private int prop1 = 5;
+	public int Prop1 { get; set; }
+
+	private int prop2;
+	public int Prop2 {
+		get { return prop2*2; 
+		}
+	}
+
+	private string prop3;
+	public string Prop3 {
+		set 
+		{ 
+			prop3 = value+" ";
+		}
+	}
+
+	private double prop4;
+	public double Prop4 {
+		get { return prop4; }
+		protected set {
+			aVar9 = aVar10 + value;
+		}
+	}
+
+
+	// Use this for initialization
+	void Start () {
+		
+		string aVar1, aVar2;
+
+		int aVar5, aVar6 , aVar7 ,aVar8;
+
+		bool aVar3=true , aVar4;
+
+		
+	}
+	
+	// Update is called once per frame
+	void DoSomething (string[] args) {
+	
+	}
+
+	public override string ToString () {
+		return "ToString()";
+	}
+}
+
+struct AStruct
+{
+	gbase.machin
+	base.machin
+}
