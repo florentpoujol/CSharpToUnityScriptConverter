@@ -49,6 +49,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     public static List<string> importedAssemblies = new List<string> ();
 
     public static bool convertMultipleVarDeclaration = false;
+
+
     
     // ----------------------------------------------------------------------------------
 
@@ -90,7 +92,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // YIELDS
 
         /*patterns.Add ("yield"+optWS+";");
-        replacements.Add ("yield return 0;");
+        replacements.Add ("yield return null;");
 
         // yield return  ;
         patterns.Add ("yield("+oblWS+commonChars+optWS+";)");
@@ -111,11 +113,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // CLASSES
         Classes ();
 
-        
         // VARIABLES
-        //CSharpToUnityScriptConverter_Variables varConverter = new CSharpToUnityScriptConverter_Variables (convertedCode);
-        //convertedCode = varConverter.Variables ();
-        //Variables ();
+        Variables ();
         
         // FUNCTIONS
         Functions ();
@@ -131,6 +130,22 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // VISIBILITY
         //AddVisibility ();
 
+        // string      
+            patterns.Add ( "("+commonName+optWS+":"+optWS+")string(("+optWS+"\\["+optWS+"\\])?"+optWS+"(=|;|,|\\)|in|{))" );
+            replacements.Add ( "$1String$5" );
+
+            // bool
+            patterns.Add ( "("+commonName+optWS+":"+optWS+")bool(("+optWS+"\\["+optWS+"\\])?"+optWS+"(=|;|,|\\)|in|{))" );
+            replacements.Add ( "$1boolean$5" );
+
+        // with generic collections
+            // string
+            patterns.Add ( "((<|,)"+optWS+")string(("+optWS+"\\["+optWS+"\\])?"+optWS+"(>|,))" );
+            replacements.Add ( "$1String$4" );
+
+            // bool
+            patterns.Add ( "((<|,)"+optWS+")bool(("+optWS+"\\["+optWS+"\\])?"+optWS+"(>|,))" );
+            replacements.Add ( "$1boolean$4" );
 
         // #region
         patterns.Add ("\\#(region|REGION)"+oblSpaces+commonName+"("+oblSpaces+commonName+")*");
@@ -314,6 +329,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         replacements.Add ("import$1");
 
         DoReplacements ();
+
+        
         // in UnityScript, each assembly has to be imported once per project, or it will throw a warning in he Unity console for each duplicate assembly import !
         // so keep track of the assemblies already imported in the project (in one of the previous file) and comment out the duplicate
         pattern = "\\bimport"+oblWS+"(?<assemblyName>"+commonNameWithSpace+")"+optWS+";";
@@ -361,7 +378,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             // multiple inline var declaration of the same type : "Type varName, varName = foo;"
 
-            pattern = "(?<varType>"+commonChars+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+"[^,]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
+            pattern = "\\b(?<varType>"+commonChars+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+"[^,]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
             List<Match> allDeclarations = ReverseMatches (convertedCode, pattern);
 
             foreach (Match aDeclaration in allDeclarations){
@@ -393,12 +410,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
         // VAR DECLARATION WITHOUT VALUE
-        patterns.Add ("\\b"+"(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)"); 
+        patterns.Add ("\\b(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)"); 
         replacements.Add ("var ${varName}: ${varType}${end}");
 
 
         // VAR DECLARATION WITH VALUE
-        patterns.Add ("\\b"+"(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<varValue>"+optWS+"="+optWS+".+;)");
+        patterns.Add ("\\b(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<varValue>"+optWS+"="+optWS+".+;)");
         replacements.Add ("var ${varName}: ${varType}${varValue}");
         // will mess up if the string is on several lines
 
@@ -419,16 +436,21 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // PATCHING   converting var declaration leads to some garbage
            // assembly imports
-           patterns.Add ("var"+oblWS+commonName+optWS+":"+optWS+"import"+optWS+";"); // will mess up if a custom class is named "import"...
+           patterns.Add ("\\bvar"+oblWS+commonName+optWS+":"+optWS+"import"+optWS+";"); // will mess up if a custom class is named "import"...
            replacements.Add ("import $2;");
 
            // returned values
-           patterns.Add ("var"+oblWS+commonName+optWS+":"+optWS+"return"+optWS+";");
+           patterns.Add ("\\bvar"+oblWS+commonName+optWS+":"+optWS+"return"+optWS+";");
            replacements.Add ("return $2;");
 
            // "else aVar = aValue;" got converted in  "var aVar: else = aValue;"
-           patterns.Add ("var"+oblWS+commonName+optWS+":"+optWS+"else"+optWS+"=");
+           patterns.Add ("\\bvar"+oblWS+commonName+optWS+":"+optWS+"else"+optWS+"=");
            replacements.Add ("else $2 =");
+
+           // yield return null;   or yield return 0;   got converted into  var null: yield return;
+           patterns.Add ("\\bvar"+oblWS+"(?<value>null|0)"+optWS+":"+optWS+"yield"+oblWS+"return"+optWS+";");
+           replacements.Add ("yield return ${value};");
+
 
 
         // CASTING
@@ -695,24 +717,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             convertedCode = convertedCode.Replace (cSharpProperty, property); // replace property block by the new(s) function(s)
         } // end lopping on properties
-
-         // string      
-            patterns.Add ( "("+commonName+optWS+":"+optWS+")string(("+optWS+"\\["+optWS+"\\])?"+optWS+"(=|;|,|\\)|in|{))" );
-            replacements.Add ( "$1String$5" );
-
-            // bool
-            patterns.Add ( "("+commonName+optWS+":"+optWS+")bool(("+optWS+"\\["+optWS+"\\])?"+optWS+"(=|;|,|\\)|in|{))" );
-            replacements.Add ( "$1boolean$5" );
-
-        // with generic collections
-            // string
-            patterns.Add ( "((<|,)"+optWS+")string(("+optWS+"\\["+optWS+"\\])?"+optWS+"(>|,))" );
-            replacements.Add ( "$1String$4" );
-
-            // bool
-            patterns.Add ( "((<|,)"+optWS+")bool(("+optWS+"\\["+optWS+"\\])?"+optWS+"(>|,))" );
-            replacements.Add ( "$1boolean$4" );
-
     } // end of method Properties
 
 

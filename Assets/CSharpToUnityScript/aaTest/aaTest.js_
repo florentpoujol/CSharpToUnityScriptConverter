@@ -51,67 +51,91 @@ aaTest(aTruc);
 	// VARIABLES
 
 	// multiple variable declaration
-	double aVar9= 3.5f, aVar10, aVar11=5.0 ;
-	string aVar1 = "un ; espace", aVar2;
-	Class avar = new Class(), avar2 = new Class (untruc);
+	var aVar9: double= 3.5, aVar10, aVar11=5.0 ;
+	var aVar1: String = "un ; var aVar2: espace",;
+	var avar: Class = new Class(), avar2 = new Class (untruc);
 	
 
 	// VAR DECLARATION WITHOUT VALUE
-	bool avar;
-	string avar;
-	Dictionary.<string, bool> avar;
+	var avar: boolean;
+	var avar: String;
+	var avar: Dictionary.<String, boolean>;
 
 
 	// VAR DECLARATION WITH VALUE
-	string var1 = "mach ; in";
-	string var3 = @'machin'+	' machin chose'	;
-	bool var4 = false;
-	float[] var6 = {3.5f, 0f};
-	double avar = Method (machin);
-	Class var7 = new Class (parma, param);
+	var var1: String = "mach ; in";
+	var var3: String = @'machin'+	' machin chose'	;
+	var var4: boolean = false;
+	var var6: float[] = [3.5, 0];
+	var avar: double = Method (machin);
+	var var7: Class = new Class (parma, param);
 
 	
 	// VAR DECLARATION IN FOREACH LOOP
-	for (string avar in avars)
-	for (KeyValuePair.<string, bool> avar in dico)
+	for (var avar: String in avars)
+	for (var avar: KeyValuePair.<String, boolean> in dico)
 
 	// PATCHING garbage correction
 	import System.Collections.Generics;
 
 	function Method(): String { return avar; }
 
-	else
-		avar = value;
+	else avar = value;
 
 	// CASTING
 
 
 	// ARRAYS
-	string[] avar;
-	string[] avar = new string[5];
+	var avar: String[];
+	var avar: String[] = new string[5];
 
-	string[] avar = new string[] { "machin", "machin"};
-	bool[] avar = { false, true};
+	var avar: String[] = new string[] { "machin", "machin"};
+	var avar: boolean[] = [ false, true];
 
-	float[] avar = new float[] { 0.0f,
-		3.5f,
-		5f};
+	float[] avar = new float[] { 0.0,
+		3.5,
+		5};
 	int[] avar = new int[] { 0,
 		3,
 		5};
 
 
+
+	// FUNCTIONS
+	public function ReturnVoid() {}
+
+	private function ReturnString(bool testarg): String {}
+
+	protected function ReturnBool(string arg1, float arg2): boolean {}
+
+	public override function ToString(): String {
+		return "ToString()";
+	}
+
+	function ACoroutine(bool isTrue): IEnumerator {
+		if (isTrue) {
+			yield return null
+		}
+		else {
+			yield return new WaitForSeconds (3.5);
+			// yield WaitForSeconds (3.5);
+		}
+		
+	}
+
+
+
 	// PROPERTIES
-	private int prop1 = 5;
+	var prop1: private int = 5;
 	public int Prop1 { get; set; }
 
-	private int prop2;
+	var prop2: private int;
 	public int Prop2 {
 		get { return prop2*2; 
 		}
 	}
 
-	private string prop3;
+	var prop3: private string;
 	public string Prop3 {
 		set 
 		{ 
@@ -119,7 +143,7 @@ aaTest(aTruc);
 		}
 	}
 
-	private double prop4;
+	var prop4: private double;
 	public double Prop4 {
 		get { return prop4; }
 		protected set {
@@ -131,23 +155,16 @@ aaTest(aTruc);
 	// Use this for initialization
 	function Start() {
 		
-		string aVar1, aVar2;
+		var aVar2: string aVar1,;
 
 		int aVar5, aVar6 , aVar7 ,aVar8;
 
-		bool aVar3=true , aVar4;
+		var aVar3: boolean=var aVar4: true ,;
 
 		
 	}
-	
-	// Update is called once per frame
-	function DoSomething(string[] args) {
-	
-	}
 
-	public override function ToString(): String {
-		return "ToString()";
-	}
+
 }
 
 class AStruct extends System.ValueType {

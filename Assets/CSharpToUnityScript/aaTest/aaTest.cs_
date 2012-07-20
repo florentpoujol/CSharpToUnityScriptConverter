@@ -99,6 +99,31 @@ public class aaTest : MonoBehaviour, Int1 ,Int2 {
 		5};
 
 
+
+	// FUNCTIONS
+	public void ReturnVoid () {}
+
+	private string ReturnString (bool testarg) {}
+
+	protected bool ReturnBool (string arg1, float arg2) {}
+
+	public override string ToString () {
+		return "ToString()";
+	}
+
+	IEnumerator ACoroutine (bool isTrue) {
+		if (isTrue) {
+			yield return null;
+		}
+		else {
+			yield return new WaitForSeconds (3.5f);
+			// yield WaitForSeconds (3.5);
+		}
+		
+	}
+
+
+
 	// PROPERTIES
 	private int prop1 = 5;
 	public int Prop1 { get; set; }
@@ -137,15 +162,8 @@ public class aaTest : MonoBehaviour, Int1 ,Int2 {
 
 		
 	}
-	
-	// Update is called once per frame
-	void DoSomething (string[] args) {
-	
-	}
 
-	public override string ToString () {
-		return "ToString()";
-	}
+
 }
 
 struct AStruct
