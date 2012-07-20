@@ -12,9 +12,24 @@ public class TestInterfaces2 implements Int1, Int2 , Int3 {}
 public class aaTest extends MonoBehaviour implements  Int1 ,Int2 {
 
 	// CLASSES
-	public aaTest (string aTruc): base (aTruc)
-	{
-		
+	public function aaTest(string aTruc) {
+super(aTruc);
+		// struff there 1
+	}
+
+	public function aaTest() {
+super();
+		// struff there 2
+	}
+
+	public function aaTest() {
+aaTest();
+		// struff there 3
+	}
+
+	public function aaTest() {
+aaTest(aTruc);
+		// struff there 4
 	}
 
 

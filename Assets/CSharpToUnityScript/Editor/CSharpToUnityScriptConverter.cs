@@ -183,7 +183,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
         
-
         DoReplacements ();
 
 
@@ -191,18 +190,17 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // loop the classes declarations in the file
         pattern = "\\bclass"+oblWS+"(?<blockName>"+commonName+")"+
-        "("+oblWS+"extends"+oblWS+commonNameWithSpace+")?"+
-        oblWS+"(implements).*"+
-        optWS+"{";
+        "("+oblWS+"extends"+oblWS+commonName+")?[^{]*{";
         List<Match> allClasses = ReverseMatches (convertedCode, pattern);
         
         foreach (Match aClass in allClasses) {
             Block classBlock = new Block (aClass, convertedCode);
-            
+            classBlock.newText = classBlock.text;
+
             if (classBlock.isEmpty)
                 continue;
 
-            List<Match> allConstructors;
+            List<Match> allConstructors = new List<Match> ();
 
             // look for constructors in the class that call the parent constructor
             if (classBlock.declaration.Contains ("extends")) { // if the class declaration doesn't contains "extends", a constructor has no parent to call
@@ -211,34 +209,34 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 allConstructors = ReverseMatches (classBlock.text, pattern); // all constructors in that class
 
                 foreach (Match aConstructor in allConstructors) {
-                    Block constructorBlock = new Block (aConstructor, classBlock.text);
+                    Block constructorBlock = new Block (aConstructor, classBlock.newText);
 
                     // first task : add "super();" to the constructor's body
-                   constructorBlock.newText = constructorBlock.text+EOL+"super("+aConstructor.Groups["args"]+");";
-                   classBlock.newText = classBlock.text.Replace (constructorBlock.text, constructorBlock.newText);
+                   constructorBlock.newText = constructorBlock.text.Insert (1, EOL+"super("+aConstructor.Groups["args"]+");");
+                   classBlock.newText = classBlock.newText.Replace (constructorBlock.text, constructorBlock.newText);
 
                    // second tacks : remove ":base()" in the constructor declaration
                    constructorBlock.newDeclaration = constructorBlock.declaration.Replace (aConstructor.Groups["base"].Value, "");
-                   classBlock.newText = classBlock.text.Replace (constructorBlock.declaration, constructorBlock.newDeclaration);
+                   classBlock.newText = classBlock.newText.Replace (constructorBlock.declaration, constructorBlock.newDeclaration);
                 }
             }
 
 
             // look for constructors in the class that call others constructors (in the same class)
             pattern = "\\bpublic"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\(.*\\)(?<this>"+optWS+":"+optWS+"this"+optWS+"\\((?<args>.*)\\))"+optWS+"{";
-            allConstructors = ReverseMatches (classBlock.text, pattern); // all constructors in that class
-            classBlock.newText = classBlock.text;
+            allConstructors.Clear ();
+            allConstructors = ReverseMatches (classBlock.newText, pattern); // all constructors in that class
 
             foreach (Match aConstructor in allConstructors) {
-                Block constructorBlock = new Block (aConstructor, classBlock.text);
+                Block constructorBlock = new Block (aConstructor, classBlock.newText);
 
                 // first task : add "classname();" to the constructor's body
-               constructorBlock.newText = constructorBlock.text+EOL+classBlock.name+"("+aConstructor.Groups["args"]+");";
-               classBlock.newText = classBlock.text.Replace (constructorBlock.text, constructorBlock.newText);
+               constructorBlock.newText = constructorBlock.text.Insert (1, EOL+classBlock.name+"("+aConstructor.Groups["args"]+");");
+               classBlock.newText = classBlock.newText.Replace (constructorBlock.text, constructorBlock.newText);
 
                // second tacks : remove ":this()" in the constructor declaration
                constructorBlock.newDeclaration = constructorBlock.declaration.Replace (aConstructor.Groups["this"].Value, "");
-               classBlock.newText = classBlock.text.Replace (constructorBlock.declaration, constructorBlock.newDeclaration);
+               classBlock.newText = classBlock.newText.Replace (constructorBlock.declaration, constructorBlock.newDeclaration);
             }
             
             // we won't do more search/replace for this class 

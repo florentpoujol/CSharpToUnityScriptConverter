@@ -12,9 +12,20 @@ public class TestInterfaces2 : Int1 ,Int2 , Int3 {}
 public class aaTest : MonoBehaviour, Int1 ,Int2 {
 
 	// CLASSES
-	public aaTest (string aTruc): base (aTruc)
-	{
-		
+	public aaTest (string aTruc) : base (aTruc) {
+		// struff there 1
+	}
+
+	public aaTest () : base () {
+		// struff there 2
+	}
+
+	public aaTest () : this () {
+		// struff there 3
+	}
+
+	public aaTest () : this (aTruc) {
+		// struff there 4
 	}
 
 

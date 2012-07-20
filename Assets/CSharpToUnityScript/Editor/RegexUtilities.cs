@@ -122,6 +122,7 @@ public class RegexUtilities {
 
     // NOTE : not all variables below are used by the "C# to UnityScript" extension
 
+    protected string all = "[.\\n]";
 
 	// most common characters used in names. Does not match arrays or generic collections
     protected string commonName = "([A-Za-z0-9_\\.]+)";
