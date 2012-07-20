@@ -5,14 +5,16 @@ interface Int1 {}
 interface Int2 {}
 interface Int3 {}
 
+// CLASSES DECLARATION
 public class TestInheritance : MonoBehaviour {}
 public class TestInterface : Itruc {}
 public class TestInterfaces : Int1 ,Int2 {}
 public class TestInterfaces2 : Int1 ,Int2 , Int3 {}
 public class aaTest : MonoBehaviour, Int1 ,Int2 {
 
-	// CLASSES
-	public aaTest (string aTruc) : base (aTruc) {
+	// CONSTRUCTORS
+	public aaTest (string aTruc) 
+	: base (aTruc) {
 		// struff there 1
 	}
 
@@ -20,13 +22,28 @@ public class aaTest : MonoBehaviour, Int1 ,Int2 {
 		// struff there 2
 	}
 
-	public aaTest () : this () {
+	public aaTest () 
+	: this () {
 		// struff there 3
 	}
 
-	public aaTest () : this (aTruc) {
+	public aaTest (string mahcin) : this (aTruc) 
+	{
 		// struff there 4
 	}
+
+
+	// ATTRIBUTES
+	[HideInInspector]
+	[RPC]
+	[RequireComponent ( typeof(Material) )]
+	[DrawGizmo (GizmoType.NotSelected | GizmoType.Pickable)]
+	[AddComponentMenu("Transform/Follow Transform")]
+	[ContextMenu ("Do Something")]
+	[MenuItem ("MyMenu/Do Something")]
+	[ExecuteInEditMode]
+	[System.Serializable]
+
 
 
 	// VARIABLES

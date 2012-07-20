@@ -266,7 +266,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             }
 
             foreach (string attr in attributesList) {
-                if (attr == "RPC") {
+                /*if (attr == "RPC") {
                     patterns.Add ("\\["+optWS+"RPC"+optWS+"\\]");
                     replacements.Add ("@RPC");
                     continue;
@@ -276,22 +276,22 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     patterns.Add ("\\["+optWS+"HideInInspector"+optWS+"\\]");
                     replacements.Add ("@HideInInspector");
                     continue;
-                }
+                }*/
 
                 if (attr == "RequireComponent") {
-                    patterns.Add ("\\["+optWS+"RequireComponent"+optWS+"\\("+optWS+"typeof"+optWS+"\\("+commonName+"\\)"+optWS+"\\)"+optWS+"\\]");
-                    replacements.Add ("@script RequireComponent($5)");
+                    patterns.Add ("\\["+optWS+"RequireComponent"+optWS+"\\("+optWS+"typeof"+optWS+"\\((?<type>"+commonName+")\\)"+optWS+"\\)"+optWS+"\\]");
+                    replacements.Add ("@script RequireComponent(${type})");
                     continue;
                 }
 
-                if (attr == "DrawGizmo") {
+                /*if (attr == "DrawGizmo") {
                     patterns.Add ("\\["+optWS+"DrawGizmo"+optWS+"(\\(.*\\))"+optWS+"\\]");
                     replacements.Add ("@DrawGizmo$3");
                     continue;
-                }
+                }*/
 
-                patterns.Add ("\\["+optWS+attr+optWS+"(\\(.*\\))?"+optWS+"\\]");
-                replacements.Add ("@script "+attr+"$3");
+                patterns.Add ("\\["+optWS+attr+optWS+"(?<params>\\(.*\\))?"+optWS+"\\]");
+                replacements.Add ("@script "+attr+"${params}");
             }
         }
         else

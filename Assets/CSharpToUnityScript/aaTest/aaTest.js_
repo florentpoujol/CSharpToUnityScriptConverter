@@ -5,13 +5,14 @@ interface Int1 {}
 interface Int2 {}
 interface Int3 {}
 
+// CLASSES DECLARATION
 public class TestInheritance extends MonoBehaviour {}
 public class TestInterface implements Itruc {}
 public class TestInterfaces implements Int1, Int2 {}
 public class TestInterfaces2 implements Int1, Int2 , Int3 {}
 public class aaTest extends MonoBehaviour implements  Int1 ,Int2 {
 
-	// CLASSES
+	// CONSTRUCTORS
 	public function aaTest(string aTruc) {
 super(aTruc);
 		// struff there 1
@@ -27,10 +28,24 @@ aaTest();
 		// struff there 3
 	}
 
-	public function aaTest() {
+	public function aaTest(string mahcin) 
+	{
 aaTest(aTruc);
 		// struff there 4
 	}
+
+
+	// ATTRIBUTES
+	@script HideInInspector
+	@script RPC
+	@script RequireComponent(Material)
+	@script DrawGizmo(GizmoType.NotSelected | GizmoType.Pickable)
+	@script AddComponentMenu("Transform/Follow Transform")
+	@script ContextMenu("Do Something")
+	@script MenuItem("MyMenu/Do Something")
+	@script ExecuteInEditMode
+	@script System.Serializable
+
 
 
 	// VARIABLES
