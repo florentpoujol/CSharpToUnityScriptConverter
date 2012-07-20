@@ -3,9 +3,13 @@ using System. Collections ;
 
 interface Int1 {}
 interface Int2 {}
+interface Int3 {}
 
-public class aaTest: MonoBehaviour {
-
+public class TestInheritance : MonoBehaviour {}
+public class TestInterface : Itruc {}
+public class TestInterfaces : Int1 ,Int2 {}
+public class TestInterfaces2 : Int1 ,Int2 , Int3 {}
+public class aaTest : MonoBehaviour, Int1 ,Int2 {
 
 	// CLASSES
 	public aaTest (string aTruc): base (aTruc)

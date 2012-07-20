@@ -1,14 +1,18 @@
 import UnityEngine;
 import System.Collections;
 
+interface Int1 {}
+interface Int2 {}
+interface Int3 {}
 
-
-
-public class aaTest extends MonoBehaviour {
-
+public class TestInheritance extends MonoBehaviour {}
+public class TestInterface implements Itruc {}
+public class TestInterfaces implements Int1, Int2 {}
+public class TestInterfaces2 implements Int1, Int2 , Int3 {}
+public class aaTest extends MonoBehaviour implements  Int1 ,Int2 {
 
 	// CLASSES
-	public aaTest (aTruc: String): base (aTruc)
+	public aaTest (string aTruc): base (aTruc)
 	{
 		
 	}
@@ -17,98 +21,97 @@ public class aaTest extends MonoBehaviour {
 	// VARIABLES
 
 	// multiple variable declaration
-	private var aVar9: double= 3.5, aVar10, aVar11=5.0 ;
-	private var aVar1: String = "un ; private var aVar2: espace",;
-	private var avar: Class = new Class(), avar2 = new Class (untruc);
+	double aVar9= 3.5f, aVar10, aVar11=5.0 ;
+	string aVar1 = "un ; espace", aVar2;
+	Class avar = new Class(), avar2 = new Class (untruc);
 	
 
 	// VAR DECLARATION WITHOUT VALUE
-	private var avar: boolean;
-	private var avar: String;
-	private var avar: Dictionary.<String, boolean>;
+	bool avar;
+	string avar;
+	Dictionary.<string, bool> avar;
 
 
 	// VAR DECLARATION WITH VALUE
-	private var var1: String = "mach ; in";
-	private var var3: String = @'machin'+	' machin chose'	;
-	private var var4: boolean = false;
-	private var var6: float[] = [3.5, 0];
-	private var avar: double = Method (machin);
-	private var var7: Class = new Class (parma, param);
+	string var1 = "mach ; in";
+	string var3 = @'machin'+	' machin chose'	;
+	bool var4 = false;
+	float[] var6 = {3.5f, 0f};
+	double avar = Method (machin);
+	Class var7 = new Class (parma, param);
 
 	
 	// VAR DECLARATION IN FOREACH LOOP
-	for (var avar: String in avars)
-	for (var avar: KeyValuePair.<String, boolean> in dico)
+	for (string avar in avars)
+	for (KeyValuePair.<string, bool> avar in dico)
 
 	// PATCHING garbage correction
 	import System.Collections.Generics;
 
-	private function Method(): String { return avar; }
+	function Method(): String { return avar; }
 
-	else avar = value;
+	else
+		avar = value;
 
 	// CASTING
 
 
 	// ARRAYS
-	private var avar: String[];
-	private var avar: String[] = new string[5];
+	string[] avar;
+	string[] avar = new string[5];
 
-	private var avar: String[] = new string[] { "machin", "machin"};
-	private var avar: boolean[] = [ false, true];
+	string[] avar = new string[] { "machin", "machin"};
+	bool[] avar = { false, true};
 
-	float[] avar = new float[] { 0.0,
-		3.5,
-		5};
+	float[] avar = new float[] { 0.0f,
+		3.5f,
+		5f};
 	int[] avar = new int[] { 0,
 		3,
 		5};
 
 
 	// PROPERTIES
-	private var prop1: private int = 5;
-	public function get Prop1(): int {
-	return prop1;
-}
-public function set Prop1(value: int) {
-	prop1 = value;
-}
+	private int prop1 = 5;
+	public int Prop1 { get; set; }
 
-
-	private var prop2: private int;
-	public function get Prop2(): int { return prop2*2; 
+	private int prop2;
+	public int Prop2 {
+		get { return prop2*2; 
 		}
+	}
 
-
-	private var prop3: private string;
-	public function set Prop3(value: String) { 
+	private string prop3;
+	public string Prop3 {
+		set 
+		{ 
 			prop3 = value+" ";
 		}
+	}
 
-
-	private var prop4: private double;
-	public function get Prop4(): double { return prop4; }
-protected function set Prop4(value: double) {
+	private double prop4;
+	public double Prop4 {
+		get { return prop4; }
+		protected set {
 			aVar9 = aVar10 + value;
 		}
-
+	}
 
 
 	// Use this for initialization
-	private function Start() {
+	function Start() {
 		
-		var aVar2: string aVar1,;
+		string aVar1, aVar2;
 
 		int aVar5, aVar6 , aVar7 ,aVar8;
 
-		var aVar3: boolean=var aVar4: true ,;
+		bool aVar3=true , aVar4;
 
 		
 	}
 	
 	// Update is called once per frame
-	private function DoSomething(args: String[]) {
+	function DoSomething(string[] args) {
 	
 	}
 
@@ -117,7 +120,7 @@ protected function set Prop4(value: double) {
 	}
 }
 
-private class AStruct extends System.ValueType {
+class AStruct extends System.ValueType {
 	gbase.machin
 	super.machin
 }

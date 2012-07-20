@@ -115,7 +115,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // VARIABLES
         //CSharpToUnityScriptConverter_Variables varConverter = new CSharpToUnityScriptConverter_Variables (convertedCode);
         //convertedCode = varConverter.Variables ();
-        Variables ();
+        //Variables ();
         
         // FUNCTIONS
         Functions ();
@@ -124,10 +124,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // why after Functions() ?
         //varConverter.convertedCode = convertedCode;
         //convertedCode = varConverter.Properties ();
-        Properties ();
-        
+        //Properties ();
+        // interface Int {}
+        //MonoBehaviour, Int1 {}
+
         // VISIBILITY
-        AddVisibility ();
+        //AddVisibility ();
 
 
         // #region
@@ -155,8 +157,32 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// </summary>
     void Classes () {
         // classes declarations with inheritance
-        patterns.Add ("(\\bclass"+oblWS+commonName+optWS+"):"+optWS+"("+commonNameWithSpace+optWS+"{)");
-        replacements.Add ("$1 extends $6");
+        patterns.Add ("(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+optWS+"{)");
+        replacements.Add ("$1 extends ${parent}");
+        // if parent is an Interface, extends will be converted below
+
+        // class that inherits a parent class and implements at least one interace
+        patterns.Add ("(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+")"+
+        "(?<interfaces>("+optWS+","+optWS+commonName+")+)"+
+        "(?<end>"+optWS+"{)");
+        replacements.Add ("$1 extends ${parent} implements ${interfaces}${end}");
+        // lieave the first interface after implemtns with a coma, to be removed below
+        // if parent is an Interface, extends will be converted below
+        
+        // if the "parent" begins by a I, consider it as an interface
+        patterns.Add ("\\bextends(?<interface>"+oblWS+"I"+commonName+optWS+"(implements|{))");
+        replacements.Add ("implements${interface}");
+
+        // remove the coma before the first interface after the keyword implements
+        patterns.Add ("\\bimplements"+optWS+",");
+        replacements.Add ("implements ");
+
+        // implements [interface] implements [interfaces] => implements [interface], [interface]
+        patterns.Add ("(\\bimplements"+oblWS+"I"+commonName+")"+oblWS+"implements\\b");
+        replacements.Add ("$1,");
+
+
+        
 
         DoReplacements ();
 
@@ -164,7 +190,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // now convert parent and alternate constructor call
 
         // loop the classes declarations in the file
-        pattern = "\\bclass"+oblWS+"(?<blockName>"+commonName+")("+oblWS+"extends"+oblWS+commonNameWithSpace+")?"+optWS+"{";
+        pattern = "\\bclass"+oblWS+"(?<blockName>"+commonName+")"+
+        "("+oblWS+"extends"+oblWS+commonNameWithSpace+")?"+
+        oblWS+"(implements).*"+
+        optWS+"{";
         List<Match> allClasses = ReverseMatches (convertedCode, pattern);
         
         foreach (Match aClass in allClasses) {
@@ -509,26 +538,26 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         replacements.Add ("$1$3");
 
         // remove ref keyword in arguments  => let in so it will throw an error and the dev can figure out what to do 
-        patterns.Add ("(,|\\()"+optWS+"ref("+oblWS+commonCharsWithoutComma+")");
-        replacements.Add ("$1$3");
+        //patterns.Add ("(,|\\()"+optWS+"ref("+oblWS+commonCharsWithoutComma+")");
+        //replacements.Add ("$1$3");
 
 
         // arguments declaration      if out and ref keyword where not removed before this point it would also convert them ("out hit" in Physics.Raycast() calls) or prevent the convertion ("ref aType aVar" as function argument)
-        patterns.Add ("(\\(|,){1}"+optWS+commonCharsWithoutComma+oblWS+commonName+optWS+"(\\)|,){1}");
+        /*patterns.Add ("(\\(|,){1}"+optWS+commonCharsWithoutComma+oblWS+commonName+optWS+"(\\)|,){1}");
         replacements.Add ("$1$2$5: $3$6$7");
         // as regex doesn't overlap themselves, only half of the argument have been converted
         // I need to run the regex  a second time
         patterns.Add ("(\\(|,){1}"+optWS+commonCharsWithoutComma+oblWS+commonName+optWS+"(\\)|,){1}");
-        replacements.Add ("$1$2$5: $3$6$7");
+        replacements.Add ("$1$2$5: $3$6$7");*/
 
 
         // string
-        patterns.Add ("("+commonName+optWS+":"+optWS+")string(("+optWS+"\\["+optWS+"\\])?"+optWS+"(,|\\)))");
+        /*patterns.Add ("("+commonName+optWS+":"+optWS+")string(("+optWS+"\\["+optWS+"\\])?"+optWS+"(,|\\)))");
         replacements.Add ("$1String$5");
 
         // bool
         patterns.Add ("("+commonName+optWS+":"+optWS+")bool(("+optWS+"\\["+optWS+"\\])?"+optWS+"(,|\\)))");
-        replacements.Add ("$1boolean$5");
+        replacements.Add ("$1boolean$5");*/
 
 
         DoReplacements ();

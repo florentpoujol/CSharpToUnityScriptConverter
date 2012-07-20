@@ -65,7 +65,12 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
 		}
 
 		// convert if forcer, or target does not exist, or source newer than target
-		if (forceConversion || ! File.Exists (targetScriptPath) || File.GetLastWriteTime (sourceScriptPath) > File.GetLastWriteTime (targetScriptPath)) {
+		if (forceConversion || 
+			! File.Exists (targetScriptPath) || 
+			File.GetLastWriteTime (sourceScriptPath) > File.GetLastWriteTime (targetScriptPath)) {
+
+			CSharpToUnityScriptConverter.importedAssemblies.Clear ();
+
 			StreamReader reader = new StreamReader (sourceScriptPath);
 			string inputCode = reader.ReadToEnd ();
 			reader.Close ();
