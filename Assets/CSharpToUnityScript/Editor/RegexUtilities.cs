@@ -153,6 +153,11 @@ public class RegexUtilities {
     protected string commaSeparatedNames = "([A-Za-z0-9_\\. ,]+)"; // common Name + space and coma
 
     protected string visibility = "(?<visibility>public|private|protected)";
+    protected string visibilityAndStatic = "(public\\s+static|static\\s+public|public|"+
+                                            "private\\s+static|static\\s+private|private|"+
+                                            "protected\\s+static|static\\s+protected|protected|"+
+                                            "static)";
+    protected string methodPrefix = "(?<ethodPrefix>public|private|protected|static|override|abstract)";
 
     // white spaces (or new line)
     protected string optWS = "(\\s|\\n)*"; // optionnal white space

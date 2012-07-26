@@ -55,18 +55,18 @@ public class aaTest : MonoBehaviour, Int1 ,Int2 {
 	
 
 	// VAR DECLARATION WITHOUT VALUE
-	bool avar;
-	string avar;
-	Dictionary<string, bool> avar;
+	private bool avar;
+	private static string avar;
+	static private Dictionary<string, bool> avar;
 
 
 	// VAR DECLARATION WITH VALUE
-	string var1 = "mach ; in";
-	string var3 = @'machin'+	' machin chose'	;
-	bool var4 = false;
-	float[] var6 = {3.5f, 0f};
-	double avar = Method (machin);
-	Class var7 = new Class (parma, param);
+	public string var1 = "mach ; in";
+	public static string var3 = @'machin'+	' machin chose'	;
+	static public bool var4 = false;
+	protected float[] var6 = {3.5f, 0f};
+	protected static double avar = Method (machin);
+	static protected Class var7 = new Class (parma, param);
 
 	
 	// VAR DECLARATION IN FOREACH LOOP
@@ -82,6 +82,7 @@ public class aaTest : MonoBehaviour, Int1 ,Int2 {
 		avar = value;
 
 	// CASTING
+	string varCast1 = (string)DoMachin();
 
 
 	// ARRAYS
@@ -101,17 +102,26 @@ public class aaTest : MonoBehaviour, Int1 ,Int2 {
 
 
 	// FUNCTIONS
-	public void ReturnVoid () {}
+	public void ReturnVoid () {
+		string _var = ReturnString (ref aBoolVar)
+	}
 
-	private string ReturnString (bool testarg) {}
+	private string ReturnString (ref bool testarg) {}
 
-	protected bool ReturnBool (string arg1, float arg2) {}
+	protected bool ReturnBool (string arg1, float arg2) {
+		if (new Rect()) { // sould not be converted
 
-	public override string ToString () {
+		}
+		else if (false) { // should not be converted
+
+		}
+	}
+
+	public override string[] ToString () {
 		return "ToString()";
 	}
 
-	IEnumerator ACoroutine (bool isTrue) {
+	IEnumerator ACoroutine (out bool isTrue) {
 		if (isTrue) {
 			yield return null;
 		}

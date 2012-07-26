@@ -50,6 +50,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
     public static bool convertMultipleVarDeclaration = false;
 
+    public static bool removeRefKeyword = false;
+
 
     
     // ----------------------------------------------------------------------------------
@@ -59,6 +61,22 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Constructor and main method
     /// </summary>
     public CSharpToUnityScriptConverter (string inputCode) : base (inputCode) {
+        importedAssemblies.Clear ();
+        Convert ();
+    }
+
+
+    // ----------------------------------------------------------------------------------
+
+    /// <summary>
+    ///  main method
+    /// </summary>
+    public void Convert (string inputCode) {
+        convertedCode = inputCode;
+        Convert ();
+    }
+
+    public void Convert () {
         // GENERIC COLLECTIONS
 
         // Add a dot before the opening chevron  List.<float>
@@ -120,15 +138,11 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         Functions ();
         
         // PROPERTIES
-        // why after Functions() ?
-        //varConverter.convertedCode = convertedCode;
-        //convertedCode = varConverter.Properties ();
-        //Properties ();
-        // interface Int {}
-        //MonoBehaviour, Int1 {}
+        // why after Functions() ? => to let the function pattern be converted
+        Properties ();
 
         // VISIBILITY
-        //AddVisibility ();
+        AddVisibility ();
 
         // string      
             patterns.Add ( "("+commonName+optWS+":"+optWS+")string(("+optWS+"\\["+optWS+"\\])?"+optWS+"(=|;|,|\\)|in|{))" );
@@ -410,13 +424,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
         // VAR DECLARATION WITHOUT VALUE
-        patterns.Add ("\\b(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)"); 
-        replacements.Add ("var ${varName}: ${varType}${end}");
+        patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)"); 
+        replacements.Add ("${visibility}var ${varName}: ${varType}${end}");
 
 
         // VAR DECLARATION WITH VALUE
-        patterns.Add ("\\b(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<varValue>"+optWS+"="+optWS+".+;)");
-        replacements.Add ("var ${varName}: ${varType}${varValue}");
+        patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<varValue>"+optWS+"="+optWS+".+;)");
+        replacements.Add ("${visibility}var ${varName}: ${varType}${varValue}");
         // will mess up if the string is on several lines
 
         // remove @ in  'string aVariable = @"a string";"
@@ -447,7 +461,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
            patterns.Add ("\\bvar"+oblWS+commonName+optWS+":"+optWS+"else"+optWS+"=");
            replacements.Add ("else $2 =");
 
-           // yield return null;   or yield return 0;   got converted into  var null: yield return;
+           // yield return null;  or  yield return 0;   got converted into  var null: yield return;
            patterns.Add ("\\bvar"+oblWS+"(?<value>null|0)"+optWS+":"+optWS+"yield"+oblWS+"return"+optWS+";");
            replacements.Add ("yield return ${value};");
 
@@ -482,7 +496,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // BOOL AND STRING
         // convert bool to boolean and string to String
-        // see at the end of method Function()
+        // see in Convert ()the constructor
 
         DoReplacements ();
     } // end of method Variable
@@ -502,10 +516,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // patterns.Add (commonChars+oblWS+commonName+optWS+"(\\(.*\\))"+optWS+"{"); // here I don't care if the method is public, private, static, abstract or whatever since a signature is always composed of a type followed by the name of the method
         // replacements.Add ("function $3$5: $1 {");
 
-        pattern = "(?<returnType>"+commonChars+")"+oblSpaces+"(?<functionName>"+commonName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)"; // match two words followed by a set of parenthesis followed by an opening curly bracket
+        pattern = "("+methodPrefix+oblWS+")?(?<returnType>"+commonCharsWithSpace+")"+oblWS+"(?<functionName>"+commonName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)"; // match two words followed by a set of parenthesis followed by an opening curly bracket
         List<Match> allFunctionsDeclarations = ReverseMatches (convertedCode, pattern);
-
-        
 
         foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
             string returnType = aFunctionDeclaration.Groups["returnType"].Value.Replace ("[", Regex.Escape ("["));
@@ -520,10 +532,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             if (returnType == "new") // do not match class instanciatton inside an if statement   ie : new Rect ()) {}  => it shouldn't anymore anyway, thanks to argumentsChars instead of ".*"
                 continue;
 
+            if (returnType.Contains ("override"))
+                returnType = returnType.Replace ("override", "").Trim ();  // this will left the override keyword after the prefix
+
             // if we are there, it's really a function declaration that has to be converted
             patterns.Add ("("+returnType+")"+oblWS+"("+functionName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)"); 
-            // I can't use aFunctionDeclaration.Value as the pattern because square brackets that may be found in the argments (if some args ar arrays) wouldn't be escaped and would cause an exception
-
+            
             switch (returnType) {
                 case "void" : replacements.Add ("function $3$5$7"); continue;
                 case "string" : replacements.Add ("function $3$5: String$7"); continue;
@@ -532,61 +546,42 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 case "bool[]" : replacements.Add ("function $3$5: boolean[]$7"); continue; 
                 case "public" /* it's a constructor */ : replacements.Add ("$1 function $3$5$7"); continue;
             }
-            
-            
-            
 
             // if we are there, it's that the functiondeclaration has nothing special
             replacements.Add ("function $3$5: $1$7");
         }
 
 
-
-
-        /*patterns.Add (": void"+optWS+"{");
-        replacements.Add ("");
-
-        patterns.Add (": string(("+optWS+"\\["+optWS+"\\])?"+optWS+"{)");
-        replacements.Add (": String$1");
-
-        patterns.Add (": bool(("+optWS+"\\["+optWS+"\\])?"+optWS+"{)");
-        replacements.Add (": boolean$1");*/
-
-
         // remove out keyword in arguments
-        patterns.Add ("(,|\\()"+optWS+"out("+oblWS+commonName+")");
-        replacements.Add ("$1$3");
+        patterns.Add ("(,|\\()"+optWS+"out"+oblWS+"("+commonName+")");
+        replacements.Add ("$1$4");
 
         // remove ref keyword in arguments  => let in so it will throw an error and the dev can figure out what to do 
-        //patterns.Add ("(,|\\()"+optWS+"ref("+oblWS+commonCharsWithoutComma+")");
-        //replacements.Add ("$1$3");
+        if (removeRefKeyword) {
+            patterns.Add ("(,|\\()"+optWS+"ref"+oblWS+"("+commonCharsWithoutComma+")");
+            replacements.Add ("$1$4");
+        }
 
 
         // arguments declaration      if out and ref keyword where not removed before this point it would also convert them ("out hit" in Physics.Raycast() calls) or prevent the convertion ("ref aType aVar" as function argument)
-        /*patterns.Add ("(\\(|,){1}"+optWS+commonCharsWithoutComma+oblWS+commonName+optWS+"(\\)|,){1}");
-        replacements.Add ("$1$2$5: $3$6$7");
+        string refKeyword = "";
+        if (removeRefKeyword)
+            refKeyword = "(ref"+oblWS+")?";
+
+        patterns.Add ("(?<begining>(\\(|,){1}"+optWS+")"+refKeyword+"(?<type>"+commonCharsWithoutComma+")"+oblWS+"(?<name>"+commonName+")"+optWS+"(?<end>\\)|,){1}");
+        replacements.Add ("${begining} ${name}: ${type}${end}");
         // as regex doesn't overlap themselves, only half of the argument have been converted
         // I need to run the regex  a second time
-        patterns.Add ("(\\(|,){1}"+optWS+commonCharsWithoutComma+oblWS+commonName+optWS+"(\\)|,){1}");
-        replacements.Add ("$1$2$5: $3$6$7");*/
-
-
-        // string
-        /*patterns.Add ("("+commonName+optWS+":"+optWS+")string(("+optWS+"\\["+optWS+"\\])?"+optWS+"(,|\\)))");
-        replacements.Add ("$1String$5");
-
-        // bool
-        patterns.Add ("("+commonName+optWS+":"+optWS+")bool(("+optWS+"\\["+optWS+"\\])?"+optWS+"(,|\\)))");
-        replacements.Add ("$1boolean$5");*/
+        patterns.Add ("(?<begining>(\\(|,){1}"+optWS+")"+refKeyword+"(?<type>"+commonCharsWithoutComma+")"+oblWS+"(?<name>"+commonName+")"+optWS+"(?<end>\\)|,){1}");
+        replacements.Add ("${begining}${name}: ${type}${end}");
 
 
         DoReplacements ();
 
 
-        // loop through function and search for variable declaration that happend several times
+        // loop through functions and search for variable declaration that happend several times
         // leave only the first declaration
-
-        pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\("+argumentsChars+"\\)("+optWS+":"+optWS+commonChars+")?"+optWS+"{"; 
+        pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\("+argumentsChars+"\\)("+optWS+":"+optWS+commonCharsWithSpace+")?"+optWS+"{"; 
         allFunctionsDeclarations = ReverseMatches (convertedCode, pattern);
 
         foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
@@ -728,7 +723,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// </summary>
     void AddVisibility () {
         // the default visibility for variable and functions is public in JS but private in C# => add the keyword private when no visibility (or just static) is set 
-        patterns.Add ("([;{}\\]]+"+optWS+")((var|function|enum|class)"+oblWS+")");
+        patterns.Add ("([;{}\\]>/]+"+optWS+")((var|function|enum|class)"+oblWS+")");
         replacements.Add ("$1private $3");
 
         patterns.Add ("(\\*"+optWS+")((var|function|enum|class)"+oblWS+")"); // add a / after \\*
@@ -759,7 +754,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // all variables gets a public or static public visibility but this shouldn't happend inside functions, so remove that
 
-        pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\(.*\\)("+optWS+":"+optWS+commonChars+")?"+optWS+"{";
+        pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\(.*\\)("+optWS+":"+optWS+commonCharsWithSpace+")?"+optWS+"{";
         List<Match> allFunctions = ReverseMatches (convertedCode, pattern);
 
         foreach (Match aFunction in allFunctions) {

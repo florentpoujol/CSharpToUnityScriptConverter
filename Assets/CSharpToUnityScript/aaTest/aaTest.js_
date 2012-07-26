@@ -1,19 +1,19 @@
 import UnityEngine;
 import System.Collections;
 
-interface Int1 {}
-interface Int2 {}
-interface Int3 {}
+
+
+
 
 // CLASSES DECLARATION
 public class TestInheritance extends MonoBehaviour {}
-public class TestInterface implements Itruc {}
-public class TestInterfaces implements Int1, Int2 {}
-public class TestInterfaces2 implements Int1, Int2 , Int3 {}
+public class TestInterface 
+public class TestInterfaces implements 
+public class TestInterfaces2 implements Int1, Int2 
 public class aaTest extends MonoBehaviour implements  Int1 ,Int2 {
 
 	// CONSTRUCTORS
-	public function aaTest(string aTruc) {
+	public function aaTest( aTruc: String) {
 super(aTruc);
 		// struff there 1
 	}
@@ -28,7 +28,7 @@ aaTest();
 		// struff there 3
 	}
 
-	public function aaTest(string mahcin) 
+	public function aaTest( mahcin: String) 
 	{
 aaTest(aTruc);
 		// struff there 4
@@ -51,24 +51,24 @@ aaTest(aTruc);
 	// VARIABLES
 
 	// multiple variable declaration
-	var aVar9: double= 3.5, aVar10, aVar11=5.0 ;
-	var aVar1: String = "un ; var aVar2: espace",;
-	var avar: Class = new Class(), avar2 = new Class (untruc);
+	double aVar9= 3.5, aVar10, aVar11=5.0 ;
+	string aVar1 = "un ; espace", aVar2;
+	Class avar = new Class(), avar2 = new Class (untruc);
 	
 
 	// VAR DECLARATION WITHOUT VALUE
-	var avar: boolean;
-	var avar: String;
-	var avar: Dictionary.<String, boolean>;
+	private var avar: boolean;
+	private static var avar: String;
+	static private var avar: Dictionary.<String, boolean>;
 
 
 	// VAR DECLARATION WITH VALUE
-	var var1: String = "mach ; in";
-	var var3: String = @'machin'+	' machin chose'	;
-	var var4: boolean = false;
-	var var6: float[] = [3.5, 0];
-	var avar: double = Method (machin);
-	var var7: Class = new Class (parma, param);
+	public var var1: String = "mach ; in";
+	public static var var3: String = @'machin'+	' machin chose'	;
+	static public var var4: boolean = false;
+	protected var var6: float[] = [3.5, 0];
+	protected static var avar: double = Method (machin);
+	static protected var var7: Class = new Class (parma, param);
 
 	
 	// VAR DECLARATION IN FOREACH LOOP
@@ -78,19 +78,21 @@ aaTest(aTruc);
 	// PATCHING garbage correction
 	import System.Collections.Generics;
 
-	function Method(): String { return avar; }
+	private function Method(): String { return avar; }
 
-	else avar = value;
+	else
+		avar = value;
 
 	// CASTING
+	string varCast1 = DoMachin();
 
 
 	// ARRAYS
-	var avar: String[];
-	var avar: String[] = new string[5];
+	string[] avar;
+	string[] avar = new string[5];
 
-	var avar: String[] = new string[] { "machin", "machin"};
-	var avar: boolean[] = [ false, true];
+	string[] avar = new string[] { "machin", "machin"};
+	bool[] avar = [ false, true];
 
 	float[] avar = new float[] { 0.0,
 		3.5,
@@ -102,19 +104,28 @@ aaTest(aTruc);
 
 
 	// FUNCTIONS
-	public function ReturnVoid() {}
+	public function ReturnVoid() {
+		string _var = ReturnString ( aBoolVar: ref)
+	}
 
-	private function ReturnString(bool testarg): String {}
+	private function ReturnString(ref bool testarg): String {}
 
-	protected function ReturnBool(string arg1, float arg2): boolean {}
+	protected function ReturnBool( arg1: String, arg2: float): boolean {
+		if (new Rect()) { // sould not be converted
 
-	public override function ToString(): String {
+		}
+		else if (false) { // should not be converted
+
+		}
+	}
+
+	public override function ToString(): string[] {
 		return "ToString()";
 	}
 
-	function ACoroutine(bool isTrue): IEnumerator {
+	private function ACoroutine( isTrue: boolean): IEnumerator {
 		if (isTrue) {
-			yield return null
+			yield return null;
 		}
 		else {
 			yield return new WaitForSeconds (3.5);
@@ -126,40 +137,42 @@ aaTest(aTruc);
 
 
 	// PROPERTIES
-	var prop1: private int = 5;
-	public int Prop1 { get; set; }
+	private var prop1: int = 5;
+	public function get Prop1(): int {
+	return prop1;
+}
+public function set Prop1(value: int) {
+	prop1 = value;
+}
 
-	var prop2: private int;
-	public int Prop2 {
-		get { return prop2*2; 
+
+	private var prop2: int;
+	public function get Prop2(): int { return prop2*2; 
 		}
-	}
 
-	var prop3: private string;
-	public string Prop3 {
-		set 
-		{ 
+
+	private var prop3: String;
+	public function set Prop3(value: String) { 
 			prop3 = value+" ";
 		}
-	}
 
-	var prop4: private double;
-	public double Prop4 {
-		get { return prop4; }
-		protected set {
+
+	private var prop4: double;
+	public function get Prop4(): double { return prop4; }
+protected function set Prop4(value: double) {
 			aVar9 = aVar10 + value;
 		}
-	}
+
 
 
 	// Use this for initialization
-	function Start() {
+	private function Start() {
 		
-		var aVar2: string aVar1,;
+		string aVar1, aVar2;
 
 		int aVar5, aVar6 , aVar7 ,aVar8;
 
-		var aVar3: boolean=var aVar4: true ,;
+		bool aVar3=true , aVar4;
 
 		
 	}
@@ -167,7 +180,7 @@ aaTest(aTruc);
 
 }
 
-class AStruct extends System.ValueType {
+private class AStruct extends System.ValueType {
 	gbase.machin
 	super.machin
 }

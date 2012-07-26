@@ -40,6 +40,7 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
 		m_targetScriptExtension = EditorGUILayout.TextField ("Target extension : ", m_targetScriptExtension);
 
 		CSharpToUnityScriptConverter.convertMultipleVarDeclaration = GUILayout.Toggle(CSharpToUnityScriptConverter.convertMultipleVarDeclaration, "ConvertMultipleVarDeclaration");
+		CSharpToUnityScriptConverter.removeRefKeyword = GUILayout.Toggle(CSharpToUnityScriptConverter.removeRefKeyword, "removeRefKeyword");
 
 		if (GUILayout.Button ("Force Conversion", GUILayout.MinHeight (100)))
     		Convert (true);
