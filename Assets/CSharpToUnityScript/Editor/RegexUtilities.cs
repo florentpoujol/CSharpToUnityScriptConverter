@@ -122,9 +122,7 @@ public class RegexUtilities {
 
     // NOTE : not all variables below are used by the "C# to UnityScript" extension
 
-    protected string all = "[.\\n]";
-
-	// most common characters used in names. Does not match arrays or generic collections
+ 	// most common characters used in names. Does not match arrays or generic collections
     protected string commonName = "([A-Za-z0-9_\\.]+)";
     protected string commonNameWithSpace = "([A-Za-z0-9_\\. ]+)"; // Allows to have space in expression like "System . Something"
 
@@ -156,7 +154,7 @@ public class RegexUtilities {
     protected string visibilityAndStatic = "(public\\s+static|static\\s+public|public|"+
                                             "private\\s+static|static\\s+private|private|"+
                                             "protected\\s+static|static\\s+protected|protected|"+
-                                            "static)";
+                                            "static|override|abstract)";
     protected string methodPrefix = "(?<ethodPrefix>public|private|protected|static|override|abstract)";
 
     // white spaces (or new line)
@@ -180,7 +178,7 @@ public class RegexUtilities {
     protected string replacement;
 	
     // end of line
-    protected string EOL = "\n"; // may throw some "inconsistent line ending blabla" warnings in the console
+    protected string EOL = System.Environment.NewLine; // may throw some "inconsistent line ending blabla" warnings in the console
 
     // tranlated code to be returned
     public string convertedCode = "";
@@ -214,6 +212,7 @@ public class RegexUtilities {
         try { // some regex may throws nasty exceptions
             for (int i = 0; i < patterns.Count; i++)
                 text = Regex.Replace (text, patterns[i], replacements[i]);
+            // NOTE : the dot represent every character, including new Line (\n), because of the (?s)
 
             patterns.Clear ();
             replacements.Clear ();

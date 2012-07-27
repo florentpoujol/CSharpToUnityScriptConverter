@@ -29,6 +29,9 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
 	public string m_targetScriptExtension = ".js_";
 
 
+	public bool doConvert = true;
+
+
 	// ----------------------------------------------------------------------------------
 
 
@@ -39,8 +42,12 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
 		m_sourceScriptExtension = EditorGUILayout.TextField ("Source extension : ", m_sourceScriptExtension);
 		m_targetScriptExtension = EditorGUILayout.TextField ("Target extension : ", m_targetScriptExtension);
 
+		doConvert = GUILayout.Toggle(doConvert, "Do Convert");
+
 		CSharpToUnityScriptConverter.convertMultipleVarDeclaration = GUILayout.Toggle(CSharpToUnityScriptConverter.convertMultipleVarDeclaration, "ConvertMultipleVarDeclaration");
 		CSharpToUnityScriptConverter.removeRefKeyword = GUILayout.Toggle(CSharpToUnityScriptConverter.removeRefKeyword, "removeRefKeyword");
+		CSharpToUnityScriptConverter.removeOutKeyword = GUILayout.Toggle(CSharpToUnityScriptConverter.removeOutKeyword, "removeOutKeyword");
+
 
 		if (GUILayout.Button ("Force Conversion", GUILayout.MinHeight (100)))
     		Convert (true);
@@ -51,12 +58,15 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
     	if ( DateTime.Now.ToLocalTime () > m_lastCheckTime.AddSeconds (m_checkInterval) ) {
 			m_lastCheckTime = DateTime.Now.ToLocalTime ();
 
-			Convert (false);
+			if (doConvert)
+				Convert (false);
 		}
     }
 
 
     void Convert (bool forceConversion) {
+    	
+    	
 		string sourceScriptPath = Application.dataPath + m_scriptRelativePath + m_scriptName + m_sourceScriptExtension;
 		string targetScriptPath = sourceScriptPath.Replace (m_sourceScriptExtension, m_targetScriptExtension);
 
@@ -87,6 +97,7 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
 			writer.Close ();
 
 			Debug.Log ("Convert "+m_scriptName+" at "+DateTime.Now.ToLocalTime ());
+			AssetDatabase.Refresh ();
 		}
     }
 } // end of class CustomScriptDev_CSharpToUnityScript
