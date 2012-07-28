@@ -92,7 +92,7 @@ public class aaTest : TestInterface, Int1 ,Int2 {
 	string[] array1;
 	string[,] array2 = new string[5,6];
 
-	string[,,] array3 = new string[1,1,1] { { {""} }   };
+	
 	bool[] array4 = { false, true};
 
 	float[] array5 = new float[] { 0.0f,
@@ -104,8 +104,28 @@ public class aaTest : TestInterface, Int1 ,Int2 {
 
 	// multi array
 	int[,,] array7 = new int[1,2,3];
+	string[,] array3 = new string[2,2] { { "","" }, { "","" } };
+/*	
+int[, ,] array3Da = new int[2, 2, 3] { { { 1, 2, 3 }, { 4, 5, 6 } }, 
+                                       { { 7, 8, 9 }, { 10, 11, 12 } } };
 
+	// jagged arrays (it seems they don't quite work with UnityScript)
+	bool[][] jagged = new bool[1][];
+	int[][] jaggedArray2 = new int[][] 
+	{
+	    new int[] {1,3,5,7,9},
+	    new int[] {0,2,4,6},
+	    new int[] {11,22}
+	};
 
+	// jagged + multi
+	int[][,] jaggedArray4 = new int[3][,] 
+	{
+	    new int[,] { {1,3}, {5,7} },
+	    new int[,] { {0,2}, {4,6}, {8,10} },
+	    new int[,] { {11,22}, {99,88}, {0,9} } 
+	};
+*/
 
 	// FUNCTIONS
 	[RPC]
@@ -184,7 +204,11 @@ public class aaTest : TestInterface, Int1 ,Int2 {
 
 	// Use this for initialization
 	void Start () {
-		
+		string test ="";
+
+		test = "machin";
+
+		test = "";
 		
 
 		

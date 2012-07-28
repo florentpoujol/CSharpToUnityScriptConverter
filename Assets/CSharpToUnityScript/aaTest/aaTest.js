@@ -93,10 +93,10 @@ aaTest();
 	var array1: String[];
 	var array2: String[,] = new String[5,6];
 
-	var array3: String[,,] = [ [ [""] ]   ];
+	
 	var array4: boolean[] = [ false, true];
 
-	var array5: float[] = [ 0.0,
+	var array5: float[] =  [ 0.0,
 		3.5,
 		5];
 	var array6: int[] = [ 0,
@@ -105,14 +105,34 @@ aaTest();
 
 	// multi array
 	var array7: int[,,] = new int[1,2,3];
+	var array3: String[,] =  [ [ "","" ], [ "","" ] ]; // this is a jagged array
+/*	
+var array3Da: int[, ,] =  [ [ [ 1, 2, 3 ],  4: [, 5, 6 ] ], 
+                                       [ [ 7, 8, 9 ],  10: [, 11, 12 ] ] ];
 
+	// jagged arrays (it seems they don't quite work with UnityScript)
+	var jagged: bool[][] = new bool[1][];
+	var jaggedArray2: int[][] =  
+	[
+	     [1,3,5,7,9],
+	     [0,2,4,6],
+	     [11,22]
+	];
 
+	// jagged + multi
+	var jaggedArray4: int[][,] =  
+	[
+	     [ [1,3], [5,7] ],
+	     [ [0,2], [4,6], [8,10] ],
+	     [ [11,22], [99,88], [0,9] ] 
+	];
+*/
 
 	// FUNCTIONS
 	@RPC
 	public function ReturnVoid() {
 		
-		//function for(var _string: String in array1):  VAR DELCARATION IN FOREACH LOOP {}
+		//function for(var _string: String in array1):
 		for (var kvPair: KeyValuePair.<String, boolean> in withoutValue3) {}
 
 		var testVar: String = "";
@@ -156,33 +176,39 @@ aaTest();
 
 	// PROPERTIES
 	private var prop1: int = 5;
-	public int Prop1 { get; set; }
+	public  function get Prop1(): int {
+	return prop1;
+}
+public function set Prop1(value: int) {
+	prop1 = value;
+}
+
 
 	private var prop2: int;
-	public int Prop2 {
-		get { return prop2*2; 
+	public  function get Prop2(): int { return prop2*2; 
 		}
-	}
+
 
 	private var prop3: String;
-	public string Prop3 {
-		set 
-		{var prop3:   = value+" ";
+	public function set Prop3(value: String) {prop3   = value+" ";
 		}
-	}
+
 
 	private var prop4: double;
-	public double Prop4 {
-		get {return prop4; }
-		protected set {
+	public  function get Prop4(): double {return prop4; }
+protected function set Prop4(value: double) {
 			prop4 += value;
 		}
-	}
+
 
 
 	// Use this for initialization
 	function Start() {
-		
+		var test: String ="";
+
+		test = "machin";
+
+		test = "";
 		
 
 		

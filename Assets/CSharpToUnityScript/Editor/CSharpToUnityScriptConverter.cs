@@ -140,18 +140,18 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         
         // PROPERTIES
         // why after Functions() ? => to let the function pattern be converted
-        //Properties ();
+        Properties ();
 
         // VISIBILITY
         //AddVisibility ();
 
         // STRING BOOL CONVERSION
             // string      
-            patterns.Add ( "("+commonName+optWS+":"+optWS+")?string(?<end>("+optWS+"\\[[0-9,\\s]*\\])?"+optWS+"(=|;|,|\\)|in|{))" );
+            patterns.Add ( "("+commonName+optWS+":"+optWS+")?string(?<end>("+optWS+"(\\[[0-9,\\s]*\\])+)?"+optWS+"(=|;|,|\\)|in|{))" );
             replacements.Add ( "$1String${end}" );
 
             // bool
-            patterns.Add ( "("+commonName+optWS+":"+optWS+")?bool(?<end>("+optWS+"\\[[0-9,\\s]*\\])?"+optWS+"(=|;|,|\\)|in|{))" );
+            patterns.Add ( "("+commonName+optWS+":"+optWS+")?bool(?<end>("+optWS+"\\[([0-9,\\s]*\\])+)?"+optWS+"(=|;|,|\\)|in|{))" );
             replacements.Add ( "$1boolean${end}" );
 
         // with arrays
@@ -467,6 +467,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
            patterns.Add ("\\bvar"+oblWS+"(?<value>null|0)"+optWS+":"+optWS+"yield"+oblWS+"return"+optWS+";");
            replacements.Add ("yield return ${value};");
 
+           // some value setting got treated like var declaration   variable = value; => var variable: = value
+           patterns.Add ("\\bvar"+oblWS+"(?<varName>"+commonName+optWS+"):(?<end>"+optWS+"=)");
+           replacements.Add ("${varName}${end}");
+
 
 
         // CASTING
@@ -491,8 +495,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             // replacements.Add ("");
 
             // = new String[] {}; => = {};
-            patterns.Add ("="+optWS+"new"+oblWS+commonName+optWS+"\\[[0-9, ]*\\]"+optWS+"{");
-            replacements.Add ("= {");
+            patterns.Add ("(?<equal>="+optWS+")?new"+oblWS+commonName+optWS+"(\\[[0-9, ]*\\])+(?<end>"+optWS+"{)");
+            replacements.Add ("${equal}${end}");
 
         DoReplacements ();
 
@@ -682,18 +686,42 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         List<Match> allProperties = ReverseMatches (convertedCode, pattern);
 
         foreach (Match aProp in allProperties) {
-            string[] types = {"enum", "class", "extends", "new", "else"};
-            List<string> forbiddenBlockTypes = new List<string> (types);
+            // first check if this is really a property declaration
+            string[] forbiddenBlockTypes = {"enum", "class", "extends", "implements", "new", "else", "struct", "interface"};
+            
+            //List<string> forbiddenBlockTypes = new List<string> (types);
+            //if (forbiddenBlockTypes.Contains (aProp.Groups["blockType"].Value))
+            //    continue;
 
-            if (forbiddenBlockTypes.Contains (aProp.Groups["blockType"].Value))
+            bool isAPropDeclaration = true;
+            string blockType = aProp.Groups["blockType"].Value;
+           
+            foreach (string type in forbiddenBlockTypes) {
+                if (blockType.Contains (type))
+                    isAPropDeclaration = false;
+            }
+
+            if ( ! isAPropDeclaration)
+                continue;
+ 
+
+            string[] forbiddenBlockNames = {"get", "set", "else", "if"};
+            
+            //List<string> forbiddenBlockNames = new List<string> (names);
+            //if (forbiddenBlockNames.Contains (aProp.Groups["blockName"].Value))
+            //    continue;
+
+            foreach (string type in forbiddenBlockNames) {
+                if (aProp.Groups["blockName"].Value.Contains (type))
+                    isAPropDeclaration = false;
+            }
+
+            if ( ! isAPropDeclaration)
                 continue;
 
-            string[] names = {"get", "set", "else", "if"};
-            List<string> forbiddenBlockNames = new List<string> (names);
 
-            if (forbiddenBlockNames.Contains (aProp.Groups["blockName"].Value))
-                continue;
-
+            //--------------------
+            // Ok now we are sure this is a property declaration
 
             Block PropBlock = new Block (aProp, convertedCode);
             //Debug.Log ("property : "+aProp.Value+" | "+PropBlock.text);
