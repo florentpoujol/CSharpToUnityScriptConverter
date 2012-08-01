@@ -46,6 +46,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     // list of classes and their items (variable or function) and corresponding type
     //private Dictionary<string, Dictionary<string, string>> projectItems = new Dictionary<string, Dictionary<string, string>> ();
 
+    private static List<string> projectClasses = new List<string> ();
     public static List<string> importedAssemblies = new List<string> ();
 
     public static bool convertMultipleVarDeclaration = false;
@@ -63,6 +64,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// </summary>
     public CSharpToUnityScriptConverter (string inputCode) : base (inputCode) {
         importedAssemblies.Clear ();
+        projectClasses.Clear ();
         Convert ();
     }
 
@@ -193,6 +195,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Convert stuffs related to classes : declaration, inheritance, parent constructor call, Assembly imports
     /// </summary>
     void Classes () {
+        pattern = "\\bclass"+oblWS+commonName+"\\b";
+        List<Match> allClasses = ReverseMatches (convertedCode, pattern);
+
+        foreach (Match aClass in allClasses)
+            projectClasses.Add (aClass.Groups[2].Value);
+
         // classes declarations with inheritance
         patterns.Add ("(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+optWS+"{)");
         replacements.Add ("$1 extends ${parent}");
@@ -219,7 +227,15 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         replacements.Add ("$1,");
 
 
-        
+        // if parent class begins by a I and have alredy been encountered during the conversion, they will be in projectClasses
+        foreach (string aClass in projectClasses) {
+            patterns.Add ("implements("+oblWS+aClass+optWS+"{)");
+            replacements.Add ("extends$1");
+
+            patterns.Add ("implements("+oblWS+aClass+")"+optWS+",");
+            replacements.Add ("extends$1 implements ");
+        }
+
         DoReplacements ();
 
 
@@ -228,7 +244,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // loop the classes declarations in the file
         pattern = "\\bclass"+oblWS+"(?<blockName>"+commonName+")"+
         "("+oblWS+"extends"+oblWS+commonName+")?[^{]*{";
-        List<Match> allClasses = ReverseMatches (convertedCode, pattern);
+        allClasses = ReverseMatches (convertedCode, pattern);
         
         foreach (Match aClass in allClasses) {
             Block classBlock = new Block (aClass, convertedCode);

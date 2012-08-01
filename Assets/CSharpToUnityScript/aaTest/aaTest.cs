@@ -5,9 +5,11 @@ using System. Collections . Generic;
 interface Int1 {}
 interface Int2 {}
 interface Int3 {}
+public class IParent {}
 
 // CLASSES DECLARATION
 public class TestInheritance : MonoBehaviour {}
+public class TestIParent : IParent {}
 public class TestInterface : Int1 {
 	public TestInterface () {}
 	public TestInterface (string aTruc) {}
@@ -15,6 +17,7 @@ public class TestInterface : Int1 {
 }
 public class TestInterfaces : Int1 ,Int2 {}
 public class TestInterfaces2 : Int1 ,Int2 , Int3 {}
+public class TestInterfaces3 : IParent ,Int2 , Int3 {}
 public class aaTest : TestInterface, Int1 ,Int2 {
 
 	// CONSTRUCTORS

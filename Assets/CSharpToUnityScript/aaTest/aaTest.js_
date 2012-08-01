@@ -5,9 +5,11 @@ import System.Collections.Generic;
 interface Int1 {}
 interface Int2 {}
 interface Int3 {}
+public class IParent {}
 
 // CLASSES DECLARATION
 public class TestInheritance extends MonoBehaviour {}
+public class TestIParent extends IParent {}
 public class TestInterface implements Int1 {
 	public function TestInterface() {}
 	public function TestInterface( aTruc: String) {}
@@ -15,6 +17,7 @@ public class TestInterface implements Int1 {
 }
 public class TestInterfaces implements Int1, Int2 {}
 public class TestInterfaces2 implements Int1, Int2 , Int3 {}
+public class TestInterfaces3 extends IParent implements  Int2 , Int3 {}
 public class aaTest extends TestInterface implements  Int1 ,Int2 {
 
 	// CONSTRUCTORS
@@ -105,7 +108,7 @@ aaTest();
 
 	// multi array
 	var array7: int[,,] = new int[1,2,3];
-	var array3: String[,] =  [ [ "","" ], [ "","" ] ]; // this is a jagged array
+	var array3: String[,] =  [ [ "","" ], [ "","" ] ];
 /*	
 var array3Da: int[, ,] =  [ [ [ 1, 2, 3 ],  4: [, 5, 6 ] ], 
                                        [ [ 7, 8, 9 ],  10: [, 11, 12 ] ] ];
