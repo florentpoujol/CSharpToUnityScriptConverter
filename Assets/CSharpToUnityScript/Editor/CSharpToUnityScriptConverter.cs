@@ -205,8 +205,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
         // #region
-        //patterns.Add ("\\#(region|REGION)"+oblSpaces+commonName+"("+oblSpaces+commonName+")*");
-        patterns.Add ("\\#(region|REGION)"+oblSpaces+"*");
+        patterns.Add ("\\#(region|REGION)"+oblSpaces+commonChars+"("+oblSpaces+commonChars+")*");
+        //patterns.Add ("\\#(region|REGION)[.]*\\n");
         replacements.Add ("");
         patterns.Add ("\\#(endregion|ENDREGION)");
         replacements.Add ("");
@@ -426,7 +426,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         
         // in UnityScript, each assembly has to be imported once per project, or it will throw a warning in he Unity console for each duplicate assembly import !
         // so keep track of the assemblies already imported in the project (in one of the previous file) and comment out the duplicate
-        pattern = "\\bimport"+oblWS+"(?<assemblyName>"+commonNameWithSpace+")"+optWS+";";
+        pattern = "\\bimport"+oblWS+"(?<assemblyName>"+commonName+")"+optWS+";";
         List<Match> allImports = ReverseMatches (convertedCode, pattern);
 
         foreach (Match import in allImports) {
@@ -434,7 +434,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             
             // remove spaces
             string assemblyName = oldAssemblyName.Replace (" ", "");
-            convertedCode = convertedCode.Replace (oldAssemblyName, assemblyName);
+            //convertedCode = convertedCode.Replace (oldAssemblyName, assemblyName);
 
             // won't work if 
             // System. Collections is written after
@@ -471,7 +471,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             // multiple inline var declaration of the same type : "Type varName, varName = foo;"
 
-            pattern = "\\b(?<varType>"+commonChars+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+"[^,]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
+            pattern = "\\b(?<varType>"+dataTypes+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+"[^,]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
             List<Match> allDeclarations = ReverseMatches (convertedCode, pattern);
 
             foreach (Match aDeclaration in allDeclarations){
@@ -495,12 +495,16 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             }
         } // end if convertMultipleVarDeclaration
  
-
+ 
         // " as AType;" => ";"
         // "as aType" might appear in other location
         patterns.Add (oblWS+"as"+oblWS+commonCharsWithSpace+optWS+";");
         replacements.Add (";");
 
+
+        // removing const keyword
+        patterns.Add ("(\\bconst"+oblWS+")(?<end>"+commonCharsWithSpace+oblWS+commonName+")"); 
+        replacements.Add ("${end}");
 
         // VAR DECLARATION WITHOUT VALUE
         patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)"); 
@@ -542,8 +546,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
            patterns.Add ("\\bvar"+oblWS+"(?<varName>"+commonName+optWS+"):(?<end>"+optWS+"=)");
            replacements.Add ("${varName}${end}");
 
-           //in for loop :   i < variable;   got converted in    var variable: i <;
-           patterns.Add ("\\bvar"+oblWS+"(?<varName>"+commonName+")"+optWS+":(?<start>"+optWS+commonName+optWS+"(<|>|<=|>=))");
+           //in for loop :   for( ; i < variable; )   got converted in   for( ;var variable: i <; )
+           // using commonNameWithoutDot present legit expression like   var name: List.<Type> to be converted into List.<nameType>
+           patterns.Add ("\\bvar"+oblWS+"(?<varName>"+commonName+")"+optWS+":(?<start>"+optWS+commonNameWithoutDot+optWS+"(<|>|<=|>=))");
            replacements.Add ("${start}${varName}");
 
 

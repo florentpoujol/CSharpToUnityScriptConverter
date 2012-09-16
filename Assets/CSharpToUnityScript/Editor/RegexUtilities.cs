@@ -125,6 +125,7 @@ public class RegexUtilities {
 
  	// most common characters used in names. Does not match arrays or generic collections
     protected string commonName = "([A-Za-z0-9_\\.]+)";
+    protected string commonNameWithoutDot = "([A-Za-z0-9_]+)";
     protected string commonNameWithSpace = "([A-Za-z0-9_\\. ]+)"; // Allows to have space in expression like "System . Something"
 
     // any numerical value (including the "f" for the float in C#)
