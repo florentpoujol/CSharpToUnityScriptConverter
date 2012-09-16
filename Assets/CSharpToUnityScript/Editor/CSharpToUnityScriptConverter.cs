@@ -47,7 +47,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     //private Dictionary<string, Dictionary<string, string>> projectItems = new Dictionary<string, Dictionary<string, string>> ();
 
     private static List<string> projectClasses = new List<string> ();
+    private static List<string> unityClasses = new List<string> ();
     public static List<string> importedAssemblies = new List<string> ();
+
+    public static string dataTypes = "";
 
     public static bool convertMultipleVarDeclaration = false;
 
@@ -62,11 +65,41 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// <summary>
     /// Constructor and main method
     /// </summary>
-    public CSharpToUnityScriptConverter (string inputCode) : base (inputCode) {
+    //public CSharpToUnityScriptConverter (string inputCode) : base (inputCode) {
+    public CSharpToUnityScriptConverter() {
         importedAssemblies.Clear ();
         projectClasses.Clear ();
-        Convert ();
+        unityClasses.Clear();
+
+        // reading unity classes
+        StreamReader reader = new StreamReader( Application.dataPath+"/CSharpToUnityScript/Editor/UnityClasses.txt" );
+        string line = "";
+        while( true ) {
+            line = reader.ReadLine();
+            if( line == null )
+                break;
+
+            unityClasses.Add( line.Trim() );
+        }
+        reader.Close();
+
+
+
+        // set datatypes
+        dataTypes = regularTypes.Substring( 0, regularTypes.Length-1 );
+
+        foreach( string _class in unityClasses )
+            AddDataType( _class );
+
+
+        //Convert ();
     }
+
+
+    public void AddDataType( string dataType ) {
+        dataTypes = dataTypes.Substring( 0, dataTypes.Length-1 ) + "|" + dataType + ")";
+    }
+
 
 
     // ----------------------------------------------------------------------------------
@@ -193,14 +226,35 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     // ----------------------------------------------------------------------------------
 
     /// <summary> 
+    /// 
+    /// </summary>
+    void CheckDataTypes () {
+        string[] types = {"class", "struct", "enum"};
+
+        List<Match> allMatches;
+        foreach (string type in types) {
+            pattern = "\\b"+type+oblWS+commonName+"\\b";
+            allMatches = ReverseMatches (convertedCode, pattern);
+
+            foreach( Match aMatch in allMatches )
+                AddDataType (aMatch.Groups[2].Value);
+        }
+    }
+
+
+    // ----------------------------------------------------------------------------------
+
+    /// <summary> 
     /// Convert stuffs related to classes : declaration, inheritance, parent constructor call, Assembly imports
     /// </summary>
     void Classes () {
         pattern = "\\bclass"+oblWS+commonName+"\\b";
         List<Match> allClasses = ReverseMatches (convertedCode, pattern);
 
-        foreach (Match aClass in allClasses)
+        foreach (Match aClass in allClasses) {
             projectClasses.Add (aClass.Groups[2].Value);
+            AddDataType (aClass.Groups[2].Value);
+        }
 
         // classes declarations with inheritance
         patterns.Add ("(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+optWS+"{)");
@@ -455,7 +509,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // VAR DECLARATION WITH VALUE
         //patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<varValue>"+optWS+"="+optWS+".+;)");
-        patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<varValue>"+optWS+"=)");
+        patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")?(?<varType>"+commonCharsWithSpace+")"+oblSpaces+"(?<varName>"+commonName+")(?<varValue>"+optWS+"=)");
         replacements.Add ("${visibility}var ${varName}: ${varType}${varValue}");
         // will mess up if the string is on several lines
 

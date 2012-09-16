@@ -127,7 +127,7 @@ public class CSharpToUnityScriptExtension : EditorWindow {
 
 
     // ----------------------------------------------------------------------------------
-
+    CSharpToUnityScriptConverter converter;
     /// <summaray>
     /// Called 100 times per second
     /// Perform the conversion, one file per frame
@@ -141,7 +141,11 @@ public class CSharpToUnityScriptExtension : EditorWindow {
             Directory.CreateDirectory (targetScriptPath); // make sure the directory exist, or create it
 
             // write the converted code into the file
-            CSharpToUnityScriptConverter converter = new CSharpToUnityScriptConverter (m_scriptInConversion.text);
+            if (converter == null)
+                converter = new CSharpToUnityScriptConverter();
+
+            converter.Convert( m_scriptInConversion.text );
+            //CSharpToUnityScriptConverter converter = new CSharpToUnityScriptConverter (m_scriptInConversion.text);
 
             StreamWriter writer = new StreamWriter (targetScriptPath+m_scriptInConversion.name+".js");
             writer.Write (converter.convertedCode);

@@ -63,6 +63,7 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
 		}
     }
 
+    CSharpToUnityScriptConverter converter = new CSharpToUnityScriptConverter();
 
     void Convert (bool forceConversion) {
     	
@@ -88,8 +89,9 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
 
 			string outputCode;
 
-			CSharpToUnityScriptConverter convertor = new CSharpToUnityScriptConverter (inputCode);
-			outputCode = convertor.convertedCode;
+            converter.Convert( inputCode );
+			//CSharpToUnityScriptConverter convertor = new CSharpToUnityScriptConverter (inputCode);
+			outputCode = converter.convertedCode;
 			
 			StreamWriter writer = new StreamWriter (targetScriptPath);
 			writer.Write(outputCode);

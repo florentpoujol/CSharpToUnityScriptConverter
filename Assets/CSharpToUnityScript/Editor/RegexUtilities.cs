@@ -182,7 +182,7 @@ public class RegexUtilities {
 
 
     // variable types + project classes + unity classes
-    protected string types = "(string|String|int|float|double|bool|boolean)";
+    protected string regularTypes = "(byte|char|string|String|short|int|long|float|double|decimal|bool|boolean)";
     
 
     // list of the patterns and corresponding replacements to be processed by DoReplacements()
@@ -203,9 +203,9 @@ public class RegexUtilities {
     /// <summary>
     /// Constructor
     /// </summary>
-    public RegexUtilities (string inputCode) {
+    /*public RegexUtilities (string inputCode) {
         convertedCode = inputCode;
-    }
+    }*/
 
 
     // ----------------------------------------------------------------------------------
