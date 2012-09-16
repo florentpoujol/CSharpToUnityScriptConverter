@@ -156,7 +156,15 @@ public class RegexUtilities {
                                             "private\\s+static|static\\s+private|private|"+
                                             "protected\\s+static|static\\s+protected|protected|"+
                                             "static|override|abstract)";
-    protected string methodPrefix = "(?<ethodPrefix>public|private|protected|static|override|abstract)";
+
+    /* 
+    // same with delegate and event
+    protected string visibilityAndStatic = "(public\\s+static|static\\s+public|public|public\\s+static\\sevent|public\\delegate|"+
+                                            "private\\s+static|static\\s+private|private|private\\s+static\\sevent|private\\delegate|"+
+                                            "protected\\s+static|static\\s+protected|protected|protected\\s+static\\sevent|protected\\delegate|"+
+                                            "static|override|abstract|delegate)";
+    */
+    //protected string methodPrefix = "(?<ethodPrefix>public|private|protected|static|override|abstract)";
 
     // white spaces (or new line)
     protected string optWS = "(\\s|\\n)*"; // optionnal white space
@@ -169,7 +177,12 @@ public class RegexUtilities {
     protected string collections = "(ArrayList|BitArray|CaseInsensitiveComparer|Comparer|Hashtable|Queue|SortedList|Stack|StructuralComparisons|DictionnaryEntry"+
         "|ICollection|IComparer|IDictionary|IDictionaryEnumerator|IEnumerable|IEnumerator|IEqualityComparer|IHashCodeProvider|IList|IStructuralComparable|IStructuralEquatable)";
     protected string genericCollections = "(Comparer|Dictionary|KeyValuePair|HashSet|KeyedByTypeCollection|LinkedList|LinkedListNode|List|Queue|SortedDictionary|SortedList|SortedSet|Stack|SynchronizedCollection"+
-        "|SynchronizedKeyedCollection|SynchronizedReadOnlyCollection|ISet)";
+        "|SynchronizedKeyedCollection|SynchronizedReadOnlyCollection|ISet|"+
+        "Action|Func)";
+
+
+    // variable types + project classes + unity classes
+    protected string types = "(string|String|int|float|double|bool|boolean)";
     
 
     // list of the patterns and corresponding replacements to be processed by DoReplacements()

@@ -172,7 +172,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
         // #region
-        patterns.Add ("\\#(region|REGION)"+oblSpaces+commonName+"("+oblSpaces+commonName+")*");
+        //patterns.Add ("\\#(region|REGION)"+oblSpaces+commonName+"("+oblSpaces+commonName+")*");
+        patterns.Add ("\\#(region|REGION)"+oblSpaces+"*");
         replacements.Add ("");
         patterns.Add ("\\#(endregion|ENDREGION)");
         replacements.Add ("");
@@ -486,6 +487,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
            // some value setting got treated like var declaration   variable = value; => var variable: = value
            patterns.Add ("\\bvar"+oblWS+"(?<varName>"+commonName+optWS+"):(?<end>"+optWS+"=)");
            replacements.Add ("${varName}${end}");
+
+           //in for loop :   i < variable;   got converted in    var variable: i <;
+           patterns.Add ("\\bvar"+oblWS+"(?<varName>"+commonName+")"+optWS+":(?<start>"+optWS+commonName+optWS+"(<|>|<=|>=))");
+           replacements.Add ("${start}${varName}");
 
 
 

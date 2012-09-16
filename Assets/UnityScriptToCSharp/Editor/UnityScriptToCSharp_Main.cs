@@ -78,7 +78,7 @@ public class UnityScriptToCSharp_Main: UnityScriptToCSharp {
 
 
 
-    [MenuItem ("Script Converter/UnityScript To C#")]
+    [MenuItem ("Script Converters/UnityScript To C#")]
     static void ShowWindow () {
         UnityScriptToCSharp_Main window = (UnityScriptToCSharp_Main)EditorWindow.GetWindow (typeof(UnityScriptToCSharp_Main));
         window.title = "US to C#";
