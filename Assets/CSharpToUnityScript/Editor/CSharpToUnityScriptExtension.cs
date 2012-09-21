@@ -45,6 +45,9 @@ public class CSharpToUnityScriptExtension : EditorWindow {
     // a list of structure that contains all needed infos about the script to be converted
     protected List<Script> m_scriptsToConvertList = new List<Script> ();
 
+    // the instance of the converter class
+    CSharpToUnityScriptConverter converter;
+
 
     // ----------------------------------------------------------------------------------
 
@@ -115,6 +118,7 @@ public class CSharpToUnityScriptExtension : EditorWindow {
         if (GUILayout.Button ("Reset/Abord", GUILayout.MaxWidth (200))) {
             Debug.LogWarning ("Abording conversion ! Refreshing project.");
             m_scriptsToConvertList.Clear ();
+            converter = null;
             AssetDatabase.Refresh ();
         }
         GUILayout.EndHorizontal ();
@@ -127,7 +131,7 @@ public class CSharpToUnityScriptExtension : EditorWindow {
 
 
     // ----------------------------------------------------------------------------------
-    CSharpToUnityScriptConverter converter;
+    
     /// <summaray>
     /// Called 100 times per second
     /// Perform the conversion, one file per frame
@@ -142,7 +146,7 @@ public class CSharpToUnityScriptExtension : EditorWindow {
 
             // write the converted code into the file
             if (converter == null)
-                converter = new CSharpToUnityScriptConverter();
+                converter = new CSharpToUnityScriptConverter( m_sourceDirectory );
 
             converter.Convert( m_scriptInConversion.text );
             //CSharpToUnityScriptConverter converter = new CSharpToUnityScriptConverter (m_scriptInConversion.text);

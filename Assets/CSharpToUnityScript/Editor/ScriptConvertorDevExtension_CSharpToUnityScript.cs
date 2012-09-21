@@ -14,7 +14,7 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
     
     public string m_scriptName = "aaTest";
     //public DateTime m_scriptLastWriteTime = DateTime.Now.ToLocalTime ();
-    public string m_scriptRelativePath = "/CSharpToUnityScript/aaTest/";
+    public string m_scriptRelativePath = "/GitIgnore/ScriptsToBeConverted/";
 
     // the interval (in second) time between two project checking
 	// can be set in the extension's window
@@ -29,7 +29,7 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
 	public string m_targetScriptExtension = ".js_";
 
 
-	public bool doConvert = true;
+	public bool doConvert = false;
 
 
 	// ----------------------------------------------------------------------------------
@@ -63,10 +63,10 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
 		}
     }
 
-    CSharpToUnityScriptConverter converter = new CSharpToUnityScriptConverter();
+    CSharpToUnityScriptConverter converter;
 
     void Convert (bool forceConversion) {
-    	
+    	converter = new CSharpToUnityScriptConverter(m_scriptRelativePath);
     	
 		string sourceScriptPath = Application.dataPath + m_scriptRelativePath + m_scriptName + m_sourceScriptExtension;
 		string targetScriptPath = sourceScriptPath.Replace (m_sourceScriptExtension, m_targetScriptExtension);

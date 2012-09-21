@@ -127,9 +127,10 @@ public class RegexUtilities {
     protected string commonName = "([A-Za-z0-9_\\.]+)";
     protected string commonNameWithoutDot = "([A-Za-z0-9_]+)";
     protected string commonNameWithSpace = "([A-Za-z0-9_\\. ]+)"; // Allows to have space in expression like "System . Something"
+    protected string commonNameWithSpaceAndComa = "([A-Za-z0-9_\\. ,]+)";
 
     // any numerical value (including the "f" for the float in C#)
-    protected string number =       "(-?[0-9]+(\\.{1}[0-9]+(f|F)?)?)";
+    protected string number = "(-?[0-9]+(\\.{1}[0-9]+(f|F)?)?)";
     // same but makes the "f" mandatory for float
     protected string cSharpFloat = "(-?[0-9]+(\\.{1}[0-9]+(f|F){1})?)";
     
@@ -142,7 +143,7 @@ public class RegexUtilities {
     // same as common name but includes also arrays, generic collections, strings
     // usefull when looking for a type (of variable or method)
     protected string commonChars = "([A-Za-z0-9<>,'\"_\\[\\]\\.]+)"; // 
-    protected string commonCharsWithSpace = "([A-Za-z0-9<>,'\"_\\[\\]\\. ]+)"; // generic collections likes dictionnaries may have a space after the come, for instance
+    protected string commonCharsWithSpace = "([A-Za-z0-9<>,'\"_\\[\\]\\. ]+)"; // generic collections likes dictionnaries may have a space after the coma, for instance
     protected string commonCharsWithSpaceAndParenthesis = "([A-Za-z0-9<>,'\"_\\[\\]\\. \\(\\)]+)"; // generic collections likes dictionnaries may have a space after the come, for instance
     protected string commonCharsWithoutComma = "([A-Za-z0-9<>'\"_\\[\\]\\.]+)"; // for use with variable or type as method parameter
     protected string commonCharsWoCommaWSpace = "([A-Za-z0-9<>'\"_\\[\\]\\. ]+)";
@@ -183,7 +184,7 @@ public class RegexUtilities {
         "Action|Func)";
 
 
-    // variable types + project classes + unity classes
+    // regular data types (the list get completed with the Unity and project classes)
     protected string regularTypes = "(byte|char|string|String|short|int|long|float|double|decimal|bool|boolean)";
     
 

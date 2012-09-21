@@ -52,7 +52,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
     public static string dataTypes = "";
 
-    public static bool convertMultipleVarDeclaration = false;
+    public static bool convertMultipleVarDeclaration = true;
 
     public static bool removeRefKeyword = true;
     public static bool removeOutKeyword = true;
@@ -66,7 +66,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Constructor and main method
     /// </summary>
     //public CSharpToUnityScriptConverter (string inputCode) : base (inputCode) {
-    public CSharpToUnityScriptConverter() {
+    public CSharpToUnityScriptConverter( string sourceDirectory ) {
         importedAssemblies.Clear ();
         projectClasses.Clear ();
         unityClasses.Clear();
@@ -91,8 +91,23 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         foreach( string _class in unityClasses )
             AddDataType( _class );
 
+        // loop trough all poject's file, extract the data types (classes, enums and structs)
+        string[] paths = Directory.GetFiles( Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories );
+        foreach( string path in paths ) {
+            reader = new StreamReader( path );
+            string scriptText = reader.ReadToEnd();
+            reader.Close();
 
-        //Convert ();
+            pattern = "\\b(class|struct|enum)"+oblWS+"(?<name>"+commonName+")\\b";
+            MatchCollection allDataTypes = Regex.Matches( scriptText, pattern );
+
+            foreach( Match aDataType in allDataTypes ) {
+                projectClasses.Add( aDataType.Groups["name"].Value );
+                AddDataType( aDataType.Groups["name"].Value );
+            }
+        } // end looping through files
+
+        Debug.Log ("Data types : "+dataTypes);
     }
 
 
@@ -183,12 +198,14 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // STRING BOOL CONVERSION
             // string      
-            patterns.Add ( "("+commonName+optWS+":"+optWS+")?string(?<end>("+optWS+"(\\[[0-9,\\s]*\\])+)?"+optWS+"(=|;|,|\\)|in|{))" );
-            replacements.Add ( "$1String${end}" );
+            //patterns.Add ( "("+commonName+optWS+":"+optWS+")?string(?<end>("+optWS+"(\\[[0-9,\\s]*\\])+)?"+optWS+"(=|;|,|\\)|in|{))" );
+            patterns.Add( "((:|new)"+optWS+")?string(?<end>("+optWS+"(\\["+commonNameWithSpaceAndComa+"\\])+)?)" );
+            replacements.Add( "$1String${end}" );
 
             // bool
-            patterns.Add ( "("+commonName+optWS+":"+optWS+")?bool(?<end>("+optWS+"\\[([0-9,\\s]*\\])+)?"+optWS+"(=|;|,|\\)|in|{))" );
-            replacements.Add ( "$1boolean${end}" );
+            //patterns.Add ( "("+commonName+optWS+":"+optWS+")?bool(?<end>("+optWS+"\\[([0-9,\\s]*\\])+)?"+optWS+"(=|;|,|\\)|in|{))" );
+            patterns.Add( "((:|new)"+optWS+")?bool(?<end>("+optWS+"\\[("+commonNameWithSpaceAndComa+"\\])+)?)" );
+            replacements.Add( "$1boolean${end}" );
 
         // with arrays
             // string
@@ -229,7 +246,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// <summary> 
     /// 
     /// </summary>
-    void CheckDataTypes () {
+    /*void CheckDataTypes () {
         string[] types = {"class", "struct", "enum"};
 
         List<Match> allMatches;
@@ -240,7 +257,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             foreach( Match aMatch in allMatches )
                 AddDataType (aMatch.Groups[2].Value);
         }
-    }
+    }*/
 
 
     // ----------------------------------------------------------------------------------
@@ -249,13 +266,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Convert stuffs related to classes : declaration, inheritance, parent constructor call, Assembly imports
     /// </summary>
     void Classes () {
-        pattern = "\\bclass"+oblWS+commonName+"\\b";
+        /*pattern = "\\bclass"+oblWS+commonName+"\\b";
         List<Match> allClasses = ReverseMatches (convertedCode, pattern);
 
         foreach (Match aClass in allClasses) {
             projectClasses.Add (aClass.Groups[2].Value);
             AddDataType (aClass.Groups[2].Value);
-        }
+        }*/
 
         // classes declarations with inheritance
         patterns.Add ("(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+optWS+"{)");
@@ -300,7 +317,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // loop the classes declarations in the file
         pattern = "\\bclass"+oblWS+"(?<blockName>"+commonName+")"+
         "("+oblWS+"extends"+oblWS+commonName+")?[^{]*{";
-        allClasses = ReverseMatches (convertedCode, pattern);
+        List<Match> allClasses = ReverseMatches (convertedCode, pattern);
         
         foreach (Match aClass in allClasses) {
             Block classBlock = new Block (aClass, convertedCode);
@@ -471,12 +488,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
             // multiple inline var declaration of the same type : "Type varName, varName = foo;"
-            if (dataTypes.Contains ("Vector3"))
+            if (dataTypes.Contains ("DecalPolygon"))
                 Debug.Log ("contains");
             else
                 Debug.Log( "not contain");
             //pattern = "\\b(?<varType>"+dataTypes+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+"[^,]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
-            pattern = "\\b(?<varType>"+dataTypes+")"+oblWS+"(?<varList>"+"[^,;]+"+optWS+"(="+optWS+"[^,;]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
+            pattern = "\\b(?<varType>"+dataTypes+")"+oblWS+"(?<varList>"+"[^,;{}]+"+optWS+"(="+optWS+"[^,;]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
             List<Match> allDeclarations = ReverseMatches (convertedCode, pattern);
 
             foreach (Match aDeclaration in allDeclarations){
@@ -487,10 +504,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 // look for method call pattern to discard
                 pattern = "\\b"+commonName+optWS+"\\(.+,{1}.+\\)";
                 if( Regex.Matches( aDeclaration.Value, pattern ).Count > 0 ){
-                    Debug.Log ("Discarding : "+aDeclaration.Value);  
+                    //Debug.Log ("Discarding : "+aDeclaration.Value);  
                     continue;
                 }
-                
+
                 Debug.LogWarning (aDeclaration.Value);
                 
                 // split the varlist using the coma
@@ -569,6 +586,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
            patterns.Add ("\\bvar"+oblWS+"(?<varName>"+commonName+")"+optWS+":(?<start>"+optWS+commonNameWithoutDot+optWS+"(<|>|<=|>=))");
            replacements.Add ("${start}${varName}");
 
+           // stuff like    [...] < 0.0f;   got converted to   [...]var 0.0: <;
+           patterns.Add( "\\bvar(?<partone>"+oblWS+commonNameWithSpace+")"+optWS+":"+optWS+"(?<parttwo><|<=|>|>=)"+optWS+";" );
+           replacements.Add( "${parttwo}${partone};" );
+
 
 
         // CASTING
@@ -627,9 +648,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // BOOL AND STRING
         // convert bool to boolean and string to String
-        // see in Convert ()the constructor
+        // see in Convert()
 
-        DoReplacements ();
+        DoReplacements();
 
 
         // remove @ in  'string aVariable = @"a string";"  and add a extra \ to the existing \
@@ -684,10 +705,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             
             switch (returnType) {
                 case "void" : replacements.Add ("function $3$5$7"); continue;
-                case "string" : replacements.Add ("function $3$5: String$7"); continue;
+                /*case "string" : replacements.Add ("function $3$5: String$7"); continue;
                 case "string[]" : replacements.Add ("function $3$5: String[]$7"); continue; 
                 case "bool" : replacements.Add ("function $3$5: boolean$7"); continue; 
-                case "bool[]" : replacements.Add ("function $3$5: boolean[]$7"); continue; 
+                case "bool[]" : replacements.Add ("function $3$5: boolean[]$7"); continue; */
                 case "public" /* it's a constructor */ : replacements.Add ("$1 function $3$5$7"); continue;
             }
 
