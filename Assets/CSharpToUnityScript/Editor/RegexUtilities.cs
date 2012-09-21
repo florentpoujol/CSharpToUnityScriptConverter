@@ -143,6 +143,7 @@ public class RegexUtilities {
     // usefull when looking for a type (of variable or method)
     protected string commonChars = "([A-Za-z0-9<>,'\"_\\[\\]\\.]+)"; // 
     protected string commonCharsWithSpace = "([A-Za-z0-9<>,'\"_\\[\\]\\. ]+)"; // generic collections likes dictionnaries may have a space after the come, for instance
+    protected string commonCharsWithSpaceAndParenthesis = "([A-Za-z0-9<>,'\"_\\[\\]\\. \\(\\)]+)"; // generic collections likes dictionnaries may have a space after the come, for instance
     protected string commonCharsWithoutComma = "([A-Za-z0-9<>'\"_\\[\\]\\.]+)"; // for use with variable or type as method parameter
     protected string commonCharsWoCommaWSpace = "([A-Za-z0-9<>'\"_\\[\\]\\. ]+)";
 
