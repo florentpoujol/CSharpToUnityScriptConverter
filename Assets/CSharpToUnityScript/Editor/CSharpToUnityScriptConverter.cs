@@ -483,6 +483,14 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 Debug.Log (aDeclaration.Value);
                 if( aDeclaration.Value.Contains( "\n" ) )
                     continue;
+
+                // look for method call pattern to discard
+                pattern = "\\b"+commonName+optWS+"\\(.+,{1}.+\\)";
+                if( Regex.Matches( aDeclaration.Value, pattern ).Count > 0 ){
+                    Debug.Log ("Discarding : "+aDeclaration.Value);  
+                    continue;
+                }
+                
                 Debug.LogWarning (aDeclaration.Value);
                 
                 // split the varlist using the coma
