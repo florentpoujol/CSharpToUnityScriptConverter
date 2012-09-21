@@ -748,41 +748,43 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // loop through functions and search for variable declaration that happend several times
         // leave only the first declaration
+        // because it would throw an error "BCE0067: There is already a local variable with the name 'younameit'."
         pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\("+argumentsChars+"\\)("+optWS+":"+optWS+commonCharsWithSpace+")?"+optWS+"{"; 
         allFunctionsDeclarations = ReverseMatches (convertedCode, pattern);
 
-        foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
-            Block functionBlock = new Block (aFunctionDeclaration, convertedCode);
+        foreach( Match aFunctionDeclaration in allFunctionsDeclarations ) {
+            Block functionBlock = new Block( aFunctionDeclaration, convertedCode );
 
-            pattern = "var"+oblWS+"(?<varName>"+commonName+")"+optWS+":"+optWS+"(?<varType>"+commonChars+")"+optWS+"(?<ending>(=|;))"; // don't match var declaration in foreach loop
-            List<Match> allVariablesDeclarations = ReverseMatches (functionBlock.text, pattern);
+            pattern = "var"+oblWS+"(?<varName>"+commonName+")"+optWS+":"+optWS+"(?<varType>"+commonCharsWithSpace+")"+optWS+"(?<ending>(=|;|in))";
+            // don't match var declaration in foreach loop
+            List<Match> allVariablesDeclarations = ReverseMatches( functionBlock.text, pattern );
 
-            foreach (Match aVariableDeclaration in allVariablesDeclarations) {
+            foreach( Match aVariableDeclaration in allVariablesDeclarations ) {
                 string varName = aVariableDeclaration.Groups["varName"].Value;
-                string varType = aVariableDeclaration.Groups["varType"].Value.Replace ("[", Regex.Escape ("["));
-                //varType = varType.Escape ("[");
+                string varType = aVariableDeclaration.Groups["varType"].Value.Replace ("[", Regex.Escape ("[")); // why do not escape the closing bracket ?
                 string ending = aVariableDeclaration.Groups["ending"].Value; 
 
                 // how many time this variable is (still) declared in the function ?
                 pattern = "var"+oblWS+varName+optWS+":"+optWS+varType;
-                int declarationsCount = Regex.Matches (functionBlock.newText, pattern).Count;
+                int declarationsCount = Regex.Matches( functionBlock.newText, pattern ).Count;
 
                 if (declarationsCount <= 1) // no need to go forward with this particular variable
                     continue;
                 
                 // it's at least the second time that variable is declared in the function
                 // that will throw an error in the Unity console
-                // so replace the declaration by the var name, if a value is set at the same time (var aVar: aType = whatever;), or just delete the declaration (var aVar: aType;)
+                // so remove the declaration if it is just of type    var aVar: aType;
+                // or replace the declaration by the var name (if a value is set at the same time (var aVar: aType = whatever; => aVar = whatever) or in a foreach loop)
                 
-                // here I can't replace the declaration in functionBlock with String.Replace because it could match sevral declaration at the same time
+                // here I can't replace the declaration in functionBlock with String.Replace() because it could match sevral declaration at the same time
                 // I have to use Insert and Remove, that's why the function and variable declaration are looped backward
 
-                // remove old declaration
-                functionBlock.newText = functionBlock.newText.Remove (aVariableDeclaration.Index, aVariableDeclaration.Length);
+                // remove old declaration 
+                functionBlock.newText = functionBlock.newText.Remove( aVariableDeclaration.Index, aVariableDeclaration.Length );
 
                 // add the new one (if needed)
-                if (ending == "=")
-                    functionBlock.newText = functionBlock.newText.Insert (aVariableDeclaration.Index, varName+" "+ending);
+                if (ending == "=" || ending == "in")
+                    functionBlock.newText = functionBlock.newText.Insert( aVariableDeclaration.Index, varName+" "+ending );
 
                 //varList.Add (varName, declarationsCount--);
             } // end loop variable declarations
