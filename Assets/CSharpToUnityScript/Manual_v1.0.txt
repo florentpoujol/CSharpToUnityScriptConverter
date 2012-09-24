@@ -1,0 +1,122 @@
+
+
+
+==================================================
+OPTIONS
+==================================================
+
+
+- You can choose if the script convert the declaration of multile inline variables of the same type.
+  In some case that may lead to some false positiv. If you are sure you don't have such thing is your script, don't tick the box.
+  If you do let the conversion append, be advise that the conversion will be messed up if
+  a value contains a coma or a semi colon.
+
+
+
+==================================================
+TAKE NOTES OF :
+==================================================
+
+
+- A parent class that begins by an Uppercase I may be considered as an interface if the class definition has not been encountered yet
+
+
+- Variable declaration with value will messed up if the string value is on several lines
+
+
+
+
+
+
+==================================================
+WHAT DOES NOT WORK (AS NO EQUIVALENT) IN UNITYSCRIPT
+==================================================
+
+
+- Enums in UnityScript does not accepts negative values
+
+
+- Keyword "params" in method parameters (they are left, so that they pop errors)
+  The solution is to remove the "params" keyword from the method declaration,
+  then wrap the parameters in an array when you call the method.
+
+C# :
+	void Method( params int[] values ) {}
+
+	Method( 1, 2 );
+	Method( 1, 2, 3 );
+
+	void Method( string firstParam, params int[] values ) {}
+
+	Method( "", 1, 2 );
+	Method( "", 1, 2, 3 );
+
+UnityScript :
+	function Method( values: int[] ) {}
+
+	Method( [1, 2] );
+	Method( [1, 2, 3] );
+
+	function Method( firestParam: String, values: int[] ) {}
+
+	Method( "", [1, 2] );
+	Method( "", [1, 2, 3] );
+
+
+- Keyword "ref" in method parameters (they are left, so that they pop errors)
+  There are no easy way to pass a value type as reference in UnityScript.
+
+
+- "delegate" and "event" does not exists in UnityScript but can somtimes be simulated.
+  You should be able to tuse UnityScript's "Function" type instead of all types of delegates.
+  Alternatively, you still have access to .Net's Action and Func generic delegates
+
+C# :
+	// the function type
+	delegate void FooBarMethod(int data);
+
+	// the event that will store the methods
+	event FooBarMethod foobarMethods;
+
+	[...]
+
+	// a method to be called when the event is thrown
+	void AMethod( int param ) {}
+
+	// registering methods
+	foobarMethods += AMethod;
+
+	// throwing an event
+	foobarMathods( 1 );
+
+UnityScript :
+	// the function type already exist : "Function"
+
+	// the event can be simulated by any kind of list
+	var foobarMethods: List.<Function> = new List.<Function>();
+
+	function EventFoobar( param: int ) {
+		for( var method: Function in foobarMethods ) {
+			method( param );
+		}
+	}
+
+	[...]
+
+	// a method to be called when the event is thrown
+	function AMethod( param: int ) {}
+
+	// registering methods
+	foobarMethods.Add( AMethod );
+
+	// throwing an event
+	EventFoobar( 1 );
+
+
+- I have found some [System.Serializable] over Enums, 
+  but Enums can't inherit from System.Object
+
+
+- "out" keyword.
+  In UnityScript, it is not needed when calling a C# method.
+  But there is no way in UnityScript to create such behavior in the method declaration. 
