@@ -248,8 +248,13 @@ public class RegexUtilities {
     /// <summary>
     /// Do a Regex.Matches but return the result in the inverse order
     /// </summary>
-    protected List<Match> ReverseMatches (string text, string pattern) {
-        MatchCollection matches = Regex.Matches (text, pattern);
+    protected List<Match> ReverseMatches (string text, string pattern, bool multiline ) {
+        MatchCollection matches;
+
+        if( multiline )
+            matches = Regex.Matches (text, pattern, RegexOptions.Multiline );
+        else
+            matches = Regex.Matches (text, pattern );
         
         Stack<Match> stack = new Stack<Match> ();
         foreach (Match match in matches)
@@ -257,6 +262,9 @@ public class RegexUtilities {
         // the matches piles up in the stack, so the lastest match in matches is now the first one in stack
 
         return new List<Match> (stack);
+    }
+    protected List<Match> ReverseMatches (string text, string pattern) {
+        return ReverseMatches( text, pattern, false );
     }
 
 

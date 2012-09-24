@@ -12,7 +12,7 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
         window.title = "ScriptConvertorDevExtension_CSharpToUnityScript";
     }
     
-    public string m_scriptName = "aaTest";
+    public string m_scriptName = "Test1";
     //public DateTime m_scriptLastWriteTime = DateTime.Now.ToLocalTime ();
     public string m_scriptRelativePath = "/GitIgnore/ScriptsToBeConverted/";
 
@@ -26,7 +26,7 @@ class ScriptConvertorDevExtension_CSharpToUnityScript : EditorWindow {
 
 	// script's extension in the target language 
 	// must be .cs .js or .boo
-	public string m_targetScriptExtension = ".js_";
+	public string m_targetScriptExtension = ".js";
 
 
 	public bool doConvert = false;

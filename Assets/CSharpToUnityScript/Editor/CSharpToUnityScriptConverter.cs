@@ -52,7 +52,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
     public static string dataTypes = "";
 
-    public static bool convertMultipleVarDeclaration = true;
+    public static bool convertMultipleVarDeclaration = false;
 
     public static bool removeRefKeyword = true;
     public static bool removeOutKeyword = true;
@@ -107,11 +107,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 if( aDataType.Groups["type"].Value == "class" )
                     projectClasses.Add( aDataType.Groups["name"].Value );
             }
-
-            // do it again
         } // end looping through files
 
-        Debug.Log ("Data types : "+dataTypes);
+       // Debug.Log ("Data types : "+dataTypes);
     }
 
 
@@ -131,7 +129,49 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         Convert ();
     }
 
+    private Dictionary<string, string> commentStrings = new Dictionary<string, string>(); // key random string, value comment
+
+    private string GetRandomString() {
+        string randomString = "#comment#";
+        string alphabet = "abcdefghijklmnopqrstuvwxyz0123456789-_$*!:;,<>&";
+
+        while( randomString.Length < 20 ) {
+            int number = (int)Random.Range( 0, alphabet.Length-1 );
+            //Debug.Log( "number="+number );
+
+            char letter = alphabet[ number ];
+            //Debug.Log( "letter="+letter.ToString() );
+
+            randomString += letter.ToString();
+            //Debug.Log( "randomString="+randomString );
+        }
+
+        randomString += "#/comment#";
+        return randomString;
+    }
+
     public void Convert () {
+        // GET RID OF COMMENTS
+        //pattern = "(?<comment>/{2,3}(.*))(\\r\\n)";
+        /*pattern = "//.*$";
+        List<Match> allComments = ReverseMatches( convertedCode, pattern );
+        commentStrings.Clear();
+        Debug.Log( "allcomment size : "+allComments.Count);
+
+        foreach( Match aComment in allComments ) {
+             
+            string randomString = GetRandomString();
+            Debug.Log( "randomString : "+randomString );
+            Debug.Log( "Comment : "+aComment.Value );
+            while( commentStrings.ContainsKey( randomString ) )
+                randomString = GetRandomString();
+
+            convertedCode.Replace( aComment.Value, randomString);
+            commentStrings.Add( randomString, aComment.Value );
+        }*/
+
+
+
         // GENERIC COLLECTIONS
 
         // Add a dot before the opening chevron  List.<float>
@@ -241,6 +281,14 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         DoReplacements ();
 
         //convertedCode = "#pragma strict"+EOL+convertedCode;
+
+        // repacing comments
+        /*pattern = "(#comment#)(.*)(#/comment#)";
+        allComments = ReverseMatches( convertedCode, pattern );
+
+        foreach( Match aComment in allComments ) {
+            //convertedCode.Replace( aComment.Value, commentStrings[aComment.Value] );
+        }*/
 
     } // end of method CSharpToUnityScriptConverter
 
@@ -483,6 +531,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     void Variables () {
         // MULTIPLE INLINE VARIABLE DECLARATION
         if (convertMultipleVarDeclaration) {
+            Debug.Log("conversion multiple");
             /*string[] valuePatterns = {
                 "new"+oblWS+genericCollections+optWS+"<.*>"+optWS+"\\(.*\\)", // generic collection
                 "(new"+oblWS+")?"+commonName+optWS+"\\(.*\\)", // method or class instanciation with at least two parameters
@@ -494,11 +543,11 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             // multiple inline var declaration of the same type : "Type varName, varName = foo;"
             
             //pattern = "\\b(?<varType>"+dataTypes+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+"[^,]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
-            pattern = "\\b(?<varType>"+dataTypes+")"+oblWS+"(?<varList>"+"[^,;{}]+"+optWS+"(="+optWS+"[^,;]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
+            pattern = "(?<varType>\\b"+dataTypes+")"+oblWS+"(?<varList>"+"[^,;{}]+"+optWS+"(="+optWS+"[^,;]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
             List<Match> allDeclarations = ReverseMatches (convertedCode, pattern);
 
             foreach (Match aDeclaration in allDeclarations){
-                //Debug.Log (aDeclaration.Value);
+                Debug.Log (aDeclaration.Value);
                 if( aDeclaration.Value.Contains( "\n" ) )
                     continue;
 
@@ -538,19 +587,19 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         replacements.Add ("${end}");
 
         // VAR DECLARATION WITHOUT VALUE
-        patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)"); 
+        patterns.Add ("(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)"); 
         replacements.Add ("${visibility}var ${varName}: ${varType}${end}");
 
 
         // VAR DECLARATION WITH VALUE
-        //patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<varValue>"+optWS+"="+optWS+".+;)");
-        patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")?(?<varType>"+commonCharsWithSpace+")"+oblSpaces+"(?<varName>"+commonName+")(?<varValue>"+optWS+"=)");
+        patterns.Add ("(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+".+;)");
+        //patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")?(?<varType>"+commonCharsWithSpace+")"+oblSpaces+"(?<varName>"+commonName+")(?<varValue>"+optWS+"=)");
         replacements.Add ("${visibility}var ${varName}: ${varType}${varValue}");
-        // will mess up if the string is on several lines
+        // will mess up if the string is on several lines 
 
 
         // VAR DECLARATION IN FOREACH LOOP
-        patterns.Add ("\\b"+"(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<in>"+oblWS+"in"+oblWS+")");
+        patterns.Add ("(?<varType>\\b"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<in>"+oblWS+"in"+oblWS+")");
         replacements.Add ("var ${varName}: ${varType}${in}");
 
 
@@ -689,13 +738,15 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // patterns.Add (commonChars+oblWS+commonName+optWS+"(\\(.*\\))"+optWS+"{"); // here I don't care if the method is public, private, static, abstract or whatever since a signature is always composed of a type followed by the name of the method
         // replacements.Add ("function $3$5: $1 {");
 
-        pattern = "("+visibilityAndStatic+oblWS+")?(?<returnType>"+commonCharsWithSpace+")"+oblWS+"(?<functionName>"+commonName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)"; // match two words followed by a set of parenthesis followed by an opening curly bracket
+        pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<returnType>"+commonCharsWithSpace+")"+oblWS+"(?<functionName>"+commonName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)"; // match two words followed by a set of parenthesis followed by an opening curly bracket
         List<Match> allFunctionsDeclarations = ReverseMatches (convertedCode, pattern);
 
         foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
+            Debug.Log (aFunctionDeclaration.Value);
+            string visibility = aFunctionDeclaration.Groups["visibility"].Value;
             string returnType = aFunctionDeclaration.Groups["returnType"].Value.Replace ("[", Regex.Escape ("["));
             string functionName = aFunctionDeclaration.Groups["functionName"].Value;
-            
+            Debug.Log( "visibility="+visibility+" returntype="+returnType+" name="+functionName );
 
             //Debug.Log ("returnType="+returnType+" | functionName="+functionName);
 
@@ -709,19 +760,21 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 returnType = returnType.Replace ("override", "").Trim ();  // this will left the override keyword after the prefix
 
             // if we are there, it's really a function declaration that has to be converted
-            patterns.Add ("("+returnType+")"+oblWS+"("+functionName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)"); 
+            
+            patterns.Add ("(?<returnType>"+returnType+")"+oblWS+"(?<name>"+functionName+")"+optWS+"(?<args>\\("+argumentsChars+"\\))(?<end>"+optWS+"{)"); 
+            // no need to add the visibility in the pattern
             
             switch (returnType) {
-                case "void" : replacements.Add ("function $3$5$7"); continue;
+                case "void" : replacements.Add ("function ${name}${args}${end}"); continue;
                 /*case "string" : replacements.Add ("function $3$5: String$7"); continue;
                 case "string[]" : replacements.Add ("function $3$5: String[]$7"); continue; 
                 case "bool" : replacements.Add ("function $3$5: boolean$7"); continue; 
                 case "bool[]" : replacements.Add ("function $3$5: boolean[]$7"); continue; */
-                case "public" /* it's a constructor */ : replacements.Add ("$1 function $3$5$7"); continue;
+                case "public" /* it's a constructor */ : replacements.Add( "public function ${name}${args}${end}" ); continue;
             }
 
             // if we are there, it's that the functiondeclaration has nothing special
-            replacements.Add ("function $3$5: $1$7");
+            replacements.Add ("function ${name}${args}: ${returnType}${end}");
         }
 
 
