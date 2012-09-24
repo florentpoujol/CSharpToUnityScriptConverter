@@ -98,13 +98,17 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             string scriptText = reader.ReadToEnd();
             reader.Close();
 
-            pattern = "\\b(class|struct|enum)"+oblWS+"(?<name>"+commonName+")\\b";
+            pattern = "\\b(?<type>class|interface|struct|enum)"+oblWS+"(?<name>"+commonName+")\\b";
             MatchCollection allDataTypes = Regex.Matches( scriptText, pattern );
 
             foreach( Match aDataType in allDataTypes ) {
-                projectClasses.Add( aDataType.Groups["name"].Value );
                 AddDataType( aDataType.Groups["name"].Value );
+
+                if( aDataType.Groups["type"].Value == "class" )
+                    projectClasses.Add( aDataType.Groups["name"].Value );
             }
+
+            // do it again
         } // end looping through files
 
         Debug.Log ("Data types : "+dataTypes);
@@ -488,16 +492,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
             // multiple inline var declaration of the same type : "Type varName, varName = foo;"
-            if (dataTypes.Contains ("DecalPolygon"))
-                Debug.Log ("contains");
-            else
-                Debug.Log( "not contain");
+            
             //pattern = "\\b(?<varType>"+dataTypes+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+"[^,]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
             pattern = "\\b(?<varType>"+dataTypes+")"+oblWS+"(?<varList>"+"[^,;{}]+"+optWS+"(="+optWS+"[^,;]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
             List<Match> allDeclarations = ReverseMatches (convertedCode, pattern);
 
             foreach (Match aDeclaration in allDeclarations){
-                Debug.Log (aDeclaration.Value);
+                //Debug.Log (aDeclaration.Value);
                 if( aDeclaration.Value.Contains( "\n" ) )
                     continue;
 
@@ -508,7 +509,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     continue;
                 }
 
-                Debug.LogWarning (aDeclaration.Value);
+                //Debug.LogWarning (aDeclaration.Value);
                 
                 // split the varlist using the coma
                 string[] varList = aDeclaration.Groups["varList"].Value.Split (',');
@@ -531,12 +532,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         } // end if convertMultipleVarDeclaration
  
  
-        // " as AType;" => ";"
-        // "as aType" might appear in other location
-        //patterns.Add (oblWS+"as"+oblWS+commonCharsWithSpace+optWS+";");
-        //replacements.Add (";");
-
-
+        
         // removing const keyword
         patterns.Add ("(\\bconst"+oblWS+")(?<end>"+commonCharsWithSpace+oblWS+commonName+")"); 
         replacements.Add ("${end}");
@@ -560,10 +556,14 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         
 
-        // PATCHING   converting var declaration leads to some garbage
+        // PATCHING   converting var declaration leads to some (many actually) garbage
            // assembly imports
            patterns.Add ("\\bvar"+oblWS+commonName+optWS+":"+optWS+"import"+optWS+";"); // will mess up if a custom class is named "import"...
            replacements.Add ("import $2;");
+
+           // using System. Collections ;    got converted to    var Collections: import System. ;
+           patterns.Add ("\\bvar"+oblWS+"(?<end>"+commonName+")"+optWS+":"+optWS+"import"+oblWS+"(?<start>.*);"); // will mess up if a custom class is named "import"...
+           replacements.Add ("import ${start}${end};");
 
            // returned values
            patterns.Add ("\\bvar"+oblWS+commonName+optWS+":"+optWS+"return"+optWS+";");
@@ -590,6 +590,11 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
            patterns.Add( "\\bvar(?<partone>"+oblWS+commonNameWithSpace+")"+optWS+":"+optWS+"(?<parttwo><|<=|>|>=)"+optWS+";" );
            replacements.Add( "${parttwo}${partone};" );
 
+           // stuff like    Type name = othervar as Type;   got converted to   var name: Type =var Type: othervar as;
+           // othervar as Type; seems to be a var declaration without value
+           patterns.Add( "="+optWS+"var"+oblWS+"(?<type>"+commonNameWithSpace+")"+optWS+":"+optWS+"(?<variable>"+commonNameWithSpace+")"+oblWS+"as"+optWS+";" );
+           replacements.Add( "= ${variable} as ${type};" );
+
 
 
         // CASTING
@@ -600,6 +605,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         patterns.Add ("(="+optWS+")\\("+optWS+"(?<type>"+commonCharsWithSpace+")"+optWS+"\\)"+optWS+"(?<afterCast>\\(?"+optWS+commonCharsWithSpaceAndParenthesis+optWS+"\\)?)"+optWS+";"); // match if and loop without brackets !!
         replacements.Add ("$1${afterCast} as ${type};");
 
+        // the as keyword can't be used with value types
+        patterns.Add (oblWS+"as"+oblWS+regularTypes+optWS+";");
+        replacements.Add (";");
 
         // ARRAYS
             // string[] array1; => var array1: String[] (already done)
