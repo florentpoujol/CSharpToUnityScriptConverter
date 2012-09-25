@@ -212,6 +212,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // abstract methods are deal with at the beginning of Function().
         // What about abstract variables ?
 
+
+        // VIRTUAL
+        patterns.Add ("(\\b(public|private|protected|static)"+oblWS+")virtual\\b");
+        replacements.Add ("$1");
+
+
         // YIELDS
             // must remove the return keyword after yield
         patterns.Add ("yield"+optWS+"return"+optWS+"(null|0|new)");
@@ -461,9 +467,20 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     continue;
                 }
 
+
                 if (attr == "HideInInspector") {
                     patterns.Add ("\\["+optWS+"HideInInspector"+optWS+"\\]");
                     replacements.Add ("@HideInInspector");
+                    continue;
+                }
+                if (attr == "System.NonSerialized") {
+                    patterns.Add ("\\["+optWS+"System.NonSerialized"+optWS+"\\]");
+                    replacements.Add ("@System.NonSerialized");
+                    continue;
+                }
+                if (attr == "SerializeField") {
+                    patterns.Add ("\\["+optWS+"SerializeField"+optWS+"\\]");
+                    replacements.Add ("@SerializeField");
                     continue;
                 }
 
@@ -478,6 +495,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     replacements.Add ("@DrawGizmo${params}");
                     continue;
                 }
+                if (attr == "Conditional") {
+                    patterns.Add ("\\["+optWS+"Conditional"+optWS+"(?<params>\\(.*\\))"+optWS+"\\]");
+                    replacements.Add ("@Conditional${params}");
+                    continue;
+                }
+
+                
 
                 patterns.Add ("\\["+optWS+attr+optWS+"(?<params>\\(.*\\))?"+optWS+"\\]");
                 replacements.Add ("@script "+attr+"${params}");
@@ -884,11 +908,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         List<Match> allProperties = ReverseMatches (convertedCode, pattern);
 
         foreach (Match aProp in allProperties) {
-            Debug.Log( "Properties : "+aProp.Value );
-            Debug.Log( "visi="+aProp.Groups["visibility"].Value+
-            " abstract="+aProp.Groups["abstract"].Value+
-            " type="+aProp.Groups["blockType"].Value+
-            " name="+aProp.Groups["blockName"].Value );
+            //Debug.Log( "Properties : "+aProp.Value );
+            //Debug.Log( "visi="+aProp.Groups["visibility"].Value+" abstract="+aProp.Groups["abstract"].Value+
+            //" type="+aProp.Groups["blockType"].Value+" name="+aProp.Groups["blockName"].Value );
+            
             // first check if this is really a property declaration
             string[] forbiddenBlockTypes = {"enum", "class", "extends", "implements", "new", "else", "struct", "interface"};
             
@@ -899,12 +922,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             bool isAPropDeclaration = true;
             string blockType = aProp.Groups["blockType"].Value;
            
-            foreach (string type in forbiddenBlockTypes) {
-                if (blockType.Trim() == type)
+            foreach( string type in forbiddenBlockTypes ) {
+                if ( blockType.Contains( type ) ) // can't use blockType.Trim() == type
                     isAPropDeclaration = false;
             }
 
-            if ( ! isAPropDeclaration)
+            if ( !isAPropDeclaration )
                 continue;
  
 
@@ -914,12 +937,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             //if (forbiddenBlockNames.Contains (aProp.Groups["blockName"].Value))
             //    continue;
 
-            foreach (string type in forbiddenBlockNames) {
-                if (aProp.Groups["blockName"].Value.Trim() == type)
+            foreach( string type in forbiddenBlockNames ) {
+                if( aProp.Groups["blockName"].Value.Contains( type ) ) // aProp.Groups["blockName"].Value.Trim() == type
                     isAPropDeclaration = false;
             }
 
-            if ( ! isAPropDeclaration)
+            if ( !isAPropDeclaration )
                 continue;
 
 
@@ -927,7 +950,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             // Ok now we are sure this is a property declaration
 
             Block PropBlock = new Block (aProp, convertedCode);
-            Debug.Log ("property : "+aProp.Value+" | "+PropBlock.text);
+            //Debug.Log ("property : "+aProp.Value+" | "+PropBlock.text);
 
             string property = "";
             string visibility = "";
