@@ -13,6 +13,8 @@ RequireComponent
 System.Serializable
 SerializeField
 
+Conditional
+
 # Editor Classes
 CanEditMultipleObjects
 CustomEditor

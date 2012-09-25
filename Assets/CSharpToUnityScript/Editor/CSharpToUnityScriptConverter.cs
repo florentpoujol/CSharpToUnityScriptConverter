@@ -200,7 +200,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // GETCOMPONENT (& Co)
 
         // GetComponent<T>() => GetComponent.<T>()
-        patterns.Add ("((AddComponent|GetComponent|GetComponents|GetComponentInChildren|GetComponentsInChildren)"+optWS+")(?<type><"+optWS+commonChars+optWS+">)");
+        patterns.Add ("(\\b(AddComponent|GetComponent|GetComponents|GetComponentInChildren|GetComponentsInChildren)"+optWS+")(?<type><"+optWS+commonChars+optWS+">)");
         replacements.Add ("$1.${type}");
 
 
@@ -560,6 +560,35 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
     // ----------------------------------------------------------------------------------
 
+    // check if the first character is a letter or an underscore
+    // make sure the name asn't more than tree space in it
+    bool IsAValidName( string text ) {
+        if( text.Trim() == "" )
+            return true;
+
+        // check the number of spaces
+        int spaceCount = 0;
+        foreach( char letter in text ) {
+            if( letter == ' ' )
+                spaceCount++;
+        }
+
+        if( spaceCount >= 3 ) {
+            Debug.LogWarning( "Invalid name : "+text );
+            return false;
+        }
+
+        // check if the first character is  a letter or an underscore
+        string alphabet = "abcdefghijklmnopqrstuvwxyz_";
+
+        if( alphabet.Contains( char.ToLower(text[0]).ToString() ) )
+            return true;
+
+        Debug.LogWarning( "Invalid name : "+text );
+        return false;
+    }
+
+
     /// <summary> 
     /// Convert stuffs related to variable declarations
     /// </summary>
@@ -616,16 +645,60 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         patterns.Add ("(\\bconst"+oblWS+")(?<end>"+commonCharsWithSpace+oblWS+commonName+")"); 
         replacements.Add ("${end}");
 
-        // VAR DECLARATION WITHOUT VALUE
-        patterns.Add ("(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)"); 
-        replacements.Add ("${visibility}var ${varName}: ${varType}${end}");
+        DoReplacements();
 
+        // VAR DECLARATION WITHOUT VALUE
+        //patterns.Add ("(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)"); 
+        //replacements.Add ("${visibility}var ${varName}: ${varType}${end}");
+        pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)";
+        MatchCollection allVariables = Regex.Matches( convertedCode, pattern );
+
+        foreach( Match aVariable in allVariables ) {
+            string visibility = aVariable.Groups["visibility"].Value;
+            string type = aVariable.Groups["varType"].Value;
+            string name = aVariable.Groups["varName"].Value;
+            string end = aVariable.Groups["end"].Value;
+
+            if( !IsAValidName( visibility.Trim() ) )
+                continue;
+
+            if( !IsAValidName( type.Trim() ) )
+                continue;
+
+            if( !IsAValidName( name.Trim() ) )
+                continue;
+
+            patterns.Add( EscapeRegexChars( aVariable.Value ) );
+            replacements.Add( visibility+"var "+name+": "+type+end );
+        }
 
         // VAR DECLARATION WITH VALUE
-        patterns.Add ("(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+".+;)");
+        //patterns.Add ("(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)");
         //patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")?(?<varType>"+commonCharsWithSpace+")"+oblSpaces+"(?<varName>"+commonName+")(?<varValue>"+optWS+"=)");
-        replacements.Add ("${visibility}var ${varName}: ${varType}${varValue}");
+        //replacements.Add ("${visibility}var ${varName}: ${varType}${varValue}");
         // will mess up if the string is on several lines 
+
+        pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)";
+        allVariables = Regex.Matches( convertedCode, pattern );
+
+        foreach( Match aVariable in allVariables ) {
+            string visibility = aVariable.Groups["visibility"].Value;
+            string type = aVariable.Groups["varType"].Value;
+            string name = aVariable.Groups["varName"].Value;
+            string varValue = aVariable.Groups["varValue"].Value;
+
+            if( !IsAValidName( visibility.Trim() ) )
+                continue;
+
+            if( !IsAValidName( type.Trim() ) )
+                continue;
+
+            if( !IsAValidName( name.Trim() ) )
+                continue;
+
+            patterns.Add( EscapeRegexChars( aVariable.Value ) );
+            replacements.Add( visibility+"var "+name+": "+type+varValue );
+        }
 
 
         // VAR DECLARATION IN FOREACH LOOP
@@ -669,10 +742,14 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
            patterns.Add( "\\bvar(?<partone>"+oblWS+commonNameWithSpace+")"+optWS+":"+optWS+"(?<parttwo><|<=|>|>=)"+optWS+";" );
            replacements.Add( "${parttwo}${partone};" );
 
-           // stuff like    Type name = othervar as Type;   got converted to   var name: Type =var Type: othervar as;
+           // stuff like     othervar as Type;   got converted to   var Type: othervar as;
            // othervar as Type; seems to be a var declaration without value
-           patterns.Add( "="+optWS+"var"+oblWS+"(?<type>"+commonNameWithSpace+")"+optWS+":"+optWS+"(?<variable>"+commonNameWithSpace+")"+oblWS+"as"+optWS+";" );
-           replacements.Add( "= ${variable} as ${type};" );
+           patterns.Add( "var"+oblWS+"(?<type>"+commonNameWithSpace+")"+optWS+":"+optWS+"(?<variable>"+commonNameWithSpace+")"+oblWS+"as"+optWS+";" );
+           replacements.Add( "${variable} as ${type};" );
+
+           // when there is space before a visibility pattern, a var declaration is converted to 
+           // var name:    public Type;
+
 
 
 
@@ -707,6 +784,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         DoReplacements ();
 
             // replace curly brackets by square bracket
+            //pattern = "(?s)((=|\\(|return){1}"+optWS+"){(?<values>.*)}(?<end>"+optWS+"(;|\\)){1})"; // le (?s)
             pattern = "(?s)(="+optWS+"){(?<values>.*)}(?<end>"+optWS+";)";
             foreach (Match _pattern in ReverseMatches (convertedCode, pattern)) {
                 string text = _pattern.Value;

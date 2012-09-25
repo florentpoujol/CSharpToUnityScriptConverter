@@ -124,10 +124,10 @@ public class RegexUtilities {
 
 
  	// most common characters used in names. Does not match arrays or generic collections
-    protected string commonName = "([A-Za-z0-9_\\.]+)";
-    protected string commonNameWithoutDot = "([A-Za-z0-9_]+)";
-    protected string commonNameWithSpace = "([A-Za-z0-9_\\. ]+)"; // Allows to have space in expression like "System . Something"
-    protected string commonNameWithSpaceAndComa = "([A-Za-z0-9_\\. ,]+)";
+    protected string commonName = "([A-Za-z_]{1}[A-Za-z0-9_\\.]*)";
+    protected string commonNameWithoutDot = "([A-Za-z_]{1}[A-Za-z0-9_]*)";
+    protected string commonNameWithSpace = "([A-Za-z_]{1}[A-Za-z0-9_\\. ]*)"; // Allows to have space in expression like "System . Something"
+    protected string commonNameWithSpaceAndComa = "([A-Za-z_]{1}[A-Za-z0-9_\\. ,]*)";
 
     // any numerical value (including the "f" for the float in C#)
     protected string number = "(-?[0-9]+(\\.{1}[0-9]+(f|F)?)?)";
@@ -142,11 +142,11 @@ public class RegexUtilities {
 
     // same as common name but includes also arrays, generic collections, strings
     // usefull when looking for a type (of variable or method)
-    protected string commonChars = "([A-Za-z0-9<>,'\"_\\[\\]\\.]+)"; // 
-    protected string commonCharsWithSpace = "([A-Za-z0-9<>,'\"_\\[\\]\\. ]+)"; // generic collections likes dictionnaries may have a space after the coma, for instance
-    protected string commonCharsWithSpaceAndParenthesis = "([A-Za-z0-9<>,'\"_\\[\\]\\. \\(\\)]+)"; // generic collections likes dictionnaries may have a space after the come, for instance
-    protected string commonCharsWithoutComma = "([A-Za-z0-9<>'\"_\\[\\]\\.]+)"; // for use with variable or type as method parameter
-    protected string commonCharsWoCommaWSpace = "([A-Za-z0-9<>'\"_\\[\\]\\. ]+)";
+    protected string commonChars = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_\\[\\]\\.]*)"; // 
+    protected string commonCharsWithSpace = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_\\[\\]\\. ]*)"; // generic collections likes dictionnaries may have a space after the coma, for instance
+    protected string commonCharsWithSpaceAndParenthesis = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_\\[\\]\\. \\(\\)]*)"; // generic collections likes dictionnaries may have a space after the come, for instance
+    protected string commonCharsWithoutComma = "([A-Za-z_]{1}[A-Za-z0-9<>'\"_\\[\\]\\.]*)"; // for use with variable or type as method parameter
+    protected string commonCharsWoCommaWSpace = "([A-Za-z_]{1}[A-Za-z0-9<>'\"_\\[\\]\\. ]*)";
 
     // characters seen in method parameters
     protected string argumentsChars = "([A-Za-z0-9<>,:_\\[\\]\\s\\n]*)"; 
