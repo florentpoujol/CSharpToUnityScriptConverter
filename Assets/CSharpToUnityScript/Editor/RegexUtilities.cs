@@ -18,6 +18,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.IO;
 
 
 public class RegexUtilities {
@@ -220,26 +221,45 @@ public class RegexUtilities {
         convertedCode = DoReplacements (convertedCode);
     }
 
-    protected string DoReplacements (string text) {
-        if (patterns.Count != replacements.Count) {
-            Debug.LogError ("Patterns and replacements count mismatch : patterns.Count="+patterns.Count+" replacements.Count="+replacements.Count);
+    protected string DoReplacements( string text ) {
+        if( patterns.Count != replacements.Count ) {
+            Debug.LogError( "Patterns and replacements count mismatch : patterns.Count="+patterns.Count+" replacements.Count="+replacements.Count );
             return text;
         }
 
         try { // some regex may throws nasty exceptions
-            for (int i = 0; i < patterns.Count; i++)
-                text = Regex.Replace (text, patterns[i], replacements[i]);
-            // NOTE : the dot represent every character, including new Line (\n), because of the (?s)
+            for( int i = 0; i < patterns.Count; i++ ) {
+                Log( "pattern="+patterns[i] );
+                Log( "replacement="+replacements[i] );
+                text = Regex.Replace( text, patterns[i], replacements[i] );
+            }
+            
 
-            patterns.Clear ();
-            replacements.Clear ();
+            patterns.Clear();
+            replacements.Clear();
         }
-        catch (System.Exception e) {
-            Debug.LogError (patterns.Count+" "+replacements.Count+" "+e);
-            Debug.LogWarning (text.Substring (0, 100));
+        catch( System.Exception e ) {
+            Debug.LogError( patterns.Count+" "+replacements.Count+" "+e );
+            Debug.LogWarning( text.Substring( 0, 100 ) );
         }
 
         return text;
+    }
+
+
+    // ----------------------------------------------------------------------------------
+
+    static StreamWriter writer;
+
+    /// <summary>
+    /// Log infos
+    /// </summary>
+    protected void Log( string line ) {
+        if( writer == null )
+            writer = new StreamWriter( Application.dataPath+"/GitIgnore/csharptounityscript_log.txt" );
+
+        writer.WriteLine( line );
+        writer.Flush();
     }
 
 

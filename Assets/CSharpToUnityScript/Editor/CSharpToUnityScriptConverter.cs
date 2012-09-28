@@ -335,13 +335,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Convert stuffs related to classes : declaration, inheritance, parent constructor call, Assembly imports
     /// </summary>
     void Classes () {
-        /*pattern = "\\bclass"+oblWS+commonName+"\\b";
-        List<Match> allClasses = ReverseMatches (convertedCode, pattern);
+        Log( "================================================= \n CLASSES" );
 
-        foreach (Match aClass in allClasses) {
-            projectClasses.Add (aClass.Groups[2].Value);
-            AddDataType (aClass.Groups[2].Value);
-        }*/
 
         // classes declarations with inheritance
         patterns.Add ("(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+optWS+"{)");
@@ -593,8 +588,11 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Convert stuffs related to variable declarations
     /// </summary>
     void Variables () {
+        Log( "================================================= \n VARIABLES" );
+
         // MULTIPLE INLINE VARIABLE DECLARATION
         if (convertMultipleVarDeclaration) {
+            Log( "================================================= \n MULTIPLE VAR DECLARATION" );
             Debug.Log("conversion multiple");
             Debug.Log("dataTypes = "+dataTypes);
             
@@ -606,7 +604,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             List<Match> allDeclarations = ReverseMatches (convertedCode, pattern);
 
             foreach (Match aDeclaration in allDeclarations){
-                Debug.Log (aDeclaration.Value);
+                //Debug.Log (aDeclaration.Value);
                 if( aDeclaration.Value.Contains( "\n" ) )
                     continue;
 
@@ -639,13 +637,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             }
         } // end if convertMultipleVarDeclaration
  
- 
-        
         // removing const keyword
         patterns.Add ("(\\bconst"+oblWS+")(?<end>"+commonCharsWithSpace+oblWS+commonName+")"); 
         replacements.Add ("${end}");
 
         DoReplacements();
+
+        Log( "================================================= \n VAR WITHOUT VALUE" );
 
         // VAR DECLARATION WITHOUT VALUE
         //patterns.Add ("(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)"); 
@@ -672,6 +670,15 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             replacements.Add( visibility+"var "+name+": "+type+end );
         }
 
+        // stuff like     othervar as Type;   got converted to   var Type: othervar as;
+           // othervar as Type; seems to be a var declaration without value
+           patterns.Add( "var"+oblWS+"(?<type>"+commonNameWithSpace+")"+optWS+":"+optWS+"(?<variable>"+commonNameWithSpace+")"+oblWS+"as"+optWS+";" );
+           replacements.Add( "${variable} as ${type};" );
+
+        DoReplacements();
+
+        Log( "================================================= \n VAR WITH VALUE" );
+
         // VAR DECLARATION WITH VALUE
         //patterns.Add ("(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)");
         //patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")?(?<varType>"+commonCharsWithSpace+")"+oblSpaces+"(?<varName>"+commonName+")(?<varValue>"+optWS+"=)");
@@ -695,12 +702,15 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             if( !IsAValidName( name.Trim() ) )
                 continue;
-
+            if( varValue == " = target as LegController;")
+                Debug.Log( "==============="+EscapeRegexChars( aVariable.Value ) );
             patterns.Add( EscapeRegexChars( aVariable.Value ) );
             replacements.Add( visibility+"var "+name+": "+type+varValue );
         }
-
-
+        DoReplacements();
+        
+        Log( "=================================================" );
+        
         // VAR DECLARATION IN FOREACH LOOP
         patterns.Add ("(?<varType>\\b"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<in>"+oblWS+"in"+oblWS+")");
         replacements.Add ("var ${varName}: ${varType}${in}");
@@ -742,10 +752,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
            patterns.Add( "\\bvar(?<partone>"+oblWS+commonNameWithSpace+")"+optWS+":"+optWS+"(?<parttwo><|<=|>|>=)"+optWS+";" );
            replacements.Add( "${parttwo}${partone};" );
 
-           // stuff like     othervar as Type;   got converted to   var Type: othervar as;
-           // othervar as Type; seems to be a var declaration without value
-           patterns.Add( "var"+oblWS+"(?<type>"+commonNameWithSpace+")"+optWS+":"+optWS+"(?<variable>"+commonNameWithSpace+")"+oblWS+"as"+optWS+";" );
-           replacements.Add( "${variable} as ${type};" );
+           
 
            // when there is space before a visibility pattern, a var declaration is converted to 
            // var name:    public Type;

@@ -120,3 +120,15 @@ UnityScript :
 - "out" keyword.
   In UnityScript, it is not needed when calling a C# method.
   But there is no way in UnityScript to create such behavior in the method declaration. 
+
+
+- "abstract" keyword
+
+
+
+
+==================================================
+
+==================================================
+
+- a property will not be converted if its name contains 
