@@ -335,7 +335,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Convert stuffs related to classes : declaration, inheritance, parent constructor call, Assembly imports
     /// </summary>
     void Classes () {
-        Log( "================================================= \n CLASSES" );
+        Log( "================================================= \n CLASSES \n CLASSES DECLARATION" );
 
 
         // classes declarations with inheritance
@@ -375,7 +375,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         DoReplacements ();
 
-
+        Log( "================================================= \n PARENT AND ALTERNATE CONSTRUCTOR CALL" );
         // now convert parent and alternate constructor call
 
         // loop the classes declarations in the file
@@ -435,34 +435,59 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         } // end looping through classes in that file
 
 
-        //--------------------
-
+        Log( "================================================= \n ATTRIBUTES @script" );
 
         // Attributes
-        string path = Application.dataPath+"/CSharpToUnityScript/Editor/Attributes.txt";
-        if (File.Exists (path)) {
-            StreamReader reader = new StreamReader (path);
-            List<string> attributesList = new List<string> ();
 
-            while (true) {
-                string line = reader.ReadLine ();
-                if (line == null)
-                    break;
+            // no script, no params
+            patterns.Add ("\\["+optWS+"(?<attribute>RPC|HideInInspector|System.NonSerialized|SerializeField)"+optWS+"\\]");
+            replacements.Add ("@${attribute}");
 
-                if (line.StartsWith ("#") || line.Trim () == "")
-                    continue;
+            // no script, params
+            patterns.Add ("\\["+optWS+"(?<attribute>DrawGizmo|Conditional|MenuItem)"+optWS+"(?<params>\\(.*\\))"+optWS+"\\]");
+            replacements.Add ("@${attribute}${params}");
+            
+            // require component
+            patterns.Add ("\\["+optWS+"RequireComponent"+optWS+"\\("+optWS+"typeof"+optWS+"\\((?<type>"+commonName+")\\)"+optWS+"\\)"+optWS+"\\]");
+            replacements.Add ("@script RequireComponent(${type})");
 
-                attributesList.Add (line.Trim ());
+            // script + params
+            string attributes = "(?<attributes>AddComponentMenu|ContextMenu|ExecuteInEditMode|ImageEffectOpaque|"+
+            "ImageEffectTransformsToLDR|NotConvertedAttribute|NotRenamedAttribute|System.Serializable|"+
+            "CanEditMultipleObjects|CustomEditor|PostProcessAttribute|PreferenceItem)";
+            patterns.Add ("\\["+optWS+attributes+optWS+"(?<params>\\(.*\\))?"+optWS+"\\]");
+            replacements.Add ("@script ${attributes}${params}");
+
+            /*string path = Application.dataPath+"/CSharpToUnityScript/Editor/Attributes.txt";
+            if( File.Exists( path ) ) {
+                StreamReader reader = new StreamReader (path);
+                List<string> attributesList = new List<string> ();
+
+                while (true) {
+                    string line = reader.ReadLine ();
+                    if (line == null)
+                        break;
+
+                    if (line.StartsWith ("#") || line.Trim () == "")
+                        continue;
+
+                    attributesList.Add (line.Trim ());
+                }
+                string attributes = '(?<attributes>'
+                foreach( string attr in attributesList )
+                // script + params
+                patterns.Add ("\\["+optWS+attr+optWS+"(?<params>\\(.*\\))?"+optWS+"\\]");
+                replacements.Add ("@script "+attr+"${params}");
             }
+            else
+                Debug.LogError ("Attributes.txt does not exist, not converting attributes !");*/
 
-            foreach (string attr in attributesList) {
+            /*foreach (string attr in attributesList) {
                 if (attr == "RPC") {
                     patterns.Add ("\\["+optWS+"RPC"+optWS+"\\]");
                     replacements.Add ("@RPC");
                     continue;
                 }
-
-
                 if (attr == "HideInInspector") {
                     patterns.Add ("\\["+optWS+"HideInInspector"+optWS+"\\]");
                     replacements.Add ("@HideInInspector");
@@ -485,6 +510,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     continue;
                 }
 
+
+
                 if (attr == "DrawGizmo") {
                     patterns.Add ("\\["+optWS+"DrawGizmo"+optWS+"(?<params>\\(.*\\))"+optWS+"\\]");
                     replacements.Add ("@DrawGizmo${params}");
@@ -495,15 +522,20 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     replacements.Add ("@Conditional${params}");
                     continue;
                 }
+                if (attr == "MenuItem") {
+                    patterns.Add ("\\["+optWS+"MenuItem"+optWS+"(?<params>\\(.*\\))"+optWS+"\\]");
+                    replacements.Add ("@MenuItem${params}");
+                    continue;
+                }
 
                 
 
                 patterns.Add ("\\["+optWS+attr+optWS+"(?<params>\\(.*\\))?"+optWS+"\\]");
                 replacements.Add ("@script "+attr+"${params}");
-            }
-        }
+            }*/
+        /*}
         else
-            Debug.LogError ("Attributes.txt does not exist, not converting attributes !");
+            Debug.LogError ("Attributes.txt does not exist, not converting attributes !");*/
 
         
         // struct
