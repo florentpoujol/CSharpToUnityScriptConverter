@@ -192,6 +192,7 @@ public class RegexUtilities {
     // list of the patterns and corresponding replacements to be processed by DoReplacements()
     protected List<string> patterns = new List<string> ();
     protected List<string> replacements = new List<string> ();
+    protected string[] a_patterns = new string[10];
 	protected string pattern;
     protected string replacement;
 	
@@ -256,7 +257,7 @@ public class RegexUtilities {
     /// </summary>
     protected void Log( string line ) {
         if( writer == null )
-            writer = new StreamWriter( Application.dataPath+"/GitIgnore/csharptounityscript_log.txt" );
+            writer = new StreamWriter( Application.dataPath+"/GitIgnore/csharptounityscript_log.txt", false ); // empty the file first
 
         writer.WriteLine( line );
         writer.Flush();

@@ -434,8 +434,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             convertedCode = convertedCode.Replace (classBlock.text, classBlock.newText);
         } // end looping through classes in that file
 
-
-        Log( "================================================= \n ATTRIBUTES @script" );
+        Log( "================================================= \n ATTRIBUTES STRUCT BASE/THIS ASSEMBLY" );
 
         // Attributes
 
@@ -447,7 +446,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             patterns.Add ("\\["+optWS+"(?<attribute>DrawGizmo|Conditional|MenuItem)"+optWS+"(?<params>\\(.*\\))"+optWS+"\\]");
             replacements.Add ("@${attribute}${params}");
             
-            // require component
+            // require component  need to remove typeof()    why don't we need to do that with CustomEditor ?
             patterns.Add ("\\["+optWS+"RequireComponent"+optWS+"\\("+optWS+"typeof"+optWS+"\\((?<type>"+commonName+")\\)"+optWS+"\\)"+optWS+"\\]");
             replacements.Add ("@script RequireComponent(${type})");
 
@@ -457,85 +456,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             "CanEditMultipleObjects|CustomEditor|PostProcessAttribute|PreferenceItem)";
             patterns.Add ("\\["+optWS+attributes+optWS+"(?<params>\\(.*\\))?"+optWS+"\\]");
             replacements.Add ("@script ${attributes}${params}");
-
-            /*string path = Application.dataPath+"/CSharpToUnityScript/Editor/Attributes.txt";
-            if( File.Exists( path ) ) {
-                StreamReader reader = new StreamReader (path);
-                List<string> attributesList = new List<string> ();
-
-                while (true) {
-                    string line = reader.ReadLine ();
-                    if (line == null)
-                        break;
-
-                    if (line.StartsWith ("#") || line.Trim () == "")
-                        continue;
-
-                    attributesList.Add (line.Trim ());
-                }
-                string attributes = '(?<attributes>'
-                foreach( string attr in attributesList )
-                // script + params
-                patterns.Add ("\\["+optWS+attr+optWS+"(?<params>\\(.*\\))?"+optWS+"\\]");
-                replacements.Add ("@script "+attr+"${params}");
-            }
-            else
-                Debug.LogError ("Attributes.txt does not exist, not converting attributes !");*/
-
-            /*foreach (string attr in attributesList) {
-                if (attr == "RPC") {
-                    patterns.Add ("\\["+optWS+"RPC"+optWS+"\\]");
-                    replacements.Add ("@RPC");
-                    continue;
-                }
-                if (attr == "HideInInspector") {
-                    patterns.Add ("\\["+optWS+"HideInInspector"+optWS+"\\]");
-                    replacements.Add ("@HideInInspector");
-                    continue;
-                }
-                if (attr == "System.NonSerialized") {
-                    patterns.Add ("\\["+optWS+"System.NonSerialized"+optWS+"\\]");
-                    replacements.Add ("@System.NonSerialized");
-                    continue;
-                }
-                if (attr == "SerializeField") {
-                    patterns.Add ("\\["+optWS+"SerializeField"+optWS+"\\]");
-                    replacements.Add ("@SerializeField");
-                    continue;
-                }
-
-                if (attr == "RequireComponent") {
-                    patterns.Add ("\\["+optWS+"RequireComponent"+optWS+"\\("+optWS+"typeof"+optWS+"\\((?<type>"+commonName+")\\)"+optWS+"\\)"+optWS+"\\]");
-                    replacements.Add ("@script RequireComponent(${type})");
-                    continue;
-                }
-
-
-
-                if (attr == "DrawGizmo") {
-                    patterns.Add ("\\["+optWS+"DrawGizmo"+optWS+"(?<params>\\(.*\\))"+optWS+"\\]");
-                    replacements.Add ("@DrawGizmo${params}");
-                    continue;
-                }
-                if (attr == "Conditional") {
-                    patterns.Add ("\\["+optWS+"Conditional"+optWS+"(?<params>\\(.*\\))"+optWS+"\\]");
-                    replacements.Add ("@Conditional${params}");
-                    continue;
-                }
-                if (attr == "MenuItem") {
-                    patterns.Add ("\\["+optWS+"MenuItem"+optWS+"(?<params>\\(.*\\))"+optWS+"\\]");
-                    replacements.Add ("@MenuItem${params}");
-                    continue;
-                }
-
-                
-
-                patterns.Add ("\\["+optWS+attr+optWS+"(?<params>\\(.*\\))?"+optWS+"\\]");
-                replacements.Add ("@script "+attr+"${params}");
-            }*/
-        /*}
-        else
-            Debug.LogError ("Attributes.txt does not exist, not converting attributes !");*/
 
         
         // struct
@@ -555,7 +475,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         DoReplacements ();
 
-        
+        Log( "================================================= \n REMOVING DUPLICATE ASSEMBLIES" );
+
         // in UnityScript, each assembly has to be imported once per project, or it will throw a warning in he Unity console for each duplicate assembly import !
         // so keep track of the assemblies already imported in the project (in one of the previous file) and comment out the duplicate
         pattern = "\\bimport"+oblWS+"(?<assemblyName>"+commonName+")"+optWS+";";
@@ -584,8 +505,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         DoReplacements ();
     } // end of method Classes
 
-
-    // ----------------------------------------------------------------------------------
+    
 
     // check if the first character is a letter or an underscore
     // make sure the name asn't more than tree space in it
@@ -598,20 +518,21 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         foreach( char letter in text ) {
             if( letter == ' ' )
                 spaceCount++;
-        }
 
-        if( spaceCount >= 3 ) {
-            Debug.LogWarning( "Invalid name : "+text );
-            return false;
+            if( spaceCount >= 3 ) {
+                Log( "IsAValidName() : Invalid name="+text );
+                return false;
+            }
         }
 
         // check if the first character is  a letter or an underscore
+        // tis should be useless since the regex patterns commonName and commonChars have that
         string alphabet = "abcdefghijklmnopqrstuvwxyz_";
 
         if( alphabet.Contains( char.ToLower(text[0]).ToString() ) )
             return true;
 
-        Debug.LogWarning( "Invalid name : "+text );
+        Log( "IsAValidName() : Invalid name="+text );
         return false;
     }
 
@@ -678,111 +599,145 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         Log( "================================================= \n VAR WITHOUT VALUE" );
 
         // VAR DECLARATION WITHOUT VALUE
-        //patterns.Add ("(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)"); 
-        //replacements.Add ("${visibility}var ${varName}: ${varType}${end}");
-        pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)";
-        MatchCollection allVariables = Regex.Matches( convertedCode, pattern );
 
-        foreach( Match aVariable in allVariables ) {
-            string visibility = aVariable.Groups["visibility"].Value;
-            string type = aVariable.Groups["varType"].Value;
-            string name = aVariable.Groups["varName"].Value;
-            string end = aVariable.Groups["end"].Value;
+        // conversion will mess up if the declaration is not preceded by a visibility keyword 
+        // but by something else like @HideInInspector or @System.Serialize which will be part of varType
+        // so : must strict that
+        string[] temp_patterns = { "(?<visibility>"+visibilityAndStatic+oblWS+")(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)",
+        "(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)" };
 
-            if( !IsAValidName( visibility.Trim() ) )
-                continue;
+        foreach( string temp_pattern in temp_patterns ) {
+            Log( "================================================= VAR WITHOUT VALUE   PATTERN#" );
+            MatchCollection allVariables = Regex.Matches( convertedCode, temp_pattern );
 
-            if( !IsAValidName( type.Trim() ) )
-                continue;
+            foreach( Match aVariable in allVariables ) {
+                string visibility = aVariable.Groups["visibility"].Value;
+                string type = aVariable.Groups["varType"].Value;
+                string name = aVariable.Groups["varName"].Value;
+                string end = aVariable.Groups["end"].Value;
 
-            if( !IsAValidName( name.Trim() ) )
-                continue;
+                if( !IsAValidName( visibility.Trim() ) )
+                    continue;
 
-            patterns.Add( EscapeRegexChars( aVariable.Value ) );
-            replacements.Add( visibility+"var "+name+": "+type+end );
+                if( !IsAValidName( type.Trim() ) )
+                    continue;
+
+                if( !IsAValidName( name.Trim() ) )
+                    continue;
+
+                List<string> forbiddenTypes = new List<string>( 
+                    new string[]{ "import", "return", "yield return", "as", "else", "<", "<=", ">", ">=" }
+                );
+
+                if( forbiddenTypes.Contains( type.Trim() ) || type.Contains( "import ") || type.Contains( " = ") )
+                    continue;
+                // some value setting got treated like var declaration   variable = value; => var variable: = value
+                // stuff like     othervar as Type;   got converted to   var Type: othervar as;
+                if( type.Substr( type.length-3 ) == " as" )
+                    continue;
+
+                //
+                pattern = aVariable.Value.Replace( "HideInInspector ", "" ).Replace( "System.NonSerialized ", "" );
+                type = type.Replace( "HideInInspector ", "" ).Replace( "System.NonSerialized ", "" );
+
+                patterns.Add( EscapeRegexChars( pattern ) );
+                replacements.Add( visibility+"var "+name+": "+type+end );
+            }
+            DoReplacements();
         }
 
         // stuff like     othervar as Type;   got converted to   var Type: othervar as;
            // othervar as Type; seems to be a var declaration without value
-           patterns.Add( "var"+oblWS+"(?<type>"+commonNameWithSpace+")"+optWS+":"+optWS+"(?<variable>"+commonNameWithSpace+")"+oblWS+"as"+optWS+";" );
-           replacements.Add( "${variable} as ${type};" );
+           //patterns.Add( "var"+oblWS+"(?<type>"+commonNameWithSpace+")"+optWS+":"+optWS+"(?<variable>"+commonNameWithSpace+")"+oblWS+"as"+optWS+";" );
+           //replacements.Add( "${variable} as ${type};" );
 
         DoReplacements();
 
         Log( "================================================= \n VAR WITH VALUE" );
 
         // VAR DECLARATION WITH VALUE
-        //patterns.Add ("(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)");
-        //patterns.Add ("(?<visibility>"+visibilityAndStatic+optWS+")?(?<varType>"+commonCharsWithSpace+")"+oblSpaces+"(?<varName>"+commonName+")(?<varValue>"+optWS+"=)");
-        //replacements.Add ("${visibility}var ${varName}: ${varType}${varValue}");
-        // will mess up if the string is on several lines 
+        
+        temp_patterns = new string[] { "(?<visibility>"+visibilityAndStatic+oblWS+")(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)",
+        "(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)" };
+        
+        foreach( string temp_pattern in temp_patterns ) {
+            Log( "================================================= VAR WITH VALUE   PATTERN#" );
+            MatchCollection allVariables = Regex.Matches( convertedCode, temp_pattern );
 
-        pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)";
-        allVariables = Regex.Matches( convertedCode, pattern );
+            foreach( Match aVariable in allVariables ) {
+                string visibility = aVariable.Groups["visibility"].Value;
+                string type = aVariable.Groups["varType"].Value.Replace( "HideInInspector", "").Replace( "System.NonSerialized", "" );;
+                string name = aVariable.Groups["varName"].Value;
+                string varValue = aVariable.Groups["varValue"].Value;
 
-        foreach( Match aVariable in allVariables ) {
-            string visibility = aVariable.Groups["visibility"].Value;
-            string type = aVariable.Groups["varType"].Value;
-            string name = aVariable.Groups["varName"].Value;
-            string varValue = aVariable.Groups["varValue"].Value;
+                if( !IsAValidName( visibility.Trim() ) )
+                    continue;
 
-            if( !IsAValidName( visibility.Trim() ) )
-                continue;
+                if( !IsAValidName( type.Trim() ) )
+                    continue;
 
-            if( !IsAValidName( type.Trim() ) )
-                continue;
+                if( !IsAValidName( name.Trim() ) )
+                    continue;
 
-            if( !IsAValidName( name.Trim() ) )
-                continue;
-            if( varValue == " = target as LegController;")
-                Debug.Log( "==============="+EscapeRegexChars( aVariable.Value ) );
-            patterns.Add( EscapeRegexChars( aVariable.Value ) );
-            replacements.Add( visibility+"var "+name+": "+type+varValue );
+                List<string> forbiddenTypes = new List<string>( 
+                    new string[]{ "import", "return", "yield return", "as", "else"}
+                );
+
+                if( forbiddenTypes.Contains( type.Trim() ) )
+                    continue;
+
+                pattern = aVariable.Value.Replace( "HideInInspector ", "" ).Replace( "System.NonSerialized ", "" );
+                type = type.Replace( "HideInInspector ", "" ).Replace( "System.NonSerialized ", "" );
+
+                patterns.Add( EscapeRegexChars( pattern ) );
+                replacements.Add( visibility+"var "+name+": "+type+varValue );
+            }
+            DoReplacements();
         }
+        
         DoReplacements();
         
-        Log( "=================================================" );
+        Log( "================================================= \n VAR DECLARATION IN FOREACH LOOPS + PATCHING" );
         
         // VAR DECLARATION IN FOREACH LOOP
         patterns.Add ("(?<varType>\\b"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<in>"+oblWS+"in"+oblWS+")");
         replacements.Add ("var ${varName}: ${varType}${in}");
 
 
-        
-
         // PATCHING   converting var declaration leads to some (many actually) garbage
            // assembly imports
-           patterns.Add ("\\bvar"+oblWS+commonName+optWS+":"+optWS+"import"+optWS+";"); // will mess up if a custom class is named "import"...
-           replacements.Add ("import $2;");
+           //patterns.Add ("\\bvar"+oblWS+commonName+optWS+":"+optWS+"import"+optWS+";"); // will mess up if a custom class is named "import"...
+           //replacements.Add ("import $2;");
 
            // using System. Collections ;    got converted to    var Collections: import System. ;
-           patterns.Add ("\\bvar"+oblWS+"(?<end>"+commonName+")"+optWS+":"+optWS+"import"+oblWS+"(?<start>.*);"); // will mess up if a custom class is named "import"...
-           replacements.Add ("import ${start}${end};");
+           //patterns.Add ("\\bvar"+oblWS+"(?<end>"+commonName+")"+optWS+":"+optWS+"import"+oblWS+"(?<start>.*);"); // will mess up if a custom class is named "import"...
+           //replacements.Add ("import ${start}${end};");
 
            // returned values
-           patterns.Add ("\\bvar"+oblWS+commonName+optWS+":"+optWS+"return"+optWS+";");
-           replacements.Add ("return $2;");
+           //patterns.Add ("\\bvar"+oblWS+commonName+optWS+":"+optWS+"return"+optWS+";");
+           //replacements.Add ("return $2;");
 
            // "else aVar = aValue;" got converted in  "var aVar: else = aValue;"
-           patterns.Add ("\\bvar"+oblWS+commonName+optWS+":"+optWS+"else"+optWS+"=");
-           replacements.Add ("else $2 =");
+           //patterns.Add ("\\bvar"+oblWS+commonName+optWS+":"+optWS+"else"+optWS+"=");
+           //replacements.Add ("else $2 =");
 
            // yield return null;  or  yield return 0;   got converted into  var null: yield return;
-           patterns.Add ("\\bvar"+oblWS+"(?<value>null|0)"+optWS+":"+optWS+"yield"+oblWS+"return"+optWS+";");
-           replacements.Add ("yield return ${value};");
+           //patterns.Add ("\\bvar"+oblWS+"(?<value>null|0)"+optWS+":"+optWS+"yield"+oblWS+"return"+optWS+";");
+           //replacements.Add ("yield return ${value};");
 
            // some value setting got treated like var declaration   variable = value; => var variable: = value
-           patterns.Add ("\\bvar"+oblWS+"(?<varName>"+commonName+optWS+"):(?<end>"+optWS+"=)");
-           replacements.Add ("${varName}${end}");
+           //patterns.Add ("\\bvar"+oblWS+"(?<varName>"+commonName+optWS+"):(?<end>"+optWS+"=)");
+           //replacements.Add ("${varName}${end}");
 
            //in for loop :   for( ; i < variable; )   got converted in   for( ;var variable: i <; )
-           // using commonNameWithoutDot present legit expression like   var name: List.<Type> to be converted into List.<nameType>
+           // using commonNameWithoutDot prevent legit expression like   var name: List.<Type> to be converted into List.<nameType>
+           // I can't prevent this to happen if  generic collection
            patterns.Add ("\\bvar"+oblWS+"(?<varName>"+commonName+")"+optWS+":(?<start>"+optWS+commonNameWithoutDot+optWS+"(<|>|<=|>=))");
            replacements.Add ("${start}${varName}");
 
            // stuff like    [...] < 0.0f;   got converted to   [...]var 0.0: <;
-           patterns.Add( "\\bvar(?<partone>"+oblWS+commonNameWithSpace+")"+optWS+":"+optWS+"(?<parttwo><|<=|>|>=)"+optWS+";" );
-           replacements.Add( "${parttwo}${partone};" );
+           //patterns.Add( "\\bvar(?<partone>"+oblWS+commonNameWithSpace+")"+optWS+":"+optWS+"(?<parttwo><|<=|>|>=)"+optWS+";" );
+           //replacements.Add( "${parttwo}${partone};" );
 
            
 
@@ -790,7 +745,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
            // var name:    public Type;
 
 
-
+        Log( "================================================= \n CASTING + REST" );
 
         // CASTING
         // we can make it a little more secure by checking that the two commonChars are the same
