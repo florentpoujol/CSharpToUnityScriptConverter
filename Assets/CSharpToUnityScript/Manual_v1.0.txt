@@ -131,4 +131,4 @@ UnityScript :
 
 ==================================================
 
-- a property will not be converted if its name contains 
+- you can not have a method parameter nammed get
