@@ -220,7 +220,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         patterns.Add("yield"+optWS+"return"+optWS+"(null|0|new)");
         replacements.Add("yield ");
 
-
         DoReplacements();
     
 
@@ -292,45 +291,25 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     // ----------------------------------------------------------------------------------
 
     /// <summary> 
-    /// 
-    /// </summary>
-    /*void CheckDataTypes () {
-        string[] types = {"class", "struct", "enum"};
-
-        List<Match> allMatches;
-        foreach (string type in types) {
-            pattern = "\\b"+type+oblWS+commonName+"\\b";
-            allMatches = ReverseMatches (convertedCode, pattern);
-
-            foreach( Match aMatch in allMatches )
-                AddDataType (aMatch.Groups[2].Value);
-        }
-    }*/
-
-
-    // ----------------------------------------------------------------------------------
-
-    /// <summary> 
     /// Convert stuffs related to classes : declaration, inheritance, parent constructor call, Assembly imports
     /// </summary>
     void Classes () {
-        Log( "================================================= \n CLASSES \n CLASSES DECLARATION" );
-
+        // CLASSES DECLARATION
 
         // classes declarations with inheritance
-        patterns.Add ("(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+optWS+"{)");
+        /*patterns.Add ("(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+optWS+"{)");
         replacements.Add ("$1 extends ${parent}");
-        // if parent is an Interface, extends will be converted below
+        // if parent is an interface, "extends" will be converted below
 
         // class that inherits a parent class and implements at least one interace
         patterns.Add ("(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+")"+
         "(?<interfaces>("+optWS+","+optWS+commonName+")+)"+
         "(?<end>"+optWS+"{)");
         replacements.Add ("$1 extends ${parent} implements ${interfaces}${end}");
-        // lieave the first interface after implemtns with a coma, to be removed below
+        // leave the first interface after implements with a coma before it (implements ,Interface), to be removed below
         // if parent is an Interface, extends will be converted below
         
-        // if the "parent" begins by a I, consider it as an interface
+        // if the "parent" begins by an uppercase I, consider it as an interface
         patterns.Add ("\\bextends(?<interface>"+oblWS+"I"+commonName+optWS+"(implements|{))");
         replacements.Add ("implements${interface}");
 
@@ -338,7 +317,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         patterns.Add ("\\bimplements"+optWS+",");
         replacements.Add ("implements ");
 
-        // implements [interface] implements [interfaces] => implements [interface], [interface]
+        // implements [interface] implements [interface] => implements [interface], [interface]
         patterns.Add ("(\\bimplements"+oblWS+"I"+commonName+")"+oblWS+"implements\\b");
         replacements.Add ("$1,");
 
@@ -352,46 +331,95 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             replacements.Add ("extends$1 implements ");
         }
 
-        DoReplacements();
+        DoReplacements();*/
 
-        Log( "================================================= \n PARENT AND ALTERNATE CONSTRUCTOR CALL" );
-        // now convert parent and alternate constructor call
+        pattern = "(\\bclass"+oblWS+commonName+")(?<keyword>"+optWS+":"+optWS+")(?<parent>"+commonName+")"+optWS+"{";
+        MatchCollection allClasses = Regex.Matches( convertedCode, pattern );
+
+        foreach( Match aClass in allClasses ) {
+            // assume parent is a class unless
+            // it is not in UnityClasses nor in projectClasses and its name begin by an uppercase I
+            string parent = aClass.Groups['parent'].Value;
+            string keyword = " extends "
+            
+            if( !unityClasses.Contains(parent) && !projectClasses.Contains(parent) && parent[0] == 'I' )
+                keyword = " implements ";
+
+            string newClassDeclaration = aClass.Value.Replace( aClass.Groups['keyword'].Value, keyword );
+            convertedCode = convertedCode.Replace( aClass.Value, newClassDeclaration );
+        }
+
+
+        pattern = "(\\bclass"+oblWS+commonName+")(?<keyword>"+optWS+":"+optWS+")(?<parent>"+commonName+")"+
+        "(?<interfaces>("+optWS+","+optWS+commonName+")+)"+
+        "(?<end>"+optWS+"{)";
+        allClasses = Regex.Matches( convertedCode, pattern );
+
+        foreach( Match aClass in allClasses ) {
+            string parent = aClass.Groups['parent'].Value;
+            string keyword = " extends "
+            
+            if( !unityClasses.Contains(parent) && !projectClasses.Contains(parent) && parent[0] == 'I' )
+                keyword = " implements ";
+
+            string newClassDeclaration = aClass.Value.Replace( aClass.Groups['keyword'].Value, keyword );
+
+            // if keyword is implements, there is nothing more to do
+            // but if keyword is extends, needs to add "implements" after the parent and strip the first coma (between implements and the first interface)
+            if( keyword == " extends " ) {
+                newClassDeclaration = newClassDeclaration.Replace( parent, parent+" implements " );
+                string newInterfaces = aClass.Groups['interfaces'].Value.TrimStart(' ', ','); // remove space and coma
+                newClassDeclaration = newClassDeclaration.Replace( aClass.Groups['interfaces'].Value, newInterfaces );
+            }
+
+            convertedCode = convertedCode.Replace( aClass.Value, newClassDeclaration );
+        }
+
+
+        // PARENT AND ALTERNATE CONSTRUCTOR CALL
 
         // loop the classes declarations in the file
         pattern = "\\bclass"+oblWS+"(?<blockName>"+commonName+")"+
         "("+oblWS+"extends"+oblWS+commonName+")?[^{]*{";
-        List<Match> allClasses = ReverseMatches (convertedCode, pattern);
+        allClasses = Regex.Matches( convertedCode, pattern );
         
-        foreach (Match aClass in allClasses) {
-            Block classBlock = new Block (aClass, convertedCode);
+        foreach( Match aClass in allClasses ) {
+            Block classBlock = new Block( aClass, convertedCode );
             classBlock.newText = classBlock.text;
 
-            if (classBlock.isEmpty)
+            if( classBlock.isEmpty )
                 continue;
 
             List<Match> allConstructors = new List<Match>();
 
             // look for constructors in the class that call the parent constructor
-            if (classBlock.declaration.Contains ("extends")) { // if the class declaration doesn't contains "extends", a constructor has no parent to call
-                
-                pattern = "\\bpublic"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\(.*\\)(?<base>"+optWS+":"+optWS+"base"+optWS+"\\((?<args>.*)\\))"+optWS+"{";
-                allConstructors = ReverseMatches (classBlock.text, pattern); // all constructors in that class
+            // if the class declaration doesn't contains "extends", a constructor has no parent to call
+            if( classBlock.declaration.Contains("extends") ) { 
+                // all constructors in this class
+                pattern = "\\bpublic"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\([^\\)]*\\)(?<base>"+optWS+":"+optWS+"base"+optWS+"\\((?<args>[^\\)]*)\\))"+optWS+"{";
+                allConstructors = ReverseMatches( classBlock.text, pattern ); 
 
-                foreach (Match aConstructor in allConstructors) {
-                    Block constructorBlock = new Block (aConstructor, classBlock.newText);
+                foreach( Match aConstructor in allConstructors ) {
+                    //Block constructorBlock = new Block( aConstructor, classBlock.newText );
+                    string super = "{"+EOL+"super("+aConstructor.Groups["args"]+");";
+                    string newConstructor = aConstructor.Value.Replace( aConstructor.Groups["base"].Value, "" );
+                    newConstructor = newConstructor.Replace( "{", super );
+                    
+                    classBlock.newText = classBlock.newText.Replace( aConstructor.Value, newConstructor );
+                    //classBlock.newText = classBlock.newText.Replace (constructorBlock.declaration, constructorBlock.newDeclaration);
 
                     // first task : add "super();" to the constructor's body
-                   constructorBlock.newText = constructorBlock.text.Insert (1, EOL+"super("+aConstructor.Groups["args"]+");");
+                   /*constructorBlock.newText = constructorBlock.text.Insert (1, EOL+"super("+aConstructor.Groups["args"]+");");
                    classBlock.newText = classBlock.newText.Replace (constructorBlock.text, constructorBlock.newText);
 
                    // second tacks : remove ":base()" in the constructor declaration
                    constructorBlock.newDeclaration = constructorBlock.declaration.Replace (aConstructor.Groups["base"].Value, "");
-                   classBlock.newText = classBlock.newText.Replace (constructorBlock.declaration, constructorBlock.newDeclaration);
+                   classBlock.newText = classBlock.newText.Replace (constructorBlock.declaration, constructorBlock.newDeclaration);*/
                 }
             }
 
 
-            // look for constructors in the class that call others constructors (in the same class)
+            // look for constructors in the class that call others constructors of the same class
             pattern = "\\bpublic"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\(.*\\)(?<this>"+optWS+":"+optWS+"this"+optWS+"\\((?<args>.*)\\))"+optWS+"{";
             allConstructors.Clear();
             allConstructors = ReverseMatches (classBlock.newText, pattern); // all constructors in that class
@@ -410,82 +438,72 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             
             // we won't do more search/replace for this class 
             // now replace in convertedCode, the old classBlock.text by the new
-            convertedCode = convertedCode.Replace (classBlock.text, classBlock.newText);
+            convertedCode = convertedCode.Replace( classBlock.text, classBlock.newText );
         } // end looping through classes in that file
 
 
-        // Attributes
+        // ATTRIBUTES
 
-            // no script, no params
-            patterns.Add ("\\["+optWS+"(?<attribute>RPC|HideInInspector|System.NonSerialized|SerializeField)"+optWS+"\\]");
-            replacements.Add ("@${attribute}");
+        // no script, no params
+        patterns.Add( "\\["+optWS+"(?<attribute>RPC|HideInInspector|System.NonSerialized|SerializeField)"+optWS+"\\]" );
+        replacements.Add( "@${attribute}" );
 
-            // no script, params
-            patterns.Add ("\\["+optWS+"(?<attribute>DrawGizmo|Conditional|MenuItem)"+optWS+"(?<params>\\(.*\\))"+optWS+"\\]");
-            replacements.Add ("@${attribute}${params}");
-            
-            // require component  need to remove typeof()    why don't we need to do that with CustomEditor ?
-            patterns.Add ("\\["+optWS+"RequireComponent"+optWS+"\\("+optWS+"typeof"+optWS+"\\((?<type>"+commonName+")\\)"+optWS+"\\)"+optWS+"\\]");
-            replacements.Add ("@script RequireComponent(${type})");
+        // no script, with params
+        patterns.Add( "\\["+optWS+"(?<attribute>DrawGizmo|Conditional|MenuItem)"+optWS+"(?<params>\\(.*\\))"+optWS+"\\]" );
+        replacements.Add( "@${attribute}${params}" );
+        
+        // require component  need to remove typeof()
+        // why don't we need to do that with CustomEditor ??
+        patterns.Add( "\\["+optWS+"RequireComponent"+optWS+"\\("+optWS+"typeof"+optWS+"\\((?<type>"+commonName+")\\)"+optWS+"\\)"+optWS+"\\]" );
+        replacements.Add( "@script RequireComponent(${type})" );
 
-            // script + params
-            string attributes = "(?<attributes>AddComponentMenu|ContextMenu|ExecuteInEditMode|ImageEffectOpaque|"+
-            "ImageEffectTransformsToLDR|NotConvertedAttribute|NotRenamedAttribute|System.Serializable|"+
-            "CanEditMultipleObjects|CustomEditor|PostProcessAttribute|PreferenceItem)";
-            patterns.Add ("\\["+optWS+attributes+optWS+"(?<params>\\(.*\\))?"+optWS+"\\]");
-            replacements.Add ("@script ${attributes}${params}");
+        // script + params
+        string attributes = "(?<attributes>AddComponentMenu|ContextMenu|ExecuteInEditMode|ImageEffectOpaque|"+
+        "ImageEffectTransformsToLDR|NotConvertedAttribute|NotRenamedAttribute|System.Serializable|"+
+        "CanEditMultipleObjects|CustomEditor|PostProcessAttribute|PreferenceItem)";
+        patterns.Add( "\\["+optWS+attributes+optWS+"(?<params>\\(.*\\))?"+optWS+"\\]" );
+        replacements.Add( "@script ${attributes}${params}" );
 
         
-        // struct
-        // in JS, the way to define struct is to makes a public class inherits from System.ValueType
-        patterns.Add ("\\bstruct"+oblWS+commonName+optWS+"{");
-        replacements.Add ("class $2 extends System.ValueType {");
+        // STRUCT
+        patterns.Add( "\\bstruct"+oblWS+commonName+optWS+"{" );
+        replacements.Add( "class $2 extends System.ValueType {" );
 
 
         // base. => this.      
-        patterns.Add ("\\bbase"+optWS+"\\.");
-        replacements.Add ("super$1.");
-
-
-        // Assembly imports
-        patterns.Add ("\\busing("+oblWS+commonNameWithSpace+optWS+";)");
-        replacements.Add ("import$1");
+        patterns.Add( "\\bbase"+optWS+"\\." );
+        replacements.Add( "super$1." );
 
         DoReplacements();
 
 
+        // ASSEMBLY IMPORT
+        
         // in UnityScript, each assembly has to be imported once per project, or it will throw a warning in he Unity console for each duplicate assembly import
         // so keep track of the assemblies already imported in the project (in one of the previous file) and comment out the duplicate
-        pattern = "\\bimport"+oblWS+"(?<assemblyName>"+commonName+")"+optWS+";";
-        List<Match> allImports = ReverseMatches (convertedCode, pattern);
+        pattern = "\\busing"+oblWS+"(?<assemblyName>"+commonName+")"+optWS+";";
+        MatchCollection allImports = Regex.matches( convertedCode, pattern );
 
         foreach( Match import in allImports ) {
-            string oldAssemblyName = import.Groups["assemblyName"].Value; // remove spaces
-            
-            // remove spaces
-            string assemblyName = oldAssemblyName.Replace( " ", "" );
-            //convertedCode = convertedCode.Replace (oldAssemblyName, assemblyName);
-
-            // won't work if 
-            // System. Collections is written after
-            // System. Collections. Generic for instace
-            // because "System.Collections" will already be replaced and "System. Collections. Generic" won't exist anymore
+            string assemblyName = import.Groups["assemblyName"].Value.Replace( " ", "" );
 
             if( importedAssemblies.Contains(assemblyName) ) {
-                convertedCode = convertedCode.Insert( import.Index, "//" );
-                //Debug.Log ("inserting comment on import ");
+                convertedCode = convertedCode.Replace( import.Value, "// "+import.Value );
             }
-            else
+            else {
+                convertedCode = convertedCode.Replace( import.Value, "import "+assemblyName+";" );
                 importedAssemblies.Add(assemblyName);
+            }
         }
-
-        DoReplacements();
     } // end of method Classes
 
-    
 
-    // check if the first character is a letter or an underscore
-    // make sure the name asn't more than tree space in it
+    // ----------------------------------------------------------------------------------
+
+    /// </summary>
+    /// check if the first character is a letter or an underscore
+    /// make sure the name asn't more than tree space in it
+    /// </summary>
     bool IsAValidName( string text ) {
         if( text.Trim() == "" )
             return true;
@@ -513,6 +531,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         return false;
     }
 
+    
+    // ----------------------------------------------------------------------------------
 
     /// <summary> 
     /// Convert stuffs related to variable declarations
