@@ -60,7 +60,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // reading unity classes
         string path = Application.dataPath+"/CSharpToUnityScript/Editor/UnityClasses.txt";
-        if( File.Exist( path ) ) {
+        if( File.Exists( path ) ) {
             reader = new StreamReader( path );
             string line = "";
 
@@ -86,8 +86,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // loop trough all poject's file, extract the data types (classes, enums and structs)
         string[] paths = Directory.GetFiles( Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories );
         
-        foreach( string path in paths ) {
-            reader = new StreamReader( path );
+        foreach( string scriptPath in paths ) {
+            reader = new StreamReader( scriptPath );
             string scriptContent = reader.ReadToEnd();
             reader.Close();
 
@@ -119,7 +119,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// </summary>
     /// <param name="inputCode">The code in C# to be converted in UnityScript</param>
     /// <returns>The converted code in UnityScript</returns>
-    public void Convert (string inputCode) {
+    public string Convert( string inputCode ) {
         convertedCode = inputCode;
         Convert();
         return convertedCode;
@@ -152,7 +152,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// convertedCode
     /// </summary>
     private void Convert() {
-        // GET RID OF COMMENTS
+        // GET RID OF COMMENTS (doesn't work)
         //pattern = "(?<comment>/{2,3}(.*))(\\r\\n)";
         /*pattern = "//.*$";
         List<Match> allComments = ReverseMatches( convertedCode, pattern );
@@ -339,13 +339,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         foreach( Match aClass in allClasses ) {
             // assume parent is a class unless
             // it is not in UnityClasses nor in projectClasses and its name begin by an uppercase I
-            string parent = aClass.Groups['parent'].Value;
-            string keyword = " extends "
+            string parent = aClass.Groups["parent"].Value;
+            string keyword = " extends ";
             
             if( !unityClasses.Contains(parent) && !projectClasses.Contains(parent) && parent[0] == 'I' )
                 keyword = " implements ";
 
-            string newClassDeclaration = aClass.Value.Replace( aClass.Groups['keyword'].Value, keyword );
+            string newClassDeclaration = aClass.Value.Replace( aClass.Groups["keyword"].Value, keyword );
             convertedCode = convertedCode.Replace( aClass.Value, newClassDeclaration );
         }
 
@@ -356,20 +356,20 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         allClasses = Regex.Matches( convertedCode, pattern );
 
         foreach( Match aClass in allClasses ) {
-            string parent = aClass.Groups['parent'].Value;
-            string keyword = " extends "
+            string parent = aClass.Groups["parent"].Value;
+            string keyword = " extends ";
             
             if( !unityClasses.Contains(parent) && !projectClasses.Contains(parent) && parent[0] == 'I' )
                 keyword = " implements ";
 
-            string newClassDeclaration = aClass.Value.Replace( aClass.Groups['keyword'].Value, keyword );
+            string newClassDeclaration = aClass.Value.Replace( aClass.Groups["keyword"].Value, keyword );
 
             // if keyword is implements, there is nothing more to do
             // but if keyword is extends, needs to add "implements" after the parent and strip the first coma (between implements and the first interface)
             if( keyword == " extends " ) {
                 newClassDeclaration = newClassDeclaration.Replace( parent, parent+" implements " );
-                string newInterfaces = aClass.Groups['interfaces'].Value.TrimStart(' ', ','); // remove space and coma
-                newClassDeclaration = newClassDeclaration.Replace( aClass.Groups['interfaces'].Value, newInterfaces );
+                string newInterfaces = aClass.Groups["interfaces"].Value.TrimStart(' ', ','); // remove space and coma
+                newClassDeclaration = newClassDeclaration.Replace( aClass.Groups["interfaces"].Value, newInterfaces );
             }
 
             convertedCode = convertedCode.Replace( aClass.Value, newClassDeclaration );
@@ -390,50 +390,39 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             if( classBlock.isEmpty )
                 continue;
 
-            List<Match> allConstructors = new List<Match>();
+            MatchCollection allConstructors;
 
             // look for constructors in the class that call the parent constructor
             // if the class declaration doesn't contains "extends", a constructor has no parent to call
             if( classBlock.declaration.Contains("extends") ) { 
                 // all constructors in this class
                 pattern = "\\bpublic"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\([^\\)]*\\)(?<base>"+optWS+":"+optWS+"base"+optWS+"\\((?<args>[^\\)]*)\\))"+optWS+"{";
-                allConstructors = ReverseMatches( classBlock.text, pattern ); 
+                allConstructors = Regex.Matches( classBlock.text, pattern ); 
 
                 foreach( Match aConstructor in allConstructors ) {
-                    //Block constructorBlock = new Block( aConstructor, classBlock.newText );
-                    string super = "{"+EOL+"super("+aConstructor.Groups["args"]+");";
+                    // remove :base() from the constructor declaration
                     string newConstructor = aConstructor.Value.Replace( aConstructor.Groups["base"].Value, "" );
+                    // add super(); to the constructor body
+                    string super = "{"+EOL+"super("+aConstructor.Groups["args"]+");";
                     newConstructor = newConstructor.Replace( "{", super );
                     
                     classBlock.newText = classBlock.newText.Replace( aConstructor.Value, newConstructor );
-                    //classBlock.newText = classBlock.newText.Replace (constructorBlock.declaration, constructorBlock.newDeclaration);
-
-                    // first task : add "super();" to the constructor's body
-                   /*constructorBlock.newText = constructorBlock.text.Insert (1, EOL+"super("+aConstructor.Groups["args"]+");");
-                   classBlock.newText = classBlock.newText.Replace (constructorBlock.text, constructorBlock.newText);
-
-                   // second tacks : remove ":base()" in the constructor declaration
-                   constructorBlock.newDeclaration = constructorBlock.declaration.Replace (aConstructor.Groups["base"].Value, "");
-                   classBlock.newText = classBlock.newText.Replace (constructorBlock.declaration, constructorBlock.newDeclaration);*/
                 }
             }
 
 
-            // look for constructors in the class that call others constructors of the same class
+            // look for constructors in this class that call others constructors of the same class
             pattern = "\\bpublic"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\(.*\\)(?<this>"+optWS+":"+optWS+"this"+optWS+"\\((?<args>.*)\\))"+optWS+"{";
-            allConstructors.Clear();
-            allConstructors = ReverseMatches (classBlock.newText, pattern); // all constructors in that class
+            allConstructors = Regex.Matches( classBlock.newText, pattern );
 
-            foreach (Match aConstructor in allConstructors) {
-                Block constructorBlock = new Block (aConstructor, classBlock.newText);
-
-                // first task : add "classname();" to the constructor's body
-               constructorBlock.newText = constructorBlock.text.Insert (1, EOL+classBlock.name+"("+aConstructor.Groups["args"]+");");
-               classBlock.newText = classBlock.newText.Replace (constructorBlock.text, constructorBlock.newText);
-
-               // second tacks : remove ":this()" in the constructor declaration
-               constructorBlock.newDeclaration = constructorBlock.declaration.Replace (aConstructor.Groups["this"].Value, "");
-               classBlock.newText = classBlock.newText.Replace (constructorBlock.declaration, constructorBlock.newDeclaration);
+            foreach( Match aConstructor in allConstructors ) {
+                // remove :this() from the constructor declaration
+                string newConstructor = aConstructor.Value.Replace( aConstructor.Groups["this"].Value, "" );
+                // add Classname() to the constructor body
+                string super = "{"+EOL+classBlock.name+"("+aConstructor.Groups["args"]+");";
+                newConstructor = newConstructor.Replace( "{", super );
+                
+                classBlock.newText = classBlock.newText.Replace( aConstructor.Value, newConstructor );
             }
             
             // we won't do more search/replace for this class 
@@ -470,7 +459,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         replacements.Add( "class $2 extends System.ValueType {" );
 
 
-        // base. => this.      
+        // base. => super.      
         patterns.Add( "\\bbase"+optWS+"\\." );
         replacements.Add( "super$1." );
 
@@ -481,8 +470,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         
         // in UnityScript, each assembly has to be imported once per project, or it will throw a warning in he Unity console for each duplicate assembly import
         // so keep track of the assemblies already imported in the project (in one of the previous file) and comment out the duplicate
-        pattern = "\\busing"+oblWS+"(?<assemblyName>"+commonName+")"+optWS+";";
-        MatchCollection allImports = Regex.matches( convertedCode, pattern );
+        pattern = "\\busing"+oblWS+"(?<assemblyName>"+commonNameWithSpace+")"+optWS+";";
+        MatchCollection allImports = Regex.Matches( convertedCode, pattern );
 
         foreach( Match import in allImports ) {
             string assemblyName = import.Groups["assemblyName"].Value.Replace( " ", "" );
