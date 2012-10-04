@@ -113,7 +113,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
     // ----------------------------------------------------------------------------------
-
+    
     /// <summary>
     ///  Main method that perform generic conversion and call the other method for specific conversion
     /// </summary>
@@ -287,7 +287,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         }*/
     } // end of method Convert()
 
-
+    
     // ----------------------------------------------------------------------------------
 
     /// <summary> 
@@ -793,11 +793,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     // ----------------------------------------------------------------------------------
 
     /// <summary> 
-    /// Convert stuffs related to functions : declaration
+    /// Convert stuffs related to functions/methods
     /// </summary>
     void Functions () {
-        Log( "================================================= \n FUCNTION" );
-
         // first check for abtract methods, strip the abstract keyword while add curly bracket instead of the semi colon
         pattern = "(\\babstract"+oblWS+")(?<body>"+commonCharsWithSpace+oblWS+commonName+optWS+"\\(.*\\))("+optWS+";)";
         List<Match> allFunctionsDeclarations = ReverseMatches( convertedCode, pattern );
@@ -941,8 +939,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Convert Properties declarations
     /// </summary>
     public void Properties () {
-        Log( "================================================= \n PROPERTIES" );
-
         // find properties
         pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<override>\\boverride"+oblWS+")?(?<blockType>"+commonCharsWithSpace+")"+oblWS+"(?<blockName>"+commonName+")"+optWS+"{";
         List<Match> allProperties = ReverseMatches (convertedCode, pattern);

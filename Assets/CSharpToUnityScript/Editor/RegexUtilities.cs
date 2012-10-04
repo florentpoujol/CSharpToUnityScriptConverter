@@ -1,13 +1,10 @@
 /// <summary>
 /// RegexUtilities class for Unity3D
 ///
-/// This class provide some structs and variables to help in the search and replace of text using regex
+/// This class provide some structs, variables and methods 
+///   to facilitate the use of regexes by the CSharpToUnityScriptConverter class
 ///
-/// Version used by the "C# to UnityScript" extension for Unity3D
-/// Website : 
-/// Documentation :
-///
-/// Created by Florent POUJOL aka Lion on Unity's forums
+/// Created by Florent POUJOL
 /// florent.poujol@gmail.com
 /// http://www.florent-poujol.fr/en
 /// Profile on Unity's forums : http://forum.unity3d.com/members/23148-Lion
@@ -24,19 +21,22 @@ using System.IO;
 public class RegexUtilities {
 
     /// <summary>
-    /// 
+    /// A block is what is writtent between an opening and its matching closing curly brackets
+    /// This struct
     /// </summary>
 	public struct Block {
         public Match match; // the Match of the block's declaration
 
+        public string refText; // the text in which the match has been found, and where to search for the block
         public int startIndex;
         public int endIndex; // index of the opening and closing bracket of block in reftext
-        public string refText; //
-
+        
         public string name; // name of the block (Block is used only with methods or classes)
         public string type; // type if the block is a method
-        public string declaration; // full block's declaration (up util the opening bracket). Usually the match's value
+
+        public string declaration; // full block's declaration (up util the opening bracket). Usually the match's value (match.Value)
         public string newDeclaration;
+
         public string text; // text inside the block between the opening and closing bracket which are included
         public string newText;
 
@@ -46,20 +46,19 @@ public class RegexUtilities {
         // ----------------------------------------------------------------------------------
 
         /// <summary>
-        /// 
+        /// Constructor
         /// </summary>
         /// <param name="p_match">Match of the block's declaration</param>
-        /// <param name="p_refText">full reference text in which to find the block</param>
-        public Block (Match p_match, string p_refText) {
+        /// <param name="p_refText">full reference text in which to search for the block</param>
+        public Block( Match p_match, string p_refText ) {
             match = p_match;
             refText = p_refText;
 
-            declaration = match.Value;
-            newDeclaration = "";
-            
-            name = match.Groups[2].Value;
+            startIndex = match.Index + match.Length - 1;
+            endIndex = 0;
 
-            try {
+            name = match.Groups[2].Value;
+            try { // match.Groups has no ContainsKey() method
                 name = match.Groups["blockName"].Value;
             } catch {}
 
@@ -68,23 +67,25 @@ public class RegexUtilities {
                 type = match.Groups["blockType"].Value;
             } catch {}
             
-            startIndex = match.Index + match.Length - 1;
-            endIndex = 0;
+            declaration = match.Value;
+            newDeclaration = "";
+
             text = "";
             newText = "";
+
             isEmpty = true;
 
-            endIndex = GetEndOfBlockIndex ();
+            endIndex = GetEndOfBlockIndex();
             
-            if (endIndex == -1)
+            if( endIndex == -1 )
                 return;
 
-            if (endIndex <= startIndex) {
+            if( endIndex <= startIndex ) {
                 Debug.LogError ("RegexUtilities.Block.Block() : endIndex <= startIndex. Can't get block text. match=["+match.Value+"] startIndex=["+startIndex+"] endIndex=["+endIndex+"] refText=["+refText+"].");
                 return;
             }
 
-            text = refText.Substring (startIndex, endIndex-startIndex); // the openeing and closing brackets are included in text
+            text = refText.Substring( startIndex, endIndex-startIndex ); // the openeing and closing brackets are included in text
             isEmpty = (text.Trim() == "");
             newText = text;
         }
@@ -95,7 +96,8 @@ public class RegexUtilities {
         /// <summary>
         /// Search for the block's closing curcly bracket, given the index in refText (startIndex) of the opening bracket
         /// </summary>
-        int GetEndOfBlockIndex () {
+        /// <returns>The index in refText of the closing bracket, if one is found</returns>
+        int GetEndOfBlockIndex() {
             int openedBrackets = 0;
 
             for (int i = startIndex; i < refText.Length; i++) {
@@ -111,8 +113,8 @@ public class RegexUtilities {
             }
 
             // no matching closing bracket has been found
-            Debug.LogError ("RegexUtilities.Block.GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning -1. match=["+match.Value+"] startIndex=["+startIndex+"] ["+
-                refText[startIndex-1]+"|"+refText[startIndex]+"|"+refText[startIndex+1]+"] text=["+refText+"].");
+            Debug.LogError( "RegexUtilities.Block.GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning -1. match=["+match.Value+"] startIndex=["+startIndex+"] ["+
+                refText[startIndex-1]+"|"+refText[startIndex]+"|"+refText[startIndex+1]+"] text=["+refText+"]." );
             return -1;
         }
     } // end of struct Block
@@ -121,14 +123,26 @@ public class RegexUtilities {
     // ----------------------------------------------------------------------------------
 
 
-    // NOTE : not all variables below are used by the "C# to UnityScript" extension
-
-
  	// most common characters used in names. Does not match arrays or generic collections
     protected string commonName = "([A-Za-z_]{1}[A-Za-z0-9_\\.]*)";
     protected string commonNameWithoutDot = "([A-Za-z_]{1}[A-Za-z0-9_]*)";
     protected string commonNameWithSpace = "([A-Za-z_]{1}[A-Za-z0-9_\\. ]*)"; // Allows to have space in expression like "System . Something"
     protected string commonNameWithSpaceAndComa = "([A-Za-z_]{1}[A-Za-z0-9_\\. ,]*)";
+
+    // same as common name but includes also arrays, generic collections, strings
+    // usefull when looking for a type (of variable or method)
+    protected string commonChars = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_\\[\\]\\.]*)"; // 
+    protected string commonCharsWithSpace = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_\\[\\]\\. ]*)"; // generic collections likes dictionnaries may have a space after the coma, for instance
+    protected string commonCharsWithSpaceAndParenthesis = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_\\[\\]\\. \\(\\)]*)";
+    protected string commonCharsWithoutComma = "([A-Za-z_]{1}[A-Za-z0-9<>'\"_\\[\\]\\.]*)"; // for use with variable or type as method parameter
+    protected string commonCharsWoCommaWSpace = "([A-Za-z_]{1}[A-Za-z0-9<>'\"_\\[\\]\\. ]*)";
+
+    // white spaces (or new line)
+    protected string optWS = "(\\s|\\n)*"; // optionnal white space
+    protected string oblWS = "(\\s|\\n)+"; // obligatory white space
+    protected string oblSpaces = "( +)"; // space only not tab, cariage return...
+    protected string optSpaces = "( *)";
+
 
     // any numerical value (including the "f" for the float in C#)
     protected string number = "(-?[0-9]+(\\.{1}[0-9]+(f|F)?)?)";
@@ -136,24 +150,17 @@ public class RegexUtilities {
     protected string cSharpFloat = "(-?[0-9]+(\\.{1}[0-9]+(f|F){1})?)";
     
     // list of characters that may be found before and after an instruction
-    protected string instructionStart = "(?<instructionStart>({|}|;|\\(|\\)|else|:|\\?|,)\\s*)";
-    protected string instructionEnd = "(?<instructionEnd>(;|\\))\\s*)";
+    //protected string instructionStart = "(?<instructionStart>({|}|;|\\(|\\)|else|:|\\?|,)\\s*)";
+    //protected string instructionEnd = "(?<instructionEnd>(;|\\))\\s*)";
 
     protected string allButParenthesis = "([^\\(\\)]*)";
-
-    // same as common name but includes also arrays, generic collections, strings
-    // usefull when looking for a type (of variable or method)
-    protected string commonChars = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_\\[\\]\\.]*)"; // 
-    protected string commonCharsWithSpace = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_\\[\\]\\. ]*)"; // generic collections likes dictionnaries may have a space after the coma, for instance
-    protected string commonCharsWithSpaceAndParenthesis = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_\\[\\]\\. \\(\\)]*)"; // generic collections likes dictionnaries may have a space after the come, for instance
-    protected string commonCharsWithoutComma = "([A-Za-z_]{1}[A-Za-z0-9<>'\"_\\[\\]\\.]*)"; // for use with variable or type as method parameter
-    protected string commonCharsWoCommaWSpace = "([A-Za-z_]{1}[A-Za-z0-9<>'\"_\\[\\]\\. ]*)";
 
     // characters seen in method parameters
     protected string argumentsChars = "([A-Za-z0-9<>,:_\\[\\]\\s\\n]*)"; 
 
     // names separated by coma (likes Interface in class declaration)
     protected string commaSeparatedNames = "([A-Za-z0-9_\\. ,]+)"; // common Name + space and coma
+    // redundant with commonNameWithSpaceAndComa
 
     protected string visibility = "(?<visibility>public|private|protected)";
     protected string visibilityAndStatic = "(public\\s+static|static\\s+public|public|"+
@@ -170,59 +177,48 @@ public class RegexUtilities {
     */
     //protected string methodPrefix = "(?<ethodPrefix>public|private|protected|static|override|abstract)";
 
-    // white spaces (or new line)
-    protected string optWS = "(\\s|\\n)*"; // optionnal white space
-    protected string oblWS = "(\\s|\\n)+"; // obligatory white space
-    protected string oblSpaces = "( +)"; // space only not tab, cariage return...
-    protected string optSpaces = "( *)";
+    
 
     //protected string anyCharsAndNewLine = "([.\\n]*)"; // any chars + New Line char
 
 
     protected string collections = "(ArrayList|BitArray|CaseInsensitiveComparer|Comparer|Hashtable|Queue|SortedList|Stack|StructuralComparisons|DictionnaryEntry"+
         "|ICollection|IComparer|IDictionary|IDictionaryEnumerator|IEnumerable|IEnumerator|IEqualityComparer|IHashCodeProvider|IList|IStructuralComparable|IStructuralEquatable)";
-    protected string genericCollections = "(Comparer|Dictionary|KeyValuePair|HashSet|KeyedByTypeCollection|LinkedList|LinkedListNode|List|Queue|SortedDictionary|SortedList|SortedSet|Stack|SynchronizedCollection"+
-        "|SynchronizedKeyedCollection|SynchronizedReadOnlyCollection|ISet|"+
+    protected string genericCollections = "(Comparer|Dictionary|KeyValuePair|HashSet|KeyedByTypeCollection|LinkedList|LinkedListNode|List|Queue|SortedDictionary"+
+        "|SortedList|SortedSet|Stack|SynchronizedCollection|SynchronizedKeyedCollection|SynchronizedReadOnlyCollection|ISet|"+
         "Action|Func)";
 
-
-    // regular data types (the list get completed with the Unity and project classes)
+    // regular data types (value types)
     protected string regularTypes = "(byte|char|string|String|short|int|long|float|double|decimal|bool|boolean)";
-    
 
-    // list of the patterns and corresponding replacements to be processed by DoReplacements()
-    protected List<string> patterns = new List<string> ();
-    protected List<string> replacements = new List<string> ();
-    protected string[] a_patterns = new string[10];
-	protected string pattern;
-    protected string replacement;
-	
     // end of line
     protected string EOL = System.Environment.NewLine; // may throw some "inconsistent line ending blabla" warnings in the console
 
-    // tranlated code to be returned
+    // list of the patterns and corresponding replacements to be processed by DoReplacements()
+    protected List<string> patterns = new List<string>();
+    protected List<string> replacements = new List<string>();
+
+	protected string pattern;
+    protected string replacement;
+	
+    // translated code to be returned
     public string convertedCode = "";
 
  
     // ----------------------------------------------------------------------------------
 
     /// <summary>
-    /// Constructor
-    /// </summary>
-    /*public RegexUtilities (string inputCode) {
-        convertedCode = inputCode;
-    }*/
-
-
-    // ----------------------------------------------------------------------------------
-
-    /// <summary>
-    /// Process the patterns/replacements
+    /// Process the patterns/replacements on convertedCode
     /// </summary>
     protected void DoReplacements() {
         convertedCode = DoReplacements( convertedCode );
     }
 
+    /// <summary>
+    /// Process the patterns/replacements on the input text
+    /// </summary>
+    /// <param name="text">The string to applies the patterns/replacements to</param>
+    /// <returns>The input string on to which all patterns/replacements have been applied to</returns>
     protected string DoReplacements( string text ) {
         if( patterns.Count != replacements.Count ) {
             Debug.LogError( "Patterns and replacements count mismatch : patterns.Count="+patterns.Count+" replacements.Count="+replacements.Count );
@@ -268,25 +264,20 @@ public class RegexUtilities {
     // ----------------------------------------------------------------------------------
 
     /// <summary>
-    /// Do a Regex.Matches but return the result in the inverse order
+    /// Do a Regex.Matches but returns the result in the inverse order
     /// </summary>
-    protected List<Match> ReverseMatches (string text, string pattern, bool multiline ) {
-        MatchCollection matches;
-
-        if( multiline )
-            matches = Regex.Matches (text, pattern, RegexOptions.Multiline );
-        else
-            matches = Regex.Matches (text, pattern );
+    /// <param name="text">The string to search the pattern in</param>
+    /// <param name="pattern">The pattern to search for in text</param>
+    /// <returns>A List<Match> containing the result of the Regex.Matches() in the inverse order</returns>
+    protected List<Match> ReverseMatches( string text, string pattern ) {
+        Stack<Match> stack = new Stack<Match>();
+        MatchCollection matches = Regex.Matches( text, pattern );
         
-        Stack<Match> stack = new Stack<Match> ();
-        foreach (Match match in matches)
-            stack.Push (match);
+        foreach( Match match in matches )
+            stack.Push( match );
         // the matches piles up in the stack, so the lastest match in matches is now the first one in stack
 
-        return new List<Match> (stack);
-    }
-    protected List<Match> ReverseMatches (string text, string pattern) {
-        return ReverseMatches( text, pattern, false );
+        return new List<Match>(stack);
     }
 
 
@@ -295,6 +286,8 @@ public class RegexUtilities {
     /// <summary>
     /// Escape some chars in strings that must be used in Regexes
     /// </summary>
+    /// <param name="input">The string in which to escape regex characters</param>
+    /// <returns>The string where the relevant characters have been escaped</returns>
     protected string EscapeRegexChars( string input ) {
         string[] chars = { "[", "]", ".", "|", "(", ")", "*", "+", "?", "{", "}" };
 
