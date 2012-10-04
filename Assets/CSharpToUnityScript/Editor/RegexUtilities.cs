@@ -174,6 +174,7 @@ public class RegexUtilities {
     protected string optWS = "(\\s|\\n)*"; // optionnal white space
     protected string oblWS = "(\\s|\\n)+"; // obligatory white space
     protected string oblSpaces = "( +)"; // space only not tab, cariage return...
+    protected string optSpaces = "( *)";
 
     //protected string anyCharsAndNewLine = "([.\\n]*)"; // any chars + New Line char
 

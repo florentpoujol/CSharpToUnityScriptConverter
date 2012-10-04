@@ -176,32 +176,32 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // GENERIC COLLECTIONS
 
         // Add a dot before the opening chevron  List.<float>
-        patterns.Add (genericCollections+optWS+"<");
-        replacements.Add ("$1$2.<");
+        patterns.Add (genericCollections+optWS+"<" );
+        replacements.Add( "$1$2.<" );
 
         // Add a whitespace between two closing chevron   Dictionary.<string,List<string> > 
-        //patterns.Add ("("+genericCollections+optWS+"\\.<.+)>>");
+        //patterns.Add( "("+genericCollections+optWS+"\\.<.+)>>" );
         // don't this pattern is used by mask or layerMask related things ? => only the opposite <<
-        patterns.Add( ">>");
-        replacements.Add ("> >");
+        patterns.Add( ">>" );
+        replacements.Add( "> >" );
  
 
         // LOOPS
         // foreach(bla in bla) => for(bla in bla)
-        patterns.Add ("foreach("+optWS+"\\(.+"+oblWS+"in"+oblWS+".+\\))");
-        replacements.Add ("for$1");
+        patterns.Add( "foreach("+optWS+"\\(.+"+oblWS+"in"+oblWS+".+\\))" );
+        replacements.Add( "for$1" );
 
 
         // GETCOMPONENT (& Co)
         // GetComponent<T>() => GetComponent.<T>()
-        //patterns.Add ("(\\b(AddComponent|GetComponent|GetComponents|GetComponentInChildren|GetComponentsInChildren)"+optWS+")(?<type><"+optWS+commonChars+optWS+">)");
-        patterns.Add ("(\\b(AddComponent|GetComponent|GetComponents|GetComponentInChildren|GetComponentsInChildren)"+optWS+")<");
-        replacements.Add ("$1.<");
+        //patterns.Add( "(\\b(AddComponent|GetComponent|GetComponents|GetComponentInChildren|GetComponentsInChildren)"+optWS+")(?<type><"+optWS+commonChars+optWS+">)" );
+        patterns.Add( "(\\b(AddComponent|GetComponent|GetComponents|GetComponentInChildren|GetComponentsInChildren)"+optWS+")<" );
+        replacements.Add( "$1.<" );
 
 
         // ABSTRACT
-        //patterns.Add ("((public|private|protected|static)"+oblWS+")abstract"+oblWS);
-        //replacements.Add ("$1");
+        //patterns.Add( "((public|private|protected|static)"+oblWS+")abstract"+oblWS);
+        //replacements.Add( "$1" );
         patterns.Add( "\\babstract"+oblWS+"class\\b" );
         replacements.Add( "class" );
         // abstract methods are dealt with at the beginning of Function().
@@ -209,16 +209,16 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
         // VIRTUAL
-        patterns.Add("(\\b(public|private|protected|static)"+oblWS+")virtual\\b");
-        replacements.Add("$1");
+        patterns.Add("(\\b(public|private|protected|static)"+oblWS+")virtual\\b" );
+        replacements.Add("$1" );
 
 
         // YIELDS
         // must remove the return keyword after yield
         // yield return null; => yield ;
         // yield return new WaitForSecond(1.0f); => yield WaitForSecond(1.0f);
-        patterns.Add("yield"+optWS+"return"+optWS+"(null|0|new)");
-        replacements.Add("yield ");
+        patterns.Add("yield"+optWS+"return"+optWS+"(null|0|new)" );
+        replacements.Add("yield " );
 
         DoReplacements();
     
@@ -263,16 +263,16 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
         // #REGION
-        patterns.Add ("\\#(region|REGION)"+oblSpaces+commonChars+"("+oblSpaces+commonChars+")*");
-        replacements.Add ("");
+        patterns.Add( "\\#(region|REGION)"+oblSpaces+commonChars+"("+oblSpaces+commonChars+")*" );
+        replacements.Add( "" );
         
-        patterns.Add ("\\#(endregion|ENDREGION)");
-        replacements.Add ("");
+        patterns.Add( "\\#(endregion|ENDREGION)" );
+        replacements.Add( "" );
 
 
         // DEFINE
-        patterns.Add ("\\#(define|DEFINE)"+oblSpaces+commonName+"("+oblSpaces+commonName+")*");
-        replacements.Add ("");
+        patterns.Add( "\\#(define|DEFINE)"+oblSpaces+commonName+"("+oblSpaces+commonName+")*" );
+        replacements.Add( "" );
 
         DoReplacements();
 
@@ -297,38 +297,38 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // CLASSES DECLARATION
 
         // classes declarations with inheritance
-        /*patterns.Add ("(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+optWS+"{)");
-        replacements.Add ("$1 extends ${parent}");
+        /*patterns.Add( "(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+optWS+"{)" );
+        replacements.Add( "$1 extends ${parent}" );
         // if parent is an interface, "extends" will be converted below
 
         // class that inherits a parent class and implements at least one interace
-        patterns.Add ("(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+")"+
+        patterns.Add( "(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+")"+
         "(?<interfaces>("+optWS+","+optWS+commonName+")+)"+
-        "(?<end>"+optWS+"{)");
-        replacements.Add ("$1 extends ${parent} implements ${interfaces}${end}");
+        "(?<end>"+optWS+"{)" );
+        replacements.Add( "$1 extends ${parent} implements ${interfaces}${end}" );
         // leave the first interface after implements with a coma before it (implements ,Interface), to be removed below
         // if parent is an Interface, extends will be converted below
         
         // if the "parent" begins by an uppercase I, consider it as an interface
-        patterns.Add ("\\bextends(?<interface>"+oblWS+"I"+commonName+optWS+"(implements|{))");
-        replacements.Add ("implements${interface}");
+        patterns.Add( "\\bextends(?<interface>"+oblWS+"I"+commonName+optWS+"(implements|{))" );
+        replacements.Add( "implements${interface}" );
 
         // remove the coma before the first interface after the keyword implements
-        patterns.Add ("\\bimplements"+optWS+",");
-        replacements.Add ("implements ");
+        patterns.Add( "\\bimplements"+optWS+"," );
+        replacements.Add( "implements " );
 
         // implements [interface] implements [interface] => implements [interface], [interface]
-        patterns.Add ("(\\bimplements"+oblWS+"I"+commonName+")"+oblWS+"implements\\b");
-        replacements.Add ("$1,");
+        patterns.Add( "(\\bimplements"+oblWS+"I"+commonName+")"+oblWS+"implements\\b" );
+        replacements.Add( "$1," );
 
 
         // if parent class begins by a I and have alredy been encountered during the conversion, they will be in projectClasses
         foreach (string aClass in projectClasses) {
-            patterns.Add ("implements("+oblWS+aClass+optWS+"{)");
-            replacements.Add ("extends$1");
+            patterns.Add( "implements("+oblWS+aClass+optWS+"{)" );
+            replacements.Add( "extends$1" );
 
-            patterns.Add ("implements("+oblWS+aClass+")"+optWS+",");
-            replacements.Add ("extends$1 implements ");
+            patterns.Add( "implements("+oblWS+aClass+")"+optWS+"," );
+            replacements.Add( "extends$1 implements " );
         }
 
         DoReplacements();*/
@@ -403,7 +403,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     // remove :base() from the constructor declaration
                     string newConstructor = aConstructor.Value.Replace( aConstructor.Groups["base"].Value, "" );
                     // add super(); to the constructor body
-                    string super = "{"+EOL+"super("+aConstructor.Groups["args"]+");";
+                    string super = "{"+EOL+"super("+aConstructor.Groups["args"]+" );";
                     newConstructor = newConstructor.Replace( "{", super );
                     
                     classBlock.newText = classBlock.newText.Replace( aConstructor.Value, newConstructor );
@@ -419,7 +419,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 // remove :this() from the constructor declaration
                 string newConstructor = aConstructor.Value.Replace( aConstructor.Groups["this"].Value, "" );
                 // add Classname() to the constructor body
-                string super = "{"+EOL+classBlock.name+"("+aConstructor.Groups["args"]+");";
+                string super = "{"+EOL+classBlock.name+"("+aConstructor.Groups["args"]+" );";
                 newConstructor = newConstructor.Replace( "{", super );
                 
                 classBlock.newText = classBlock.newText.Replace( aConstructor.Value, newConstructor );
@@ -490,12 +490,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     // ----------------------------------------------------------------------------------
 
     /// </summary>
+    /// Used in Variable() method below
     /// check if the first character is a letter or an underscore
-    /// make sure the name asn't more than tree space in it
+    ///     actually this is alredy done by the regex itself, see commonName or commonChars
+    /// make sure the name asn't more than tree spaces in it
     /// </summary>
     bool IsAValidName( string text ) {
-        if( text.Trim() == "" )
-            return true;
+        text = text.Trim();
 
         // check the number of spaces
         int spaceCount = 0;
@@ -509,15 +510,17 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             }
         }
 
+        return true;
+
         // check if the first character is  a letter or an underscore
-        // tis should be useless since the regex patterns commonName and commonChars have that
-        string alphabet = "abcdefghijklmnopqrstuvwxyz_";
+        // tis should be useless since the regex patterns commonName and commonChars already do that
+        /*string alphabet = "abcdefghijklmnopqrstuvwxyz_";
 
         if( alphabet.Contains( char.ToLower(text[0]).ToString() ) )
             return true;
 
         Log( "IsAValidName() : Invalid name="+text );
-        return false;
+        return false;*/
     }
 
     
@@ -527,58 +530,52 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Convert stuffs related to variable declarations
     /// </summary>
     void Variables () {
-        Log( "================================================= \n VARIABLES" );
-
         // MULTIPLE INLINE VARIABLE DECLARATION
         if (convertMultipleVarDeclaration) {
-            Log( "================================================= \n MULTIPLE VAR DECLARATION" );
-            //Debug.Log("conversion multiple");
-            //Debug.Log("dataTypes = "+dataTypes);
-            
-
             // multiple inline var declaration of the same type : "Type varName, varName = foo;"
             
-            //pattern = "\\b(?<varType>"+dataTypes+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+"[^,]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
+            // using dataTypes here, instead of commonChars or commonCharsWithSpace 
+            // drastically reduces the number of false positiv returned by the regex
+            // the pattern discard all match that have a coma or a semi colon when setting the value of a variable (in a string or a method call)
             pattern = "(?<varType>\\b"+dataTypes+")"+oblWS+"(?<varList>"+"[^,;{}]+"+optWS+"(="+optWS+"[^,;]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
-            List<Match> allDeclarations = ReverseMatches (convertedCode, pattern);
+            MatchCollection allDeclarations = Regex.Matches( convertedCode, pattern );
 
-            foreach (Match aDeclaration in allDeclarations){
+            foreach( Match aDeclaration in allDeclarations ) {
                 //Debug.Log (aDeclaration.Value);
-                if( aDeclaration.Value.Contains( "\n" ) )
+                if( aDeclaration.Value.Contains("\n") ) // discard results on several lines
                     continue;
 
-                // look for method call pattern to discard
-                pattern = "\\b"+commonName+optWS+"\\(.+,{1}.+\\)";
+                // look for method call pattern "method( arg1, arg2 );" to discard
+                // will discard a legit match if a variable's value comes from a method with at least two parameters
+                pattern = "\\b"+commonName+optWS+"\\(.+,{1}[^\\)]+\\)";
                 if( Regex.Matches( aDeclaration.Value, pattern ).Count > 0 ){
                     //Debug.Log ("Discarding : "+aDeclaration.Value);  
                     continue;
                 }
-
-                //Debug.LogWarning (aDeclaration.Value);
                 
                 // split the varlist using the coma
-                string[] varList = aDeclaration.Groups["varList"].Value.Split (',');
+                string[] varList = aDeclaration.Groups["varList"].Value.Split(',');
                 string varType = aDeclaration.Groups["varType"].Value;
-
                 string newSyntax = "";
 
-                foreach (string varName in varList) {
-                    if (varName.Contains ("=")) {
+                foreach( string varName in varList ) {
+                    if( varName.Contains("=") ) {
                         // add the varType beetween the varName and the equal sign
-                        string varDeclaration = varName.Replace ("=", ": "+varType+" =");
-                        newSyntax += "var "+varDeclaration.Trim ()+";"+EOL;
+                        string varDeclaration = varName.Replace( "=", ": "+varType+" =" );
+                        newSyntax += "var "+varDeclaration.Trim()+";"+EOL;
                     }
                     else 
-                        newSyntax += "var "+varName.Trim ()+": "+varType+";"+EOL;
+                        newSyntax += "var "+varName.Trim()+": "+varType+";"+EOL;
                 }
 
-                convertedCode = convertedCode.Replace (aDeclaration.Value, newSyntax);
+                convertedCode = convertedCode.Replace( aDeclaration.Value, newSyntax );
             }
         } // end if convertMultipleVarDeclaration
  
-        // removing const keyword
-        patterns.Add ("(\\bconst"+oblWS+")(?<end>"+commonCharsWithSpace+oblWS+commonName+")"); 
-        replacements.Add ("${end}");
+
+        // CONST
+        patterns.Add( "(\\bconst"+oblWS+")(?<end>"+commonCharsWithSpace+oblWS+commonName+")" ); 
+        replacements.Add( "${end}" );
 
         DoReplacements();
 
@@ -587,12 +584,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // conversion will mess up if the declaration is not preceded by a visibility keyword 
         // but by something else like @HideInInspector or @System.Serialize which will be part of varType
-        // that's why I use two pattern here instead of making the "visibility" optionnal in a single pattern
-        string[] temp_patterns = { "(?<visibility>"+visibilityAndStatic+oblWS+")(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)",
+        // that's why I use two patterns here instead of making the "visibility" optionnal in a single pattern
+        string[] tempPatterns = { "(?<visibility>"+visibilityAndStatic+oblWS+")(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)",
         "(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)" };
 
-        foreach( string temp_pattern in temp_patterns ) {
-            MatchCollection allVariables = Regex.Matches( convertedCode, temp_pattern );
+        foreach( string tempPattern in tempPatterns ) {
+            MatchCollection allVariables = Regex.Matches( convertedCode, tempPattern );
 
             foreach( Match aVariable in allVariables ) {
                 string visibility = aVariable.Groups["visibility"].Value;
@@ -600,24 +597,19 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 string name = aVariable.Groups["varName"].Value;
                 string end = aVariable.Groups["end"].Value;
 
-                if( !IsAValidName( visibility.Trim() ) )
-                    continue;
-
-                if( !IsAValidName( type.Trim() ) )
-                    continue;
-
-                if( !IsAValidName( name.Trim() ) )
+                if( !IsAValidName(visibility) || !IsAValidName(type) || !IsAValidName(name) )
                     continue;
 
                 List<string> forbiddenTypes = new List<string>( 
-                    new string[]{ "import", "return", "yield return", "as", "else", "<", "<=", ">", ">=" }
+                    new string[] { "import", "return", "yield return", "as", "else", "<", "<=", ">", ">=" }
                 );
 
-                if( forbiddenTypes.Contains( type.Trim() ) || type.Contains( "import ") || type.Contains( " = ") )
+                if( forbiddenTypes.Contains(type.Trim()) || type.Contains("import ") || type.Contains(" = ") )
                     continue;
-                // some value setting got treated like var declaration   variable = value; => var variable: = value
+                // some value setting got treated like var declaration   variable = value; => var variable: = value;
+
                 // stuff like     othervar as Type;   got converted to   var Type: othervar as;
-                if( type.Substring( type.Length-3 ) == " as" )
+                if( type.TrimEnd().EndsWith(" as") )
                     continue;
 
                 //
@@ -627,18 +619,17 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 patterns.Add( EscapeRegexChars( pattern ) );
                 replacements.Add( visibility+"var "+name+": "+type+end );
             }
+
             DoReplacements();
         }
 
-        DoReplacements();
-
 
         // VAR DECLARATION WITH VALUE
-        temp_patterns = new string[] { "(?<visibility>"+visibilityAndStatic+oblWS+")(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)",
+        tempPatterns = new string[] { "(?<visibility>"+visibilityAndStatic+oblWS+")(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)",
         "(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)" };
         
-        foreach( string temp_pattern in temp_patterns ) {
-            MatchCollection allVariables = Regex.Matches( convertedCode, temp_pattern );
+        foreach( string tempPattern in tempPatterns ) {
+            MatchCollection allVariables = Regex.Matches( convertedCode, tempPattern );
 
             foreach( Match aVariable in allVariables ) {
                 string visibility = aVariable.Groups["visibility"].Value;
@@ -646,20 +637,14 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 string name = aVariable.Groups["varName"].Value;
                 string varValue = aVariable.Groups["varValue"].Value;
 
-                if( !IsAValidName( visibility.Trim() ) )
-                    continue;
-
-                if( !IsAValidName( type.Trim() ) )
-                    continue;
-
-                if( !IsAValidName( name.Trim() ) )
+                if( !IsAValidName(visibility) || !IsAValidName(type) || !IsAValidName(name) )
                     continue;
 
                 List<string> forbiddenTypes = new List<string>( 
-                    new string[]{ "import", "return", "yield return", "as", "else"}
+                    new string[] { "import", "return", "yield return", "as", "else" }
                 );
 
-                if( forbiddenTypes.Contains( type.Trim() ) )
+                if( forbiddenTypes.Contains(type.Trim()) )
                     continue;
 
                 pattern = aVariable.Value.Replace( "HideInInspector ", "" ).Replace( "System.NonSerialized ", "" );
@@ -668,86 +653,140 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 patterns.Add( EscapeRegexChars( pattern ) );
                 replacements.Add( visibility+"var "+name+": "+type+varValue );
             }
+
             DoReplacements();
         }
         
-        DoReplacements();
         
-       
         // VAR DECLARATION IN FOREACH LOOP
-        patterns.Add ("(?<varType>\\b"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<in>"+oblWS+"in"+oblWS+")");
-        replacements.Add ("var ${varName}: ${varType}${in}");
+        patterns.Add( "(?<varType>\\b"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<in>"+oblWS+"in"+oblWS+")" );
+        replacements.Add( "var ${varName}: ${varType}${in}" );
 
-
-        // PATCHING   converting var declaration leads to some (many actually) garbage
-           
-           //in for loop :   for( ; i < variable; )   got converted in   for( ;var variable: i <; )
-           // using commonNameWithoutDot prevent legit expression like   var name: List.<Type> to be converted into List.<nameType>
-           // I can't prevent this to happen if  generic collection
-           //patterns.Add ("\\bvar"+oblWS+"(?<varName>"+commonName+")"+optWS+":(?<start>"+optWS+commonNameWithoutDot+optWS+"(<|>|<=|>=))");
-           //replacements.Add ("${start}${varName}");
-
-           
+        
         // CASTING
-        // we can make it a little more secure by checking that the two commonChars are the same
-        patterns.Add( "\\("+optWS+"(?<type>int)"+optWS+"\\)"+optWS+"(?<afterCast>\\(?"+optWS+commonCharsWithSpace+optWS+"\\)?)" );
+
+        // (int)() => paseInt()
+        /*patterns.Add( "\\("+optWS+"int"+optWS+"\\)"+optWS+"\\(?"+optWS+"(?<afterCast>"+commonChars+")"+optWS+"\\)?" );
         replacements.Add( "parseInt(${afterCast})" );
 
-        patterns.Add( "\\("+optWS+"(?<type>float)"+optWS+"\\)"+optWS+"(?<afterCast>\\(?"+optWS+commonCharsWithSpace+optWS+"\\)?)" );
-        replacements.Add( "parseFloat(${afterCast})" );
+        patterns.Add( "\\("+optWS+"float"+optWS+"\\)"+optWS+"\\(?"+optWS+"(?<afterCast>"+commonChars+")"+optWS+"\\)?" );
+        replacements.Add( "parseFloat(${afterCast})" );*/
+
+        DoReplacements();
+
+        // using dataTypes prevent to match if patterns like "if(var1) var2;"
+        tempPatterns = new string[] { 
+        "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>\\(?"+optWS+commonChars+optWS+"\\)?)", // don't allow space if parenthesis are optionnal
+        "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>\\([^;}]+(;|}))" }; 
+        
+        for( int i = 0; i < tempPatterns.Length; i++ ) {
+            MatchCollection allCasts = Regex.Matches( convertedCode, tempPatterns[i] );
+
+            foreach( Match aCast in allCasts ) {
+                string type = aCast.Groups["type"].Value;
+                string afterCast = aCast.Groups["afterCast"].Value;
+
+                if( i == 1 ) { // second pattern
+                    // find the closing parenthesis
+                    int oppenedParenthesis = 1;
+                    afterCast = afterCast.TrimStart('(');
+                    string tempAfterCast = "";
+
+                    foreach( char letter in afterCast ) {
+                        tempAfterCast += letter.ToString();
+
+                        if( letter == '(' ) {
+                            oppenedParenthesis++;
+                            continue;
+                        }
+
+                        if( letter == ')' ) {
+                            oppenedParenthesis--;
+
+                            if( oppenedParenthesis == 0 ) // we have reached the final closing parenthesis
+                                break;
+
+                            continue;
+                        }
+                    }
+
+                    afterCast = tempAfterCast.TrimEnd(')');
+                }
+
+                if( regularTypes.Contains( type.Trim() ) ) { 
+                    // the type is a value type which does not need the "as" keyword to be cast in UnityScript
+                    // just keep the "aftercast" without the parenthesis
+                    if( afterCast.StartsWith("(") )
+                        afterCast = afterCast.Trim('(', ')');
+
+                    if( type.Trim() == "int" )
+                        afterCast = "parseInt("+afterCast+")";
+                    else if( type.Trim() == "float" )
+                        afterCast = "parseFloat("+afterCast+")";
+
+                    convertedCode = convertedCode.Replace( aCast.Value, afterCast );
+                }
+                else {
+                    // (Type)(aftercast) => aftercast as Type
+                    if( afterCast.StartsWith("(") )
+                        afterCast = afterCast.Trim('(', ')');
+
+                    convertedCode = convertedCode.Replace( aCast.Value, afterCast+" as "+type );
+                }
+            }
+        }
 
 
-        patterns.Add ("(="+optWS+")\\("+optWS+"(?<type>"+commonCharsWithSpace+")"+optWS+"\\)"+optWS+"(?<afterCast>\\(?"+optWS+commonCharsWithSpaceAndParenthesis+optWS+"\\)?)"+optWS+";"); // match if and loop without brackets !!
-        replacements.Add ("$1${afterCast} as ${type};");
 
-        // the as keyword can't be used with value types
-        patterns.Add (oblWS+"as"+oblWS+regularTypes+optWS+";");
-        replacements.Add (";");
+        //replacements.Add( "$1${afterCast} as ${type};" );
+
+        // the "as" keyword can't be used with value types
+        //patterns.Add (oblWS+"as"+oblWS+regularTypes+optWS+";" );
+        //replacements.Add( ";" );
+
 
         // ARRAYS
-            // string[] array1; => var array1: String[] (already done)
-            // string[,] array2 = new string[5,6];  => var array2: Strint[] = new String[5,6];
 
-            //string[] array3 = new string[] { "machin", "machin"};
-            //bool[] array4 = { false, true};
-                // both => var array3: String[] = { }
+        // string[] array1; => var array1: String[] (already done)
+        // string[,] array2 = new string[5,6];  => var array2: Strint[] = new String[5,6];
 
-            // string[,] array2 = new string[5,6];  => var array2: Strint[] = new String[5,6];
-            //patterns.Add ("\\b(?<type>"+commonName+optWS+"\\[,*\\])"+oblWS+"(?<name>"+commonName+")"+optWS+"=");
-            // replacements.Add ("");
+        //string[] array3 = new string[] { "machin", "machin"};
+        //bool[] array4 = { false, true};
+            // both => var array3: String[] = { }
 
-            // = new String[] {}; => = {};
-            patterns.Add ("(?<equal>="+optWS+")?new"+oblWS+commonName+optWS+"(\\[[0-9, ]*\\])+(?<end>"+optWS+"{)");
-            replacements.Add ("${equal}${end}");
+        // string[,] array2 = new string[5,6];  => var array2: Strint[] = new String[5,6];
+        //patterns.Add( "\\b(?<type>"+commonName+optWS+"\\[,*\\])"+oblWS+"(?<name>"+commonName+")"+optWS+"=" );
+        // replacements.Add( "" );
 
-            DoReplacements();
+        // = new String[] {}; => = {};
+        patterns.Add( "(?<equal>="+optWS+")?new"+oblWS+commonName+optWS+"(\\[[0-9, ]*\\])+(?<end>"+optWS+"{)" );
+        replacements.Add( "${equal}${end}" );
 
-            // replace curly brackets by square bracket
-            //pattern = "(?s)((=|\\(|return){1}"+optWS+"){(?<values>.*)}(?<end>"+optWS+"(;|\\)){1})"; // le (?s)
-            pattern = "(?s)(="+optWS+"){(?<values>.*)}(?<end>"+optWS+";)";
-            foreach (Match _pattern in ReverseMatches (convertedCode, pattern)) {
-                string text = _pattern.Value;
-                string newText = text.Replace ("{", "[").Replace ("}", "]");
+        DoReplacements();
 
-                convertedCode = convertedCode.Replace (text, newText);
-            }
+        // replace curly brackets by square bracket
+        //pattern = "(?s)((=|\\(|return){1}"+optWS+"){(?<values>.*)}(?<end>"+optWS+"(;|\\)){1})"; // le (?s)
+        pattern = "(?s)(="+optWS+"){(?<values>.*)}(?<end>"+optWS+";)";
+        foreach (Match _pattern in ReverseMatches (convertedCode, pattern)) {
+            string text = _pattern.Value;
+            string newText = text.Replace ("{", "[").Replace ("}", "]" );
 
-            
+            convertedCode = convertedCode.Replace (text, newText);
+        }
 
-
-            // jagged arrays
-            // array[][]
+        // jagged arrays
+        // array[][]
 
 
         // LITTERAL CHAR 'a' => 'a'[0]
-        patterns.Add ("'[a-zA-z0-9]{1}'");
-        replacements.Add ("$0[0]");
+        patterns.Add( "'[a-zA-z0-9]{1}'" );
+        replacements.Add( "$0[0]" );
 
 
         // remove f to Float values
         // actually not needed, it works with the f
-        patterns.Add ("([0-9]{1}(\\.[0-9]{1})?)(f|F)");
-        replacements.Add ("$1");
+        patterns.Add( "([0-9]{1}(\\.[0-9]{1})?)(f|F)" );
+        replacements.Add( "$1" );
 
 
         // BOOL AND STRING
@@ -762,7 +801,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         foreach (Match _pattern in ReverseMatches (convertedCode, pattern)) {
 
             string text = _pattern.Value;
-            string newText = text.Replace ("@\"", "\"").Replace ("\\", "\\\\");
+            string newText = text.Replace ("@\"", "\"").Replace ("\\", "\\\\" );
             //Debug.Log (text);
             convertedCode = convertedCode.Replace (text, newText);
         }
@@ -794,8 +833,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // using a simple pattern/replacement regex as below match way too much things it shouldn't
         // So I need to check each match before allowing the replacement
 
-        // patterns.Add (commonChars+oblWS+commonName+optWS+"(\\(.*\\))"+optWS+"{"); // here I don't care if the method is public, private, static, abstract or whatever since a signature is always composed of a type followed by the name of the method
-        // replacements.Add ("function $3$5: $1 {");
+        // patterns.Add (commonChars+oblWS+commonName+optWS+"(\\(.*\\))"+optWS+"{" ); // here I don't care if the method is public, private, static, abstract or whatever since a signature is always composed of a type followed by the name of the method
+        // replacements.Add( "function $3$5: $1 {" );
 
         pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<returnType>"+commonCharsWithSpace+")"+oblWS+"(?<functionName>"+commonName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)"; // match two words followed by a set of parenthesis followed by an opening curly bracket
         allFunctionsDeclarations = ReverseMatches (convertedCode, pattern);
@@ -820,33 +859,33 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             // if we are there, it's really a function declaration that has to be converted
             
-            patterns.Add ("(?<returnType>"+returnType+")"+oblWS+"(?<name>"+functionName+")"+optWS+"(?<args>\\("+argumentsChars+"\\))(?<end>"+optWS+"{)"); 
+            patterns.Add( "(?<returnType>"+returnType+")"+oblWS+"(?<name>"+functionName+")"+optWS+"(?<args>\\("+argumentsChars+"\\))(?<end>"+optWS+"{)" ); 
             // no need to add the visibility in the pattern
             
             switch (returnType) {
-                case "void" : replacements.Add ("function ${name}${args}${end}"); continue;
-                /*case "string" : replacements.Add ("function $3$5: String$7"); continue;
-                case "string[]" : replacements.Add ("function $3$5: String[]$7"); continue; 
-                case "bool" : replacements.Add ("function $3$5: boolean$7"); continue; 
-                case "bool[]" : replacements.Add ("function $3$5: boolean[]$7"); continue; */
+                case "void" : replacements.Add( "function ${name}${args}${end}" ); continue;
+                /*case "string" : replacements.Add( "function $3$5: String$7" ); continue;
+                case "string[]" : replacements.Add( "function $3$5: String[]$7" ); continue; 
+                case "bool" : replacements.Add( "function $3$5: boolean$7" ); continue; 
+                case "bool[]" : replacements.Add( "function $3$5: boolean[]$7" ); continue; */
                 case "public" /* it's a constructor */ : replacements.Add( "public function ${name}${args}${end}" ); continue;
             }
 
             // if we are there, it's that the functiondeclaration has nothing special
-            replacements.Add ("function ${name}${args}: ${returnType}${end}");
+            replacements.Add( "function ${name}${args}: ${returnType}${end}" );
         }
 
 
         // remove out keyword in arguments
         if (removeOutKeyword) {
-            patterns.Add ("(,|\\()"+optWS+"out"+oblWS+"("+commonCharsWithoutComma+")");
-            replacements.Add ("$1$4");
+            patterns.Add( "(,|\\()"+optWS+"out"+oblWS+"("+commonCharsWithoutComma+")" );
+            replacements.Add( "$1$4" );
         }
 
         // remove ref keyword in arguments  => let in so it will throw an error and the dev can figure out what to do 
         if (removeRefKeyword) {
-            patterns.Add ("(,|\\()"+optWS+"ref"+oblWS+"("+commonCharsWithoutComma+")");
-            replacements.Add ("$1$4");
+            patterns.Add( "(,|\\()"+optWS+"ref"+oblWS+"("+commonCharsWithoutComma+")" );
+            replacements.Add( "$1$4" );
         }
 
 
@@ -855,12 +894,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         if (removeRefKeyword)
             refKeyword = "(ref"+oblWS+")?";
 
-        patterns.Add ("(?<begining>(\\(|,){1}"+optWS+")"+refKeyword+"(?<type>"+commonCharsWithoutComma+")"+oblWS+"(?<name>"+commonName+")"+optWS+"(?<end>\\)|,){1}");
-        replacements.Add ("${begining} ${name}: ${type}${end}");
+        patterns.Add( "(?<begining>(\\(|,){1}"+optWS+")"+refKeyword+"(?<type>"+commonCharsWithoutComma+")"+oblWS+"(?<name>"+commonName+")"+optWS+"(?<end>\\)|,){1}" );
+        replacements.Add( "${begining} ${name}: ${type}${end}" );
         // as regex doesn't overlap themselves, only half of the argument have been converted
         // I need to run the regex  a second time
-        patterns.Add ("(?<begining>(\\(|,){1}"+optWS+")"+refKeyword+"(?<type>"+commonCharsWithoutComma+")"+oblWS+"(?<name>"+commonName+")"+optWS+"(?<end>\\)|,){1}");
-        replacements.Add ("${begining}${name}: ${type}${end}");
+        patterns.Add( "(?<begining>(\\(|,){1}"+optWS+")"+refKeyword+"(?<type>"+commonCharsWithoutComma+")"+oblWS+"(?<name>"+commonName+")"+optWS+"(?<end>\\)|,){1}" );
+        replacements.Add( "${begining}${name}: ${type}${end}" );
 
 
         DoReplacements();
@@ -1038,31 +1077,31 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// </summary>
     void AddVisibility () {
         // the default visibility for variable and functions is public in JS but private in C# => add the keyword private when no visibility (or just static) is set 
-        patterns.Add ("([;{}\\]>/]+"+optWS+")((var|function|enum|class)"+oblWS+")");
-        replacements.Add ("$1private $3");
+        patterns.Add( "([;{}\\]>/]+"+optWS+")((var|function|enum|class)"+oblWS+")" );
+        replacements.Add( "$1private $3" );
 
-        patterns.Add ("(\\*"+optWS+")((var|function|enum|class)"+oblWS+")"); // add a / after \\*
-        replacements.Add ("$1private $3");
+        patterns.Add( "(\\*"+optWS+")((var|function|enum|class)"+oblWS+")" ); // add a / after \\*
+        replacements.Add( "$1private $3" );
 
-        patterns.Add ("(//.*"+optWS+")((var|function|enum|class)"+oblWS+")");
-        replacements.Add ("$1private $3");
+        patterns.Add( "(//.*"+optWS+")((var|function|enum|class)"+oblWS+")" );
+        replacements.Add( "$1private $3" );
 
-        patterns.Add ("((\\#else|\\#endif)"+oblWS+")((var|function|enum|class)"+oblWS+")");
-        replacements.Add ("$1private $4");
+        patterns.Add( "((\\#else|\\#endif)"+oblWS+")((var|function|enum|class)"+oblWS+")" );
+        replacements.Add( "$1private $4" );
 
 
         // static
-        patterns.Add ("([;{}\\]]+"+optWS+")static"+oblWS+"((var|function)"+oblWS+")");
-        replacements.Add ("$1private static $4");
+        patterns.Add( "([;{}\\]]+"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );
+        replacements.Add( "$1private static $4" );
 
-        patterns.Add ("(\\*"+optWS+")static"+oblWS+"((var|function)"+oblWS+")");  // add a / after \\*
-        replacements.Add ("$1private static $4");
+        patterns.Add( "(\\*"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );  // add a / after \\*
+        replacements.Add( "$1private static $4" );
 
-        patterns.Add ("(//.*"+optWS+")static"+oblWS+"((var|function)"+oblWS+")");
-        replacements.Add ("$1private static $4");
+        patterns.Add( "(//.*"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );
+        replacements.Add( "$1private static $4" );
 
-        patterns.Add ("((\\#else|\\#endif)"+oblWS+")((var|function)"+oblWS+")");
-        replacements.Add ("$1private static $4");
+        patterns.Add( "((\\#else|\\#endif)"+oblWS+")((var|function)"+oblWS+")" );
+        replacements.Add( "$1private static $4" );
 
         DoReplacements();
 
@@ -1078,10 +1117,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             if (function.isEmpty)
                 continue;
 
-            patterns.Add ("private"+oblWS+"(static"+oblWS+"var)");
-            replacements.Add ("$2");
-            patterns.Add ("(static"+oblWS+")?private"+oblWS+"var");
-            replacements.Add ("$1var");
+            patterns.Add( "private"+oblWS+"(static"+oblWS+"var)" );
+            replacements.Add( "$2" );
+            patterns.Add( "(static"+oblWS+")?private"+oblWS+"var" );
+            replacements.Add( "$1var" );
 
             function.newText = DoReplacements (function.text);
             convertedCode = convertedCode.Replace (function.text, function.newText);
