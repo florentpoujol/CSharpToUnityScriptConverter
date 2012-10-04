@@ -219,8 +219,8 @@ public class RegexUtilities {
     /// <summary>
     /// Process the patterns/replacements
     /// </summary>
-    protected void DoReplacements () {
-        convertedCode = DoReplacements (convertedCode);
+    protected void DoReplacements() {
+        convertedCode = DoReplacements( convertedCode );
     }
 
     protected string DoReplacements( string text ) {
@@ -235,15 +235,15 @@ public class RegexUtilities {
                 Log( "replacement="+replacements[i] );
                 text = Regex.Replace( text, patterns[i], replacements[i] );
             }
-            
-
-            patterns.Clear();
-            replacements.Clear();
         }
-        catch( System.Exception e ) {
-            Debug.LogError( patterns.Count+" "+replacements.Count+" "+e );
+        catch( System.Exception exception ) {
+            Debug.LogError( "Error in patterns/replacements." );
+            Debug.LogError( exception );
             Debug.LogWarning( text.Substring( 0, 100 ) );
         }
+
+        patterns.Clear();
+        replacements.Clear();
 
         return text;
     }
@@ -295,11 +295,11 @@ public class RegexUtilities {
     /// <summary>
     /// Escape some chars in strings that must be used in Regexes
     /// </summary>
-    protected string EscapeRegexChars (string input) {
-        string[] chars = {"[", "]", ".", "|", "(", ")", "*", "+", "?"};
+    protected string EscapeRegexChars( string input ) {
+        string[] chars = { "[", "]", ".", "|", "(", ")", "*", "+", "?", "{", "}" };
 
-        foreach (string _char in chars)
-            input = input.Replace (_char, Regex.Escape (_char));
+        foreach( string _char in chars )
+            input = input.Replace( _char, Regex.Escape(_char) );
 
         return input;
     }

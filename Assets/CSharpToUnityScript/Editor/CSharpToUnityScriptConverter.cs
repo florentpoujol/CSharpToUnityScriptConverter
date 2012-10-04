@@ -577,6 +577,11 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         patterns.Add( "(\\bconst"+oblWS+")(?<end>"+commonCharsWithSpace+oblWS+commonName+")" ); 
         replacements.Add( "${end}" );
 
+
+        // VAR DECLARATION IN FOREACH LOOP
+        patterns.Add( "(?<varType>\\b"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<in>"+oblWS+"in"+oblWS+")" );
+        replacements.Add( "var ${varName}: ${varType}${in}" );
+
         DoReplacements();
 
 
@@ -658,11 +663,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         }
         
         
-        // VAR DECLARATION IN FOREACH LOOP
-        patterns.Add( "(?<varType>\\b"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<in>"+oblWS+"in"+oblWS+")" );
-        replacements.Add( "var ${varName}: ${varType}${in}" );
-
-        
         // CASTING
 
         // (int)() => paseInt()
@@ -672,7 +672,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         patterns.Add( "\\("+optWS+"float"+optWS+"\\)"+optWS+"\\(?"+optWS+"(?<afterCast>"+commonChars+")"+optWS+"\\)?" );
         replacements.Add( "parseFloat(${afterCast})" );*/
 
-        DoReplacements();
+        //DoReplacements();
 
         // using dataTypes prevent to match if patterns like "if(var1) var2;"
         tempPatterns = new string[] { 
@@ -737,14 +737,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         }
 
 
-
-        //replacements.Add( "$1${afterCast} as ${type};" );
-
-        // the "as" keyword can't be used with value types
-        //patterns.Add (oblWS+"as"+oblWS+regularTypes+optWS+";" );
-        //replacements.Add( ";" );
-
-
         // ARRAYS
 
         // string[] array1; => var array1: String[] (already done)
@@ -765,49 +757,37 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         DoReplacements();
 
         // replace curly brackets by square bracket
-        //pattern = "(?s)((=|\\(|return){1}"+optWS+"){(?<values>.*)}(?<end>"+optWS+"(;|\\)){1})"; // le (?s)
-        pattern = "(?s)(="+optWS+"){(?<values>.*)}(?<end>"+optWS+";)";
-        foreach (Match _pattern in ReverseMatches (convertedCode, pattern)) {
-            string text = _pattern.Value;
-            string newText = text.Replace ("{", "[").Replace ("}", "]" );
-
-            convertedCode = convertedCode.Replace (text, newText);
+        pattern = "(?s)(="+optWS+"){(?<values>.*)}(?<end>"+optWS+";)"; // the (?s) means that the dot represent every character, including new line \n
+        MatchCollection allMatches = Regex.Matches( convertedCode, pattern );
+        
+        foreach( Match aMatch in allMatches ) {
+            string newText = aMatch.Value.Replace("{", "[").Replace("}", "]");
+            convertedCode = convertedCode.Replace( aMatch.Value, newText );
         }
-
-        // jagged arrays
-        // array[][]
 
 
         // LITTERAL CHAR 'a' => 'a'[0]
-        patterns.Add( "'[a-zA-z0-9]{1}'" );
+        patterns.Add( "'.{1}'" );
         replacements.Add( "$0[0]" );
 
 
         // remove f to Float values
-        // actually not needed, it works with the f
-        patterns.Add( "([0-9]{1}(\\.[0-9]{1})?)(f|F)" );
+        // actually not really needed, it works with the f
+        patterns.Add( "([0-9]{1}(\\.[0-9]+)?)(f|F)" );
         replacements.Add( "$1" );
-
-
-        // BOOL AND STRING
-        // convert bool to boolean and string to String
-        // see in Convert()
 
         DoReplacements();
 
 
         // remove @ in  'string aVariable = @"a string";"  and add a extra \ to the existing \
         pattern = "(="+optWS+")@(?<text>"+optWS+"\"[^;]+;)";
-        foreach (Match _pattern in ReverseMatches (convertedCode, pattern)) {
+        allMatches = Regex.Matches( convertedCode, pattern );
 
-            string text = _pattern.Value;
-            string newText = text.Replace ("@\"", "\"").Replace ("\\", "\\\\" );
-            //Debug.Log (text);
-            convertedCode = convertedCode.Replace (text, newText);
+        foreach( Match aMatch in allMatches ) {
+            string newText = aMatch.Value.Replace ("@\"", "\"").Replace ("\\", "\\\\" );
+            convertedCode = convertedCode.Replace( aMatch.Value, newText );
         }
-
-
-    } // end of method Variable
+    } // end of method Variable()
 
 
     // ----------------------------------------------------------------------------------
