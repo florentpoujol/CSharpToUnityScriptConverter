@@ -1,5 +1,0 @@
-
-ReturnType=
-ReturnBoolean1=
-ReturnString1=
-_Parent=
