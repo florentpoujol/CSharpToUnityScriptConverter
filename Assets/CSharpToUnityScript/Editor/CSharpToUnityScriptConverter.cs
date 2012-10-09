@@ -295,44 +295,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// </summary>
     void Classes () {
         // CLASSES DECLARATION
-
-        // classes declarations with inheritance
-        /*patterns.Add( "(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+optWS+"{)" );
-        replacements.Add( "$1 extends ${parent}" );
-        // if parent is an interface, "extends" will be converted below
-
-        // class that inherits a parent class and implements at least one interace
-        patterns.Add( "(\\bclass"+oblWS+commonName+")"+optWS+":"+optWS+"(?<parent>"+commonName+")"+
-        "(?<interfaces>("+optWS+","+optWS+commonName+")+)"+
-        "(?<end>"+optWS+"{)" );
-        replacements.Add( "$1 extends ${parent} implements ${interfaces}${end}" );
-        // leave the first interface after implements with a coma before it (implements ,Interface), to be removed below
-        // if parent is an Interface, extends will be converted below
-        
-        // if the "parent" begins by an uppercase I, consider it as an interface
-        patterns.Add( "\\bextends(?<interface>"+oblWS+"I"+commonName+optWS+"(implements|{))" );
-        replacements.Add( "implements${interface}" );
-
-        // remove the coma before the first interface after the keyword implements
-        patterns.Add( "\\bimplements"+optWS+"," );
-        replacements.Add( "implements " );
-
-        // implements [interface] implements [interface] => implements [interface], [interface]
-        patterns.Add( "(\\bimplements"+oblWS+"I"+commonName+")"+oblWS+"implements\\b" );
-        replacements.Add( "$1," );
-
-
-        // if parent class begins by a I and have alredy been encountered during the conversion, they will be in projectClasses
-        foreach (string aClass in projectClasses) {
-            patterns.Add( "implements("+oblWS+aClass+optWS+"{)" );
-            replacements.Add( "extends$1" );
-
-            patterns.Add( "implements("+oblWS+aClass+")"+optWS+"," );
-            replacements.Add( "extends$1 implements " );
-        }
-
-        DoReplacements();*/
-
         pattern = "(\\bclass"+oblWS+commonName+")(?<keyword>"+optWS+":"+optWS+")(?<parent>"+commonName+")"+optWS+"{";
         MatchCollection allClasses = Regex.Matches( convertedCode, pattern );
 
@@ -511,16 +473,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         }
 
         return true;
-
-        // check if the first character is  a letter or an underscore
-        // tis should be useless since the regex patterns commonName and commonChars already do that
-        /*string alphabet = "abcdefghijklmnopqrstuvwxyz_";
-
-        if( alphabet.Contains( char.ToLower(text[0]).ToString() ) )
-            return true;
-
-        Log( "IsAValidName() : Invalid name="+text );
-        return false;*/
     }
 
     
@@ -807,7 +759,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         }
 
 
-        // function declaration ...
+        // FUNCTION DECLARATION
+
         // using a simple pattern/replacement regex as below match way too much things it shouldn't
         // So I need to check each match before allowing the replacement
         pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<returnType>"+commonCharsWithSpace+")"+oblWS+"(?<functionName>"+commonName+")"+optWS+"(?<args>\\("+argumentsChars+"\\))(?<end>"+optWS+"{)"; 
@@ -815,10 +768,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
             string visibility = aFunctionDeclaration.Groups["visibility"].Value;
-            string returnType = aFunctionDeclaration.Groups["returnType"].Value.Replace("[", Regex.Escape("[") );
+            string returnType = aFunctionDeclaration.Groups["returnType"].Value;
             string functionName = aFunctionDeclaration.Groups["functionName"].Value;
             string args = aFunctionDeclaration.Groups["args"].Value;
-            string end = aFunctionDeclaration.Groups["end"].Value
+            string end = aFunctionDeclaration.Groups["end"].Value;
 
             if (returnType == "else" && functionName == "if") // do not match else if () statement
                 continue;
@@ -853,7 +806,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         }
 
 
-        // arguments declaration      if out and ref keyword where not removed before this point it would also convert them ("out hit" in Physics.Raycast() calls) or prevent the convertion ("ref aType aVar" as function argument)
+        // PARAMETERS DECLARATION
+        // if out and ref keyword where not removed before this point it would also convert them ("out hit" in Physics.Raycast() calls) or prevent the convertion ("ref aType aVar" as function argument)
         string refKeyword = "";
         if (removeRefKeyword)
             refKeyword = "(ref"+oblWS+")?";
@@ -865,26 +819,24 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         patterns.Add( "(?<begining>(\\(|,){1}"+optWS+")"+refKeyword+"(?<type>"+commonCharsWithoutComma+")"+oblWS+"(?<name>"+commonName+")"+optWS+"(?<end>\\)|,){1}" );
         replacements.Add( "${begining}${name}: ${type}${end}" );
 
-
         DoReplacements();
 
 
         // loop through functions and search for variable declaration that happend several times
-        // leave only the first declaration
-        // because it would throw an error "BCE0067: There is already a local variable with the name 'younameit'."
+        // leave only the first declaration because it would otherwise throw an error "BCE0067: There is already a local variable with the name 'younameit'."
         pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\("+argumentsChars+"\\)("+optWS+":"+optWS+commonCharsWithSpace+")?"+optWS+"{"; 
-        allFunctionsDeclarations = Regex.Matches(convertedCode, pattern);
+        allFunctionsDeclarations = null;
+        List<Match> allFunctionsDeclarations = ReverseMatches(convertedCode, pattern); // see comments below for why ReverseMatches() is used instead of Regex.Matches()
 
-        foreach( Match aFunctionDeclaration in allFunctionsDeclarations ) {
-            Block functionBlock = new Block( aFunctionDeclaration, convertedCode );
+        foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
+            Block functionBlock = new Block(aFunctionDeclaration, convertedCode);
 
             pattern = "var"+oblWS+"(?<varName>"+commonName+")"+optWS+":"+optWS+"(?<varType>"+commonCharsWithSpace+")"+optWS+"(?<ending>(=|;|in))";
-            // don't match var declaration in foreach loop
             List<Match> allVariablesDeclarations = ReverseMatches( functionBlock.text, pattern );
 
-            foreach( Match aVariableDeclaration in allVariablesDeclarations ) {
+            foreach (Match aVariableDeclaration in allVariablesDeclarations) {
                 string varName = aVariableDeclaration.Groups["varName"].Value;
-                string varType = aVariableDeclaration.Groups["varType"].Value.Replace ("[", Regex.Escape ("[")); // why do not escape the closing bracket ?
+                string varType = EscapeRegexChars( aVariableDeclaration.Groups["varType"].Value );
                 string ending = aVariableDeclaration.Groups["ending"].Value; 
 
                 // how many time this variable is (still) declared in the function ?
@@ -894,27 +846,23 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 if (declarationsCount <= 1) // no need to go forward with this particular variable
                     continue;
                 
-                // it's at least the second time that variable is declared in the function
-                // that will throw an error in the Unity console
+                // it's at least the second time that this variable is declared in the function, it will throw an error in the Unity console
                 // so remove the declaration if it is just of type    var aVar: aType;
                 // or replace the declaration by the var name (if a value is set at the same time (var aVar: aType = whatever; => aVar = whatever) or in a foreach loop)
-                
-                // here I can't replace the declaration in functionBlock with String.Replace() because it could match sevral declaration at the same time
-                // I have to use Insert and Remove, that's why the function and variable declaration are looped backward
+
+                // here I can't replace the declaration in functionBlock with String.Replace() because it could match several declaration at the same time
+                // I have to use Insert and Remove here, that's why the function and variable declaration are looped backward with ReverseMatches()
 
                 // remove old declaration 
                 functionBlock.newText = functionBlock.newText.Remove( aVariableDeclaration.Index, aVariableDeclaration.Length );
-
+                
                 // add the new one (if needed)
                 if (ending == "=" || ending == "in")
                     functionBlock.newText = functionBlock.newText.Insert( aVariableDeclaration.Index, varName+" "+ending );
+            }
 
-                //varList.Add (varName, declarationsCount--);
-            } // end loop variable declarations
-
-            // replace old function text by new one in convertedCode
-            convertedCode = convertedCode.Replace (functionBlock.text, functionBlock.newText);
-        } // end lopp function declarations
+            convertedCode = convertedCode.Replace( functionBlock.text, functionBlock.newText );
+        }
     } // end of method Functions
 
 

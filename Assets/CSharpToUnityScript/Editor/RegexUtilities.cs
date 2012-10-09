@@ -155,7 +155,7 @@ public class RegexUtilities {
 
     protected string allButParenthesis = "([^\\(\\)]*)";
 
-    // characters seen in method parameters
+    // characters seen in method parameters (works for both C# and UnityScript parameters)
     protected string argumentsChars = "([A-Za-z0-9<>,:_\\[\\]\\s\\n]*)"; 
 
     // names separated by coma (likes Interface in class declaration)

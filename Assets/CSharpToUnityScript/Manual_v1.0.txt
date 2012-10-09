@@ -29,14 +29,14 @@ TAKE NOTES OF :
 
 
 ==================================================
-WHAT DOES NOT WORK (AS NO EQUIVALENT) IN UNITYSCRIPT
+WHAT DOES NOT WORK (HAS NO EQUIVALENT) IN UNITYSCRIPT
 ==================================================
 
 
 - Enums in UnityScript does not accepts negative values
 
 
-- Keyword "params" in method parameters (they are left, so that they pop errors)
+- Keyword "params" in method parameters (they are left, so that they pop errors in the Unity console)
   The solution is to remove the "params" keyword from the method declaration,
   then wrap the parameters in an array when you call the method.
 
@@ -64,7 +64,7 @@ UnityScript :
 
 
 - Keyword "ref" in method parameters (they are left, so that they pop errors)
-  There are no easy way to pass a value type as reference in UnityScript.
+  There are no easy way to pass a value type as reference in UnityScript, you will have to deal with it.
 
 
 - "delegate" and "event" does not exists in UnityScript but can somtimes be simulated.
@@ -123,12 +123,14 @@ UnityScript :
 
 
 - "abstract" keyword
+  Abstract classes/methods does not exist in UnityScript.
+  Abstract classes/methods are converted into regular classes/methods.
 
 
+- In UnityScript, you can not have a method parameter nammed "get"
 
 
 ==================================================
 
 ==================================================
 
-- you can not have a method parameter nammed get
