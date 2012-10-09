@@ -855,7 +855,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
                 // remove old declaration 
                 functionBlock.newText = functionBlock.newText.Remove( aVariableDeclaration.Index, aVariableDeclaration.Length );
-                
+
                 // add the new one (if needed)
                 if (ending == "=" || ending == "in")
                     functionBlock.newText = functionBlock.newText.Insert( aVariableDeclaration.Index, varName+" "+ending );
@@ -872,15 +872,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Convert Properties declarations
     /// </summary>
     public void Properties () {
-        // find properties
+        // CONVERT PROPERTIES
+
         pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<override>\\boverride"+oblWS+")?(?<blockType>"+commonCharsWithSpace+")"+oblWS+"(?<blockName>"+commonName+")"+optWS+"{";
-        List<Match> allProperties = ReverseMatches (convertedCode, pattern);
+        MatchCollection allProperties = Regex.Matches(convertedCode, pattern);
 
         foreach (Match aProp in allProperties) {
-            //Debug.Log( "Properties : "+aProp.Value );
-            //Debug.Log( "visi="+aProp.Groups["visibility"].Value+" abstract="+aProp.Groups["abstract"].Value+
-            //" type="+aProp.Groups["blockType"].Value+" name="+aProp.Groups["blockName"].Value );
-            
             // first check if this is really a property declaration
             string[] forbiddenBlockTypes = {"enum ", "class", "extends", "implements", "new", "else", "struct", "interface"};
             
@@ -912,10 +909,11 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             if ( !isAPropDeclaration )
                 continue;
 
+
             //Debug.Log( "Properties : "+aProp.Value );
             // Ok now we are sure this is a property declaration
             Block PropBlock = new Block( aProp, convertedCode );
-            PropBlock.type = PropBlock.type.Replace( "overrite", "" );
+            PropBlock.type = PropBlock.type.Replace( "override", "" );
             //Debug.Log ("property : "+aProp.Value+" | "+PropBlock.text);
 
             string property = "";
@@ -971,11 +969,11 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             }
 
             //Debug.Log ("new prop : "+property);
-            string cSharpProperty = aProp.Value.Replace ("{", PropBlock.text);
+            string cSharpProperty = aProp.Value.Replace( "{", PropBlock.text );
 
             convertedCode = convertedCode.Replace( cSharpProperty, property ); // replace property block by the new(s) function(s)
         } // end lopping on properties
-    } // end of method Properties()
+    }
 
 
     // ----------------------------------------------------------------------------------
