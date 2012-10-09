@@ -793,12 +793,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     // ----------------------------------------------------------------------------------
 
     /// <summary> 
-    /// Convert stuffs related to functions/methods
+    /// Convert stuffs related to methods
     /// </summary>
-    void Functions () {
+    void Functions() {
         // first check for abtract methods, strip the abstract keyword while add curly bracket instead of the semi colon
         pattern = "(\\babstract"+oblWS+")(?<body>"+commonCharsWithSpace+oblWS+commonName+optWS+"\\(.*\\))("+optWS+";)";
-        List<Match> allFunctionsDeclarations = ReverseMatches( convertedCode, pattern );
+        MatchCollection allFunctionsDeclarations = Regex.Matches(convertedCode, pattern);
 
         foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
             //Debug.Log( "Abstract method : "+aFunctionDeclaration.Value );
@@ -810,21 +810,15 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // function declaration ...
         // using a simple pattern/replacement regex as below match way too much things it shouldn't
         // So I need to check each match before allowing the replacement
-
-        // patterns.Add (commonChars+oblWS+commonName+optWS+"(\\(.*\\))"+optWS+"{" ); // here I don't care if the method is public, private, static, abstract or whatever since a signature is always composed of a type followed by the name of the method
-        // replacements.Add( "function $3$5: $1 {" );
-
-        pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<returnType>"+commonCharsWithSpace+")"+oblWS+"(?<functionName>"+commonName+")"+optWS+"(\\("+argumentsChars+"\\))("+optWS+"{)"; // match two words followed by a set of parenthesis followed by an opening curly bracket
-        allFunctionsDeclarations = ReverseMatches (convertedCode, pattern);
+        pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<returnType>"+commonCharsWithSpace+")"+oblWS+"(?<functionName>"+commonName+")"+optWS+"(?<args>\\("+argumentsChars+"\\))(?<end>"+optWS+"{)"; 
+        allFunctionsDeclarations = Regex.Matches(convertedCode, pattern);
 
         foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
-            //Debug.Log ( "Method : "+aFunctionDeclaration.Value );
             string visibility = aFunctionDeclaration.Groups["visibility"].Value;
-            string returnType = aFunctionDeclaration.Groups["returnType"].Value.Replace ("[", Regex.Escape ("["));
+            string returnType = aFunctionDeclaration.Groups["returnType"].Value.Replace("[", Regex.Escape("[") );
             string functionName = aFunctionDeclaration.Groups["functionName"].Value;
-            //Debug.Log( "visibility="+visibility+" returntype="+returnType+" name="+functionName );
-
-            //Debug.Log ("returnType="+returnType+" | functionName="+functionName);
+            string args = aFunctionDeclaration.Groups["args"].Value;
+            string end = aFunctionDeclaration.Groups["end"].Value
 
             if (returnType == "else" && functionName == "if") // do not match else if () statement
                 continue;
@@ -833,24 +827,16 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 continue;
 
             if (returnType.Contains ("override"))
-                returnType = returnType.Replace ("override", "").Trim();  // this will left the override keyword after the prefix
+                returnType = returnType.Replace("override", "").Trim();  // this will left the override keyword after the prefix
 
             // if we are there, it's really a function declaration that has to be converted
-            
-            patterns.Add( "(?<returnType>"+returnType+")"+oblWS+"(?<name>"+functionName+")"+optWS+"(?<args>\\("+argumentsChars+"\\))(?<end>"+optWS+"{)" ); 
-            // no need to add the visibility in the pattern
-            
-            switch (returnType) {
-                case "void" : replacements.Add( "function ${name}${args}${end}" ); continue;
-                /*case "string" : replacements.Add( "function $3$5: String$7" ); continue;
-                case "string[]" : replacements.Add( "function $3$5: String[]$7" ); continue; 
-                case "bool" : replacements.Add( "function $3$5: boolean$7" ); continue; 
-                case "bool[]" : replacements.Add( "function $3$5: boolean[]$7" ); continue; */
-                case "public" /* it's a constructor */ : replacements.Add( "public function ${name}${args}${end}" ); continue;
-            }
+            if (returnType == "void" || returnType == "public")
+                returnType = "";
+            else
+                returnType = ": "+returnType;
 
-            // if we are there, it's that the functiondeclaration has nothing special
-            replacements.Add( "function ${name}${args}: ${returnType}${end}" );
+            string newFunctionDeclaration = visibility+"function "+functionName+args+returnType+end;
+            convertedCode = convertedCode.Replace( aFunctionDeclaration.Value, newFunctionDeclaration );
         }
 
 
@@ -882,13 +868,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         DoReplacements();
 
-        Log( "================================================= \n MULTIPLE VAR DECLARATION IN FUNCTIONS" );
 
         // loop through functions and search for variable declaration that happend several times
         // leave only the first declaration
         // because it would throw an error "BCE0067: There is already a local variable with the name 'younameit'."
         pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\("+argumentsChars+"\\)("+optWS+":"+optWS+commonCharsWithSpace+")?"+optWS+"{"; 
-        allFunctionsDeclarations = ReverseMatches (convertedCode, pattern);
+        allFunctionsDeclarations = Regex.Matches(convertedCode, pattern);
 
         foreach( Match aFunctionDeclaration in allFunctionsDeclarations ) {
             Block functionBlock = new Block( aFunctionDeclaration, convertedCode );
