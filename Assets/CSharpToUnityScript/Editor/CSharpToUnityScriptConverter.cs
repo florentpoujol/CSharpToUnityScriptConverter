@@ -125,26 +125,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         return convertedCode;
     }
 
-    /*private Dictionary<string, string> commentStrings = new Dictionary<string, string>(); // key random string, value comment
-
-    private string GetRandomString() {
-        string randomString = "#comment#";
-        string alphabet = "abcdefghijklmnopqrstuvwxyz0123456789-_$*!:;,<>&";
-
-        while( randomString.Length < 20 ) {
-            int number = (int)Random.Range( 0, alphabet.Length-1 );
-            //Debug.Log( "number="+number );
-
-            char letter = alphabet[ number ];
-            //Debug.Log( "letter="+letter.ToString() );
-
-            randomString += letter.ToString();
-            //Debug.Log( "randomString="+randomString );
-        }
-
-        randomString += "#/comment#";
-        return randomString;
-    }*/
 
     /// <summary>
     ///  Main method that perform generic conversion and call the other method for specific conversion
@@ -152,27 +132,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// convertedCode
     /// </summary>
     private void Convert() {
-        // GET RID OF COMMENTS (doesn't work)
-        //pattern = "(?<comment>/{2,3}(.*))(\\r\\n)";
-        /*pattern = "//.*$";
-        List<Match> allComments = ReverseMatches( convertedCode, pattern );
-        commentStrings.Clear();
-        Debug.Log( "allcomment size : "+allComments.Count);
-
-        foreach( Match aComment in allComments ) {
-             
-            string randomString = GetRandomString();
-            Debug.Log( "randomString : "+randomString );
-            Debug.Log( "Comment : "+aComment.Value );
-            while( commentStrings.ContainsKey( randomString ) )
-                randomString = GetRandomString();
-
-            convertedCode.Replace( aComment.Value, randomString);
-            commentStrings.Add( randomString, aComment.Value );
-        }*/
-
-
-
         // GENERIC COLLECTIONS
 
         // Add a dot before the opening chevron  List.<float>
@@ -237,7 +196,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         Properties();
 
         // VISIBILITY
-        //AddVisibility();
+        AddVisibility();
 
 
         // STRING AND BOOL
@@ -277,14 +236,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         DoReplacements();
 
         //convertedCode = "#pragma strict"+EOL+convertedCode;
-
-        // repacing comments
-        /*pattern = "(#comment#)(.*)(#/comment#)";
-        allComments = ReverseMatches( convertedCode, pattern );
-
-        foreach( Match aComment in allComments ) {
-            //convertedCode.Replace( aComment.Value, commentStrings[aComment.Value] );
-        }*/
     } // end of method Convert()
 
     
@@ -343,9 +294,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // loop the classes declarations in the file
         pattern = "\\bclass"+oblWS+"(?<blockName>"+commonName+")"+
         "("+oblWS+"extends"+oblWS+commonName+")?[^{]*{";
-        allClasses = Regex.Matches( convertedCode, pattern );
+        List<Match> allReverseClasses = ReverseMatches( convertedCode, pattern );
         
-        foreach( Match aClass in allClasses ) {
+        foreach( Match aClass in allReverseClasses ) {
             Block classBlock = new Block( aClass, convertedCode );
             classBlock.newText = classBlock.text;
 
@@ -825,10 +776,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // loop through functions and search for variable declaration that happend several times
         // leave only the first declaration because it would otherwise throw an error "BCE0067: There is already a local variable with the name 'younameit'."
         pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\("+argumentsChars+"\\)("+optWS+":"+optWS+commonCharsWithSpace+")?"+optWS+"{"; 
-        allFunctionsDeclarations = null;
-        List<Match> allFunctionsDeclarations = ReverseMatches(convertedCode, pattern); // see comments below for why ReverseMatches() is used instead of Regex.Matches()
+        List<Match> allReverseFunctionsDeclarations = ReverseMatches(convertedCode, pattern); // see comments below for why ReverseMatches() is used instead of Regex.Matches()
 
-        foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
+        foreach (Match aFunctionDeclaration in allReverseFunctionsDeclarations) {
             Block functionBlock = new Block(aFunctionDeclaration, convertedCode);
 
             pattern = "var"+oblWS+"(?<varName>"+commonName+")"+optWS+":"+optWS+"(?<varType>"+commonCharsWithSpace+")"+optWS+"(?<ending>(=|;|in))";
@@ -871,11 +821,11 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// <summary>
     /// Convert Properties declarations
     /// </summary>
-    public void Properties () {
+    void Properties () {
         // CONVERT PROPERTIES
 
         pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<override>\\boverride"+oblWS+")?(?<blockType>"+commonCharsWithSpace+")"+oblWS+"(?<blockName>"+commonName+")"+optWS+"{";
-        MatchCollection allProperties = Regex.Matches(convertedCode, pattern);
+        List<Match> allProperties = ReverseMatches(convertedCode, pattern);
 
         foreach (Match aProp in allProperties) {
             // first check if this is really a property declaration
@@ -906,11 +856,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 }
             }
 
-            if ( !isAPropDeclaration )
+            if (!isAPropDeclaration)
                 continue;
 
+            if ( !IsAValidName( blockType ) || !IsAValidName( aProp.Groups["blockName"].Value ))
+                continue;
 
-            //Debug.Log( "Properties : "+aProp.Value );
             // Ok now we are sure this is a property declaration
             Block PropBlock = new Block( aProp, convertedCode );
             PropBlock.type = PropBlock.type.Replace( "override", "" );
@@ -968,7 +919,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 }
             }
 
-            //Debug.Log ("new prop : "+property);
             string cSharpProperty = aProp.Value.Replace( "{", PropBlock.text );
 
             convertedCode = convertedCode.Replace( cSharpProperty, property ); // replace property block by the new(s) function(s)
@@ -979,22 +929,23 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     // ----------------------------------------------------------------------------------
 
     /// <summary>
-    /// Add the keyword public when no visibility (or just static) is set (the default visibility is public in JS but private in C#)
+    /// Add the keyword private when no visibility (or just static) is set (the default visibility is public in JS but private in C#)
     /// Works also for functions, classes and enums
     /// </summary>
     void AddVisibility () {
-        // the default visibility for variable and functions is public in JS but private in C# => add the keyword private when no visibility (or just static) is set 
-        patterns.Add( "([;{}\\]>/]+"+optWS+")((var|function|enum|class)"+oblWS+")" );
-        replacements.Add( "$1private $3" );
+        // the default visibility for variable and functions is public in JS but private in C# 
+        // => add the keyword private when no visibility (or just static) is set 
+        /*patterns.Add( "([;{}\\]>/]{1}"+optWS+")(?<item>(var|function|enum|class)"+oblWS+")" );
+        replacements.Add( "$1private ${item}" );
 
-        patterns.Add( "(\\*"+optWS+")((var|function|enum|class)"+oblWS+")" ); // add a / after \\*
-        replacements.Add( "$1private $3" );
+        patterns.Add( "(\\*"+optWS+")(?<item>(var|function|enum|class)"+oblWS+")" ); // add a / after \\*
+        replacements.Add( "$1private ${item}" );
 
-        patterns.Add( "(//.*"+optWS+")((var|function|enum|class)"+oblWS+")" );
-        replacements.Add( "$1private $3" );
+        patterns.Add( "(//.*"+optWS+")(?<item>(var|function|enum|class)"+oblWS+")" ); // after a comment
+        replacements.Add( "$1private ${item}" );
 
-        patterns.Add( "((\\#else|\\#endif)"+oblWS+")((var|function|enum|class)"+oblWS+")" );
-        replacements.Add( "$1private $4" );
+        patterns.Add( "((\\#else|\\#endif)"+oblWS+")(?<item>(var|function|enum|class)"+oblWS+")" );
+        replacements.Add( "$1private ${item}" );
 
 
         // static
@@ -1010,27 +961,33 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         patterns.Add( "((\\#else|\\#endif)"+oblWS+")((var|function)"+oblWS+")" );
         replacements.Add( "$1private static $4" );
 
-        DoReplacements();
+        DoReplacements();*/
 
+
+        pattern = "[^ecd]{1}\\s*\\bvar"+oblWS+commonName;
+        MatchCollection matches = Regex.Matches( convertedCode, pattern );
+        Debug.Log( "var matche : "+matches.Count);
+        return;
 
         // all variables gets a public or static public visibility but this shouldn't happend inside functions, so remove that
 
         pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\(.*\\)("+optWS+":"+optWS+commonCharsWithSpace+")?"+optWS+"{";
-        List<Match> allFunctions = ReverseMatches (convertedCode, pattern);
+        List<Match> allFunctions = ReverseMatches( convertedCode, pattern );
 
         foreach (Match aFunction in allFunctions) {
-            Block function = new Block (aFunction, convertedCode);
+            Block function = new Block(aFunction, convertedCode);
 
             if (function.isEmpty)
                 continue;
 
-            patterns.Add( "private"+oblWS+"(static"+oblWS+"var)" );
+            
+            patterns.Add( "\\bprivate"+oblWS+"(static"+oblWS+"var\\b)" );
             replacements.Add( "$2" );
-            patterns.Add( "(static"+oblWS+")?private"+oblWS+"var" );
+            patterns.Add( "(\\bstatic"+oblWS+")?private"+oblWS+"var\\b" );
             replacements.Add( "$1var" );
 
-            function.newText = DoReplacements (function.text);
-            convertedCode = convertedCode.Replace (function.text, function.newText);
+            function.newText = DoReplacements( function.text );
+            convertedCode = convertedCode.Replace( function.text, function.newText );
         }
     } // end AddVisibility ()
 } // end of class CSharpToUnityScript_Main
