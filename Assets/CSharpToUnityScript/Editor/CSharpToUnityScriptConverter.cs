@@ -296,23 +296,23 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         "("+oblWS+"extends"+oblWS+commonName+")?[^{]*{";
         List<Match> allReverseClasses = ReverseMatches( convertedCode, pattern );
         
-        foreach (Match aClass in allReverseClasses ) {
+        foreach (Match aClass in allReverseClasses) {
             Block classBlock = new Block( aClass, convertedCode );
             classBlock.newText = classBlock.text;
 
-            if (classBlock.isEmpty )
+            if (classBlock.isEmpty)
                 continue;
 
             MatchCollection allConstructors;
 
             // look for constructors in the class that call the parent constructor
             // if the class declaration doesn't contains "extends", a constructor has no parent to call
-            if (classBlock.declaration.Contains("extends") ) { 
+            if (classBlock.declaration.Contains("extends")) { 
                 // all constructors in this class
                 pattern = "\\bpublic"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\([^\\)]*\\)(?<base>"+optWS+":"+optWS+"base"+optWS+"\\((?<args>[^\\)]*)\\))"+optWS+"{";
                 allConstructors = Regex.Matches( classBlock.text, pattern ); 
 
-                foreach (Match aConstructor in allConstructors ) {
+                foreach (Match aConstructor in allConstructors) {
                     // remove :base() from the constructor declaration
                     string newConstructor = aConstructor.Value.Replace( aConstructor.Groups["base"].Value, "" );
                     // add super(); to the constructor body
@@ -328,7 +328,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             pattern = "\\bpublic"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\(.*\\)(?<this>"+optWS+":"+optWS+"this"+optWS+"\\((?<args>.*)\\))"+optWS+"{";
             allConstructors = Regex.Matches( classBlock.newText, pattern );
 
-            foreach (Match aConstructor in allConstructors ) {
+            foreach (Match aConstructor in allConstructors) {
                 // remove :this() from the constructor declaration
                 string newConstructor = aConstructor.Value.Replace( aConstructor.Groups["this"].Value, "" );
                 // add Classname() to the constructor body
@@ -698,6 +698,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Convert stuffs related to methods
     /// </summary>
     void Functions() {
+
         // ABSTRACT
         
         // first check for abtract methods, strip the abstract keyword while add curly bracket instead of the semi colon
@@ -718,14 +719,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         
         foreach (Match anInterface in allInterfaces) {
             Block interfaceBlock = new Block(anInterface, convertedCode);
-            
 
-            /*patterns.Add( "void"+oblWS+"(?<functionCorp>"+commonName+optWS+"\\("+argumentsChars+"\\)"+optWS+";)" );
-            replacements.Add( "function ${functionCorp}" );
-            patterns.Add( "(?<returnType>"+commonCharsWithSpace+")"+oblWS+"(?<functionCorp>"+commonName+optWS+"\\("+argumentsChars+"\\))(?<end>"+optWS+";)" );
-            replacements.Add( "function ${functionCorp}: ${returnType}${end}" );*/
-
-
+            // convert function
             pattern = "(?<returnType>"+commonCharsWithSpace+")"+oblWS+"(?<functionCorp>"+commonName+optWS+"\\("+argumentsChars+"\\))(?<end>"+optWS+";)";
             MatchCollection allFunctions = Regex.Matches(interfaceBlock.text, pattern);
 
@@ -737,19 +732,52 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 else
                     type = ": "+type;
 
-                string newFunction = "function "+aFunction.Groups["functionCorp"].Value+type+";";
+                string newFunction = "[interface no visibility]function "+aFunction.Groups["functionCorp"].Value+type+";";
                 interfaceBlock.newText = interfaceBlock.newText.Replace( aFunction.Value, newFunction );
             }
 
+            //convertedCode = convertedCode.Replace(interfaceBlock.text, interfaceBlock.newText);
 
-            // interfaceBlock.newText = DoReplacements(interfaceBlock.text);
+
+            // convert properties
+            pattern = "(?<blockType>"+commonCharsWithSpace+")"+oblWS+"(?<blockName>"+commonName+")"+optWS+"{";
+            List<Match> allProperties = ReverseMatches(interfaceBlock.text, pattern);
+
+            foreach (Match property in allProperties) {
+                string type = property.Groups["blockType"].Value;
+                string name = property.Groups["blockName"].Value;
+
+                if ( ! IsAValidName(type) || !IsAValidName(name))
+                    continue;
+                
+                // Ok now we are sure this is a property declaration
+                Block PropBlock = new Block(property, interfaceBlock.text);
+
+                string USProperty = "";
+
+                // search for the getter
+                pattern = "get"+optWS+";";
+                Match getterMatch = Regex.Match(PropBlock.text, pattern);
+
+                if (getterMatch.Success)
+                    USProperty += "[interface no visibility]function get "+name+"(): "+type+";";
+
+                // now search for the setter
+                pattern = "set"+optWS+";";
+                Match setterMatch = Regex.Match(PropBlock.text, pattern);
+
+                if (setterMatch.Success) {
+                    if (USProperty != "")
+                        USProperty += EOL;
+
+                    USProperty += "[interface no visibility]function set "+name+"(value: "+type+");";
+                }
+                
+                string cSharpProperty = property.Value.Replace( "{", PropBlock.text );
+                interfaceBlock.newText = interfaceBlock.newText.Replace( cSharpProperty, USProperty );
+            }
+            
             convertedCode = convertedCode.Replace(interfaceBlock.text, interfaceBlock.newText);
-            /*
-            MatchCollection allFunctions = Regex.Matches(interfaceBlock.text, pattern);
-
-            foreach (Match afunction in allFunctions) {
-                interfaceBlock.newText = interfaceBlock.newText
-            }*/
         }
 
 
@@ -777,8 +805,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 returnType = returnType.Replace("override", "").Trim();  // this will left the override keyword after the prefix
 
             // if we are there, it's really a function declaration that has to be converted
-            if (returnType == "void" || returnType == "public")
+            if (returnType == "void")
                 returnType = "";
+            else if (returnType == "public") { // a constructor
+                visibility = returnType+" ";
+                returnType = "";
+            }
             else
                 returnType = ": "+returnType;
 
@@ -801,7 +833,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
         // PARAMETERS DECLARATION
-        
+
         // if out and ref keyword where not removed before this point it would also convert them ("out hit" in Physics.Raycast() calls) or prevent the convertion ("ref aType aVar" as function argument)
         string refKeyword = "";
         if (removeRefKeyword)
@@ -973,37 +1005,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Works also for functions, classes and enums
     /// </summary>
     void AddVisibility () {
-        
-        // the default visibility for variable and functions is public in JS but private in C# 
-        // => add the keyword private when no visibility (or just static) is set 
-        /*patterns.Add( "([;{}\\]>/]{1}"+optWS+")(?<item>(var|function|enum|class)"+oblWS+")" );
-        replacements.Add( "$1private ${item}" );
-
-        patterns.Add( "(\\*"+optWS+")(?<item>(var|function|enum|class)"+oblWS+")" ); // add a / after \\*
-        replacements.Add( "$1private ${item}" );
-
-        patterns.Add( "(//.*"+optWS+")(?<item>(var|function|enum|class)"+oblWS+")" ); // after a comment
-        replacements.Add( "$1private ${item}" );
-
-        patterns.Add( "((\\#else|\\#endif)"+oblWS+")(?<item>(var|function|enum|class)"+oblWS+")" );
-        replacements.Add( "$1private ${item}" );
-
-
-        // static
-        patterns.Add( "([;{}\\]]+"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );
-        replacements.Add( "$1private static $4" );
-
-        patterns.Add( "(\\*"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );  // add a / after \\*
-        replacements.Add( "$1private static $4" );
-
-        patterns.Add( "(//.*"+optWS+")static"+oblWS+"((var|function)"+oblWS+")" );
-        replacements.Add( "$1private static $4" );
-
-        patterns.Add( "((\\#else|\\#endif)"+oblWS+")((var|function)"+oblWS+")" );
-        replacements.Add( "$1private static $4" );
-
-        DoReplacements();*/
-
         // do not match protected or private that precede declaration
         // stil match public and static, as we need to check if a visibility keyword precede static itself
         // [^ed\\W]{1}"+oblWS+"(?<type>var|function) matche everything where a non white space charac that is not e or d
@@ -1057,5 +1058,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             function.newText = DoReplacements( function.text );
             convertedCode = convertedCode.Replace( function.text, function.newText );
         }
+
+
+        // remove [interface no visibility] inside interface
+        patterns.Add("\\[interface no visibility\\]");
+        replacements.Add("");
+
+        DoReplacements();
     } // end AddVisibility ()
 } // end of class CSharpToUnityScript_Main
