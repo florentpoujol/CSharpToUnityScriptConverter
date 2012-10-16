@@ -128,14 +128,16 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
     //----------------------------------------------------------------------------------
 
-    private Dictionary<string, string> commentStrings = new Dictionary<string, string>(); // key random string, value comment
+    // key: random string, value: comment being replaced
+    private Dictionary<string, string> commentStrings = new Dictionary<string, string>(); 
 
     /// <summary>
-    /// Summary
+    /// Create a random string
     /// </summary>
     private string GetRandomString() {
         string randomString = "#comment#";
-        string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
+        string alphabet = "abcdeghijklmnopqrstuvwxyzABCDEGHIJKLMNOPQRSTUVWXYZ0123456789";
+        // I removed f and F in alphabet because the F in patterns like [number]F will be stripped by the conversion of float values
 
         while (randomString.Length < 29) {
             int number = (int)Random.Range(0, alphabet.Length-1);
@@ -158,6 +160,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // GET RID OF COMMENTS
 
         commentStrings.Clear();
+
+        // single line comments
         string[] lines = convertedCode.Split('\n');
 
         foreach (string line in lines) {
@@ -173,6 +177,50 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 commentStrings.Add(randomString, comment.Value);
             }
         }
+
+        // block comment
+
+            // find all block comments (llow nested comments)
+        int openedCommentBlocks = 0;
+        List<string> commentBlocks = new List<string>();
+        int commentBlockIndex = -1;
+        bool inACommentBlock = false;
+
+        for (int i = 0; i < convertedCode.Length; i++) {
+            if (convertedCode[i] == '/' && convertedCode[i+1] == '*') {
+
+                if ( ! inACommentBlock) {
+                    inACommentBlock = true;
+                    commentBlocks.Add("");
+                    commentBlockIndex++; 
+                }
+
+                openedCommentBlocks++;
+            }
+
+            if (convertedCode[i] == '*' && convertedCode[i+1] == '/') {
+                openedCommentBlocks--;
+
+                if (openedCommentBlocks == 0) {
+                    inACommentBlock = false;
+                    commentBlocks[commentBlockIndex] += "*/";
+                }
+            }
+
+            if (inACommentBlock)
+                commentBlocks[commentBlockIndex] += convertedCode[i].ToString();
+        }
+
+
+        foreach (string commentBlock in commentBlocks) {
+            string randomString = GetRandomString();
+            while (commentStrings.ContainsKey(randomString))
+                randomString = GetRandomString();
+
+            convertedCode = convertedCode.Replace(commentBlock, randomString);
+            commentStrings.Add(randomString, commentBlock);
+        }
+
 
         // GENERIC COLLECTIONS
 
@@ -315,10 +363,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // DEFINE
         patterns.Add("\\#(define|DEFINE)"+oblSpaces+commonName+"("+oblSpaces+commonName+")*");
         replacements.Add("");
-
-
-
-
         
 
         DoReplacements();
@@ -326,8 +370,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         //convertedCode = "#pragma strict"+EOL+convertedCode;
 
         // REPLACING COMMENTS
-        foreach (KeyValuePair<string, string> comment in commentStrings) 
-            convertedCode = convertedCode.Replace(comment.Key, comment.Value);
+        foreach (KeyValuePair<string, string> comment in commentStrings) {
+            //Debug.Log("key="+comment.Key+ " value="+comment.Value);
+            //convertedCode = convertedCode.Replace(comment.Key, comment.Value);
+        }
 
 
     } // end of method Convert()
