@@ -1,4 +1,4 @@
-
+v0.1
 
 
 ==================================================
@@ -18,13 +18,6 @@ TAKE NOTES OF :
 ==================================================
 
 
-- A parent class that begins by an Uppercase I may be considered as an interface if the class definition has not been encountered yet
-
-
-- Variable declaration with value will messed up if the string value is on several lines
-
-
-
 
 
 
@@ -36,9 +29,10 @@ WHAT DOES NOT WORK (HAS NO EQUIVALENT) IN UNITYSCRIPT
 - Enums in UnityScript does not accepts negative values
 
 
-- Keyword "params" in method parameters (they are left, so that they pop errors in the Unity console)
+- Keyword "params" in method parameters.
+  They are left, so they pop errors in the Unity console
   The solution is to remove the "params" keyword from the method declaration,
-  then wrap the parameters in an array when you call the method.
+  then wrap the parameters in an array in the method call.
 
 C# :
 	void Method( params int[] values ) {}
@@ -67,12 +61,36 @@ UnityScript :
   There are no easy way to pass a value type as reference in UnityScript, you will have to deal with it.
 
 
-- "delegate" and "event" does not exists in UnityScript but can somtimes be simulated.
-  You should be able to tuse UnityScript's "Function" type instead of all types of delegates.
-  Alternatively, you still have access to .Net's Action and Func generic delegates
+- "delegate" and "event" does not exists in UnityScript but can be simulated to some extends.
+
+  You can't create custom-nammed delegate or callable as in C# or Boo but you can express specific method signatures as Boo does.
+  ie :
+  // in C#
+  delegate string DelegateName(int arg);
+  DelegateName variabmeName = Methodname;
+
+  // in Boo
+  CallableName as callable(int) as string
+  CallableName variableName = Methodname
+
+  // in UnityScript
+  "Function" is a global callable type, you should be able to use it wherever you use a delegate in C#
+
+  // but you can also be more specific :
+  function(int): String
+  function(String, boolean) // same as    function(String, boolean): void
+  var variableName: function(int): String = MethodName;
+
+  You also still have access to .Net's Action<> and Func<> generic delegates.
+
+
+  Currently (as of v0.1), the converter convert every occurence of a delegate name in it's US conterpart.
+  Every occurence of "DelegateName" would be replaced by "function(int)"
+
+
+  Events does not exists, but they are just a specialized collection of method, something you can easily reproduce in UnityScript, while it require some code refactoring.
 
 C# :
-	// the function type
 	delegate void FooBarMethod(int data);
 
 	// the event that will store the methods
@@ -87,16 +105,14 @@ C# :
 	foobarMethods += AMethod;
 
 	// throwing an event
-	foobarMathods( 1 );
+	foobarMethods( 1 );
 
 UnityScript :
-	// the function type already exist : "Function"
-
 	// the event can be simulated by any kind of list
-	var foobarMethods: List.<Function> = new List.<Function>();
+	var foobarMethodsList: List.<function(int)> = new List.<function(int)>();
 
-	function EventFoobar( param: int ) {
-		for( var method: Function in foobarMethods ) {
+	function foorbarMethods( param: int ) {
+		for( var method: function(int) in foobarMethods ) {
 			method( param );
 		}
 	}
@@ -107,10 +123,13 @@ UnityScript :
 	function AMethod( param: int ) {}
 
 	// registering methods
-	foobarMethods.Add( AMethod );
+	foobarMethodsList.Add( AMethod );
 
 	// throwing an event
-	EventFoobar( 1 );
+	foorbarMethods( 1 );
+
+
+	Nothing is done by the converter, everything is left out in the code.
 
 
 - I have found some [System.Serializable] over Enums, 
@@ -119,7 +138,8 @@ UnityScript :
 
 - "out" keyword.
   In UnityScript, it is not needed when calling a C# method.
-  But there is no way in UnityScript to create such behavior in the method declaration. 
+  But there is no way in UnityScript to create such behavior in the method declaration.
+  Remember that you can still use C# classes from UnityScript scripts if they (the C# scripts) are compiled first
 
 
 - "abstract" keyword
