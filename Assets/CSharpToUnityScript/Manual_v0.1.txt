@@ -36,23 +36,19 @@ WHAT DOES NOT WORK (HAS NO EQUIVALENT) IN UNITYSCRIPT
 
 C# :
 	void Method( params int[] values ) {}
-
 	Method( 1, 2 );
 	Method( 1, 2, 3 );
 
 	void Method( string firstParam, params int[] values ) {}
-
 	Method( "", 1, 2 );
 	Method( "", 1, 2, 3 );
 
 UnityScript :
 	function Method( values: int[] ) {}
-
 	Method( [1, 2] );
 	Method( [1, 2, 3] );
 
 	function Method( firestParam: String, values: int[] ) {}
-
 	Method( "", [1, 2] );
 	Method( "", [1, 2, 3] );
 
@@ -63,8 +59,9 @@ UnityScript :
 
 - "delegate" and "event" does not exists in UnityScript but can be simulated to some extends.
 
-  You can't create custom-nammed delegate or callable as in C# or Boo but you can express specific method signatures as Boo does.
+  You can't create custom-nammed delegate or callable types as in C# or Boo but you can express specific method signatures as Boo does.
   ie :
+
   // in C#
   delegate string DelegateName(int arg);
   DelegateName variabmeName = Methodname;
@@ -84,7 +81,7 @@ UnityScript :
   You also still have access to .Net's Action<> and Func<> generic delegates.
 
 
-  Currently (as of v0.1), the converter convert every occurence of a delegate name in it's US conterpart.
+  As of v0.1, the converter convert every occurence of a delegate name to its US conterpart.
   Every occurence of "DelegateName" would be replaced by "function(int)"
 
 
@@ -92,7 +89,6 @@ UnityScript :
 
 C# :
 	delegate void FooBarMethod(int data);
-
 	// the event that will store the methods
 	event FooBarMethod foobarMethods;
 
@@ -112,9 +108,8 @@ UnityScript :
 	var foobarMethodsList: List.<function(int)> = new List.<function(int)>();
 
 	function foorbarMethods( param: int ) {
-		for( var method: function(int) in foobarMethods ) {
+		for (var method: function(int) in foobarMethods)
 			method( param );
-		}
 	}
 
 	[...]
@@ -122,24 +117,89 @@ UnityScript :
 	// a method to be called when the event is thrown
 	function AMethod( param: int ) {}
 
-	// registering methods
+	// registering methods, this what you need to get over and change yourself
 	foobarMethodsList.Add( AMethod );
 
 	// throwing an event
 	foorbarMethods( 1 );
 
 
-	Nothing is done by the converter, everything is left out in the code.
+	As of v0.1, nothing is done by the converter, everything is left out in the code.
+
+
+- Arrays
+  Single dimentionnal arrays convert just fine. But :
+
+
+  The syntax of a multidimensionnal array in C#, become a jagged array in US :
+  C# 	{ {0}, {1} } 	is of type int[,]
+  US 	[ [0], [1] ]	is of type int[][]
+
+
+  Here is some examples of what works, what doesn't :
+
+
+  Jagged arrays :
+	  var array: int[][];			=>	display the error UCE0001: ';' expected. Insert a semicolon at the end.
+	  var array = new int[1][2];   	=>  display the error : IndexOutOfRangeException: Array index is out of range.
+	  var array = new int[2][1];	=>	array is of type int ...
+
+	  The only way to declare a jagged array is to set it at the same time, using the multidimensionnal array sytax :
+	  var array = [ [0], [1] ];		=>	array is of type int[][]
+
+
+  MultiDimentionnal arrays :
+	  var array: in[,];						=> 	Works
+	  var array = new int[1,1]; 			=>	Works
+	  var array: int[,] = new int[1,1]; 	=>	Works
+
+	  It seems that you can't set a multidimentionnal array while delcaring it;
+  
+  
+
 
 
 - I have found some [System.Serializable] over Enums, 
   but Enums can't inherit from System.Object
 
 
-- "out" keyword.
-  In UnityScript, it is not needed when calling a C# method.
+- "out" and "ref" keywords.
+  In UnityScript, you don't need these keyword when you call a c# method (ie : the 'hitInfo' parameter of Physics.Raycast()).
   But there is no way in UnityScript to create such behavior in the method declaration.
-  Remember that you can still use C# classes from UnityScript scripts if they (the C# scripts) are compiled first
+  Remember that you can still use C# classes from UnityScript scripts if they (the C# scripts) are compiled first.
+
+  Here is one ugly hack : You use an intermediary variable which contain the value
+
+C# :
+	void RefMethod(ref int arg) {
+		arg = 20;
+	}
+
+	void Start() {
+		int refVar = 5;
+
+		RefMethod(ref refVar);
+
+		Debug.Log(refVar); // will display 20
+	}
+
+US :
+	var ref = Array();
+
+	function RefMethod() {
+		ref["refVar"] = 20;
+	}
+	
+	function Start() {
+		var refVar = 5;
+
+		ref["refvar"] = refVar;
+		RefMethod();
+		refVar = ref["refvar"];
+
+		print(refVar); // will print 20
+	}
+
 
 
 - "abstract" keyword
