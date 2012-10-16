@@ -126,12 +126,54 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     }
 
 
+    //----------------------------------------------------------------------------------
+
+    private Dictionary<string, string> commentStrings = new Dictionary<string, string>(); // key random string, value comment
+
+    /// <summary>
+    /// Summary
+    /// </summary>
+    private string GetRandomString() {
+        string randomString = "#comment#";
+        string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
+
+        while (randomString.Length < 29) {
+            int number = (int)Random.Range(0, alphabet.Length-1);
+            randomString += alphabet[number].ToString();
+        }
+
+        randomString += "#/comment#";
+        return randomString;
+    }
+
+
+    //----------------------------------------------------------------------------------
+
     /// <summary>
     ///  Main method that perform generic conversion and call the other method for specific conversion
     /// Assume at the beginning that convertedCode is the C# code to be converted
     /// convertedCode
     /// </summary>
     private void Convert() {
+        // GET RID OF COMMENTS
+
+        commentStrings.Clear();
+        string[] lines = convertedCode.Split('\n');
+
+        foreach (string line in lines) {
+            pattern = "//.*$";
+            Match comment = Regex.Match(line, pattern);
+
+            if (comment.Success) {
+                string randomString = GetRandomString();
+                while (commentStrings.ContainsKey(randomString))
+                    randomString = GetRandomString();
+
+                convertedCode = convertedCode.Replace(comment.Value, randomString);
+                commentStrings.Add(randomString, comment.Value);
+            }
+        }
+
         // GENERIC COLLECTIONS
 
         // Add a dot before the opening chevron  List.<float>
@@ -282,6 +324,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         DoReplacements();
 
         //convertedCode = "#pragma strict"+EOL+convertedCode;
+
+        // REPLACING COMMENTS
+        foreach (KeyValuePair<string, string> comment in commentStrings) 
+            convertedCode = convertedCode.Replace(comment.Key, comment.Value);
+
+
     } // end of method Convert()
 
     
