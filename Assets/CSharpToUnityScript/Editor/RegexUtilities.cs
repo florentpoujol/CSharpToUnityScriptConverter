@@ -185,7 +185,8 @@ public class RegexUtilities {
     protected string collections = "(ArrayList|BitArray|CaseInsensitiveComparer|Comparer|Hashtable|Queue|SortedList|Stack|StructuralComparisons|DictionnaryEntry"+
         "|ICollection|IComparer|IDictionary|IDictionaryEnumerator|IEnumerable|IEnumerator|IEqualityComparer|IHashCodeProvider|IList|IStructuralComparable|IStructuralEquatable)";
     protected string genericCollections = "(Comparer|Dictionary|KeyValuePair|HashSet|KeyedByTypeCollection|LinkedList|LinkedListNode|List|Queue|SortedDictionary"+
-        "|SortedList|SortedSet|Stack|SynchronizedCollection|SynchronizedKeyedCollection|SynchronizedReadOnlyCollection|ISet|"+
+        "|SortedList|SortedSet|Stack|SynchronizedCollection|SynchronizedKeyedCollection|SynchronizedReadOnlyCollection|"+
+        "ICollection|IComparer|IDictionary|IEnumerable|IEnumerator|IEqualityComparer|IList|IReadOnlyCollection|IReadOnlyDictionary|IReadOnlyList|ISet|"+
         "Action|Func)";
 
     // regular data types (value types)

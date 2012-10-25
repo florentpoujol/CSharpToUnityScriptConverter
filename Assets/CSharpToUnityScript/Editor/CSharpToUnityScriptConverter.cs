@@ -41,7 +41,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     public static string dataTypes = ""; // "regex list" "(data1|data2|data3|...)"
 
     // conversion options
-    public static bool convertMultipleVarDeclaration = false;
+    public static bool convertMultipleVarDeclaration = true;
     public static bool removeRefKeyword = true;
     public static bool removeOutKeyword = true;
 
@@ -246,6 +246,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         //patterns.Add("(\\b(AddComponent|GetComponent|GetComponents|GetComponentInChildren|GetComponentsInChildren)"+optWS+")(?<type><"+optWS+commonChars+optWS+">)");
         patterns.Add("(\\b(AddComponent|GetComponent|GetComponents|GetComponentInChildren|GetComponentsInChildren)"+optWS+")<");
         replacements.Add("$1.<");
+
+
+        // FINDOBJECTOFTYPE
+        // (Type)FindObjectOfType(typeof(Type)) => FindObjectOfType(Type)
+        patterns.Add("(\\("+optWS+commonCharsWithSpace+optWS+"\\)"+optWS+")?FindObjectOfType"+optWS+
+            "\\("+optWS+"typeof"+optWS+"\\("+optWS+"(?<type>"+commonCharsWithSpace+")"+optWS+"\\)"+optWS+"\\)");
+        replacements.Add("FindObjectOfType(${type})");
 
 
         // ABSTRACT
