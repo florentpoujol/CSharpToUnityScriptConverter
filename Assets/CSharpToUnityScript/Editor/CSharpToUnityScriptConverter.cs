@@ -635,7 +635,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         string[] tempPatterns = { "(?<visibility>"+visibilityAndStatic+oblWS+")(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)",
         "(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)" };
 
-        foreach (string tempPattern in tempPatterns ) {
+        foreach (string tempPattern in tempPatterns) {
             MatchCollection allVariables = Regex.Matches( convertedCode, tempPattern );
 
             foreach (Match aVariable in allVariables ) {
@@ -648,44 +648,41 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     continue;
 
                 List<string> forbiddenTypes = new List<string>( 
-                    new string[] { "import", "return", "yield return", "yield", "return", "as", "else", "<", "<=", ">", ">=" }
+                    new string[] { "import", "return", "yield return", "yield", "as", "else", "<", "<=", ">", ">=" }
                 );
 
-                bool isNotAVarDelcaration = false;
+                bool isNotVarDeclaration = false;
                 foreach (string forbiddenType in forbiddenTypes) {
                     if (type.Trim().Contains(forbiddenType))
-                        isNotAVarDelcaration = true;
+                        isNotVarDeclaration = true;
                 }
 
-                if (isNotAVarDelcaration || forbiddenTypes.Contains(type.Trim()) || type.Contains("import ") || type.Contains(" = ") )
+                if (isNotVarDeclaration || forbiddenTypes.Contains(type.Trim()) || type.Contains(" = ") )
                     continue;
                 // some value setting got treated like var declaration   variable = value; => var variable: = value;
 
                 // stuff like     othervar as Type;   got converted to   var Type: othervar as;
-                if (type.TrimEnd().EndsWith(" as") )
+                if (type.TrimEnd().EndsWith(" as")) // 25/10/2012  why such is not already discarded in the foreach loop above ?
                     continue;
 
                 //
-                pattern = aVariable.Value.Replace( "HideInInspector ", "" ).Replace( "System.NonSerialized ", "");
-                type = type.Replace( "HideInInspector ", "" ).Replace( "System.NonSerialized ", "");
+                pattern = aVariable.Value.Replace("HideInInspector ", "").Replace("System.NonSerialized ", "");
+                type = type.Replace("HideInInspector ", "").Replace("System.NonSerialized ", "");
 
-                patterns.Add( EscapeRegexChars( pattern ) );
-                replacements.Add( visibility+"var "+name+": "+type+end );
+                convertedCode = convertedCode.Replace(pattern, visibility+"var "+name+": "+type+end);
             }
-
-            DoReplacements();
         }
 
         // VAR DECLARATION WITH VALUE
         tempPatterns = new string[] { "(?<visibility>"+visibilityAndStatic+oblWS+")(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)",
         "(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)" };
         
-        foreach (string tempPattern in tempPatterns ) {
-            MatchCollection allVariables = Regex.Matches( convertedCode, tempPattern );
+        foreach (string tempPattern in tempPatterns) {
+            MatchCollection allVariables = Regex.Matches(convertedCode, tempPattern);
 
             foreach (Match aVariable in allVariables ) {
                 string visibility = aVariable.Groups["visibility"].Value;
-                string type = aVariable.Groups["varType"].Value.Replace( "HideInInspector", "").Replace( "System.NonSerialized", "");;
+                string type = aVariable.Groups["varType"].Value.Replace( "HideInInspector", "").Replace( "System.NonSerialized", "");
                 string name = aVariable.Groups["varName"].Value;
                 string varValue = aVariable.Groups["varValue"].Value;
 
@@ -693,7 +690,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     continue;
 
                 List<string> forbiddenTypes = new List<string>( 
-                    new string[] { "import", "return", "yield return", "as", "else" }
+                    new string[] { "return", "yield return", "as", "else" }
                 );
 
                 bool isNotAVarDelcaration = false;
@@ -704,58 +701,49 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
                 if (isNotAVarDelcaration || forbiddenTypes.Contains(type.Trim()) )
                     continue;
+                
+                // when HideInInspector or System.NonSerialized are n the same line as the var declaration
+                pattern = aVariable.Value.Replace("HideInInspector ", "").Replace("System.NonSerialized ", "");
 
-                pattern = aVariable.Value.Replace( "HideInInspector ", "" ).Replace( "System.NonSerialized ", "");
-                type = type.Replace( "HideInInspector ", "" ).Replace( "System.NonSerialized ", "");
-
-                patterns.Add( EscapeRegexChars( pattern ) );
-                replacements.Add( visibility+"var "+name+": "+type+varValue );
+                convertedCode = convertedCode.Replace(pattern, visibility+"var "+name+": "+type+varValue);
             }
-
-            DoReplacements();
         }
         
         
         // CASTING
 
-        // (int)() => paseInt()
-        /*patterns.Add("\\("+optWS+"int"+optWS+"\\)"+optWS+"\\(?"+optWS+"(?<afterCast>"+commonChars+")"+optWS+"\\)?");
-        replacements.Add("parseInt(${afterCast})");
+        // pattern = "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>\\()";
 
-        patterns.Add("\\("+optWS+"float"+optWS+"\\)"+optWS+"\\(?"+optWS+"(?<afterCast>"+commonChars+")"+optWS+"\\)?");
-        replacements.Add("parseFloat(${afterCast})");*/
-
-        //DoReplacements();
 
         // using dataTypes prevent to match if patterns like "if(var1) var2;"
         tempPatterns = new string[] { 
-        "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>\\([^;}]+(;|}))",
-        "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>\\(?"+optWS+commonChars+optWS+"\\)?)", // don't allow space if parenthesis are optionnal
+        "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>\\(.+(;|}))",
+        "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>"+commonChars+")", // don't allow space when there is no parenthesisf parenthes
         
         }; 
         
-        for( int i = 0; i < tempPatterns.Length; i++ ) {
-            MatchCollection allCasts = Regex.Matches( convertedCode, tempPatterns[i] );
+        for (int i = 0; i < tempPatterns.Length; i++) {
+            MatchCollection allCasts = Regex.Matches(convertedCode, tempPatterns[i]);
 
-            foreach (Match aCast in allCasts ) {
+            foreach (Match aCast in allCasts) {
                 string type = aCast.Groups["type"].Value;
                 string afterCast = aCast.Groups["afterCast"].Value;
 
-                if (i == 1 ) { // second pattern
+                if (i == 0) { // first pattern
                     // find the closing parenthesis
                     int oppenedParenthesis = 1;
                     afterCast = afterCast.TrimStart('(');
-                    string tempAfterCast = "";
+                    string newAfterCast = "";
 
-                    foreach (char letter in afterCast ) {
-                        tempAfterCast += letter.ToString();
+                    foreach (char letter in afterCast) {
+                        newAfterCast += letter.ToString();
 
-                        if (letter == '(' ) {
+                        if (letter == '(') {
                             oppenedParenthesis++;
                             continue;
                         }
 
-                        if (letter == ')' ) {
+                        if (letter == ')') {
                             oppenedParenthesis--;
 
                             if (oppenedParenthesis == 0 ) // we have reached the final closing parenthesis
@@ -765,7 +753,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                         }
                     }
 
-                    afterCast = tempAfterCast.TrimEnd(')');
+                    afterCast = newAfterCast.TrimEnd(')');
                 }
 
                 if (regularTypes.Contains(type.Trim())) { 

@@ -7,9 +7,9 @@ OPTIONS
 
 
 - You can choose if the script convert the declaration of multile inline variables of the same type.
-  In some case that may lead to some false positiv. If you are sure you don't have such thing is your script, don't tick the box.
-  If you do let the conversion append, be advise that the conversion will be messed up if
-  a value contains a coma or a semi colon.
+In some case that may lead to some false positiv. If you are sure you don't have such thing is your script, don't tick the box.
+If you do let the conversion append, be advise that the conversion will be messed up if
+a value contains a coma or a semi colon.
 
 
 
@@ -17,7 +17,8 @@ OPTIONS
 TAKE NOTES OF :
 ==================================================
 
-
+cast without parenthesis stop at the first space
+(float) castwithoutspace
 
 
 
@@ -30,9 +31,9 @@ WHAT DOES NOT WORK (HAS NO EQUIVALENT) IN UNITYSCRIPT
 
 
 - Keyword "params" in method parameters.
-  They are left, so they pop errors in the Unity console
-  The solution is to remove the "params" keyword from the method declaration,
-  then wrap the parameters in an array in the method call.
+They are left, so they pop errors in the Unity console
+The solution is to remove the "params" keyword from the method declaration,
+then wrap the parameters in an array in the method call.
 
 C# :
 	void Method( params int[] values ) {}
@@ -43,7 +44,7 @@ C# :
 	Method( "", 1, 2 );
 	Method( "", 1, 2, 3 );
 
-UnityScript :
+	UnityScript :
 	function Method( values: int[] ) {}
 	Method( [1, 2] );
 	Method( [1, 2, 3] );
@@ -54,43 +55,43 @@ UnityScript :
 
 
 - Keyword "ref" in method parameters (they are left, so that they pop errors)
-  There are no easy way to pass a value type as reference in UnityScript, you will have to deal with it.
+There are no easy way to pass a value type as reference in UnityScript, you will have to deal with it.
 
 
 - "delegate" and "event" does not exists in UnityScript but can be simulated to some extends.
 
-  You can't create custom-nammed delegate or callable types as in C# or Boo but you can express specific method signatures as Boo does.
-  ie :
-
-  // in C#
-  delegate string DelegateName(int arg);
-  DelegateName variabmeName = Methodname;
-
-  // in Boo
-  CallableName as callable(int) as string
-  CallableName variableName = Methodname
-
-  // in UnityScript
-  "Function" is a global callable type, you should be able to use it wherever you use a delegate in C#
-
-  // but you can also be more specific :
-  function(int): String
-  function(String, boolean) // same as    function(String, boolean): void
-  var variableName: function(int): String = MethodName;
-
-  You also still have access to .Net's Action<> and Func<> generic delegates.
-
-
-  As of v0.1, the converter convert every occurence of a delegate name to its US conterpart.
-  Every occurence of "DelegateName" would be replaced by "function(int)"
-
-
-  Events does not exists, but they are just a specialized collection of method, something you can easily reproduce in UnityScript, while it require some code refactoring.
+You can't create custom-nammed delegate or callable types as in C# or Boo but you can express specific method signatures as Boo does.
+ie :
 
 C# :
-	delegate void FooBarMethod(int data);
+	delegate string DelegateName(int arg);
+	DelegateName variabmeName = MethodName;
+
+Boo :
+	CallableName as callable(int) as string
+	variableName as CallableName = MethodName
+
+UnityScript :
+	"Function" is a global callable type, that match any signatures. You should be able to use it wherever you use a delegate in C#
+	But you can also be more specific :
+
+	function(int): String
+	function(String, boolean) // same as    function(String, boolean): void
+	var variableName: function(int): String = MethodName;
+
+You also still have access to .Net's Action<> and Func<> generic delegates.
+
+
+As of v0.1, the converter convert every occurence of a delegate name to its US conterpart.
+ie : Every occurence of "DelegateName" would be replaced by "function(int)"
+
+
+Events does not exists, but they are just a specialized collection of method, something you can easily reproduce in UnityScript, while it require some code refactoring.
+
+C# :
+	delegate void FooBarSignature(int data);
 	// the event that will store the methods
-	event FooBarMethod foobarMethods;
+	event FooBarSignature foobarMethods;
 
 	[...]
 
@@ -108,7 +109,7 @@ UnityScript :
 	var foobarMethodsList: List.<function(int)> = new List.<function(int)>();
 
 	function foorbarMethods( param: int ) {
-		for (var method: function(int) in foobarMethods)
+		for (var method: function(int) in foobarMethodsList)
 			method( param );
 	}
 
@@ -117,58 +118,70 @@ UnityScript :
 	// a method to be called when the event is thrown
 	function AMethod( param: int ) {}
 
-	// registering methods, this what you need to get over and change yourself
+	// registering methods, this is what you need to go over and change yourself
 	foobarMethodsList.Add( AMethod );
 
 	// throwing an event
 	foorbarMethods( 1 );
 
 
-	As of v0.1, nothing is done by the converter, everything is left out in the code.
+As of v0.1, nothing is done by the converter, everything is left out in the code.
 
 
 - Arrays
-  Single dimentionnal arrays convert just fine. But :
+	Single dimentionnal arrays convert just fine.
+	But :
+
+	The syntax of a multidimensionnal array in C#, become a jagged array in US :
+	C# 	{ {0}, {1} } 	is of type int[,]
+	US 	[ [0], [1] ]	is of type int[][] (same case in Boo)
 
 
-  The syntax of a multidimensionnal array in C#, become a jagged array in US :
-  C# 	{ {0}, {1} } 	is of type int[,]
-  US 	[ [0], [1] ]	is of type int[][]
+	Here is some examples of what works, what doesn't :
+
+	Jagged arrays :
+		var array: int[][];			=>	display the error UCE0001: ';' expected. Insert a semicolon at the end.
+		var array = new int[1][2];   	=>  display the error : IndexOutOfRangeException: Array index is out of range.
+		var array = new int[2][1];	=>	array is of type int ...
+
+		creating an empty two level jagged array is done :
+		var array = array.<int[]>(10);	=>	array is of type int[][]
+
+		// you can create single dimentionnal array like this
+		var array = array(int, 2); // the number is the size of the array    var array = new int[2];
+		var array = array.<int>(2);
+
+		You can also set the values
+		var array = [ [0], [1] ];		=>	array is of type int[][]
+		
+		actually you can create two level jagged array this way :
+		
 
 
-  Here is some examples of what works, what doesn't :
+	MultiDimentionnal arrays :
+		var array: int[,];					=> 	Works
+		var array = new int[1,1]; 			=>	Works
+		var array: int[,] = new int[1,1]; 	=>	Works
 
+		You can also use Boo's syntax :
+		var array = matrix(int, 1, 1);
+		var array: int[,] = matrix(int, 1, 1);
 
-  Jagged arrays :
-	  var array: int[][];			=>	display the error UCE0001: ';' expected. Insert a semicolon at the end.
-	  var array = new int[1][2];   	=>  display the error : IndexOutOfRangeException: Array index is out of range.
-	  var array = new int[2][1];	=>	array is of type int ...
-
-	  The only way to declare a jagged array is to set it at the same time, using the multidimensionnal array sytax :
-	  var array = [ [0], [1] ];		=>	array is of type int[][]
-
-
-  MultiDimentionnal arrays :
-	  var array: in[,];						=> 	Works
-	  var array = new int[1,1]; 			=>	Works
-	  var array: int[,] = new int[1,1]; 	=>	Works
-
-	  It seems that you can't set a multidimentionnal array while delcaring it;
+		It seems that you can't set a multidimentionnal array while declaring it;
   
   
-
 
 
 - I have found some [System.Serializable] over Enums, 
-  but Enums can't inherit from System.Object
+but Enums can't inherit from System.Object
 
 
 - "out" and "ref" keywords.
-  In UnityScript, you don't need these keyword when you call a c# method (ie : the 'hitInfo' parameter of Physics.Raycast()).
-  But there is no way in UnityScript to create such behavior in the method declaration.
-  Remember that you can still use C# classes from UnityScript scripts if they (the C# scripts) are compiled first.
+In UnityScript, you don't need these keywords when you call a C# method (ie : the 'hitInfo' parameter of Physics.Raycast()).
+But there is no way in UnityScript to create such behavior in the method declaration.
+Remember that you can still use C# classes from UnityScript scripts if they (the C# scripts) are compiled first.
 
-  Here is one ugly hack : You use an intermediary variable which contain the value
+Here is one hack : You use an intermediary variable which contains the value
 
 C# :
 	void RefMethod(ref int arg) {
@@ -183,13 +196,13 @@ C# :
 		Debug.Log(refVar); // will display 20
 	}
 
-US :
+UnityScript :
 	var ref = Array();
 
 	function RefMethod() {
 		ref["refVar"] = 20;
 	}
-	
+
 	function Start() {
 		var refVar = 5;
 
@@ -203,8 +216,8 @@ US :
 
 
 - "abstract" keyword
-  Abstract classes/methods does not exist in UnityScript.
-  Abstract classes/methods are converted into regular classes/methods.
+Abstract classes/methods does not exist in UnityScript.
+Abstract classes/methods are converted into regular classes/methods.
 
 
 - In UnityScript, you can not have a method parameter nammed "get"
