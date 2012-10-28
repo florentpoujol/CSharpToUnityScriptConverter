@@ -52,7 +52,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Constructor and main method
     /// </summary>
     /// <param name="sourceDirectory">The directory where to look for files</param>
-    public CSharpToUnityScriptConverter (string sourceDirectory) {
+    public CSharpToUnityScriptConverter (string sourceDirectory)
+    {
         importedAssemblies.Clear();
         projectClasses.Clear();
         unityClasses.Clear();
@@ -60,16 +61,18 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // reading unity classes
         string path = Application.dataPath+"/CSharpToUnityScript/Editor/UnityClasses.txt";
-        if (File.Exists( path ) ) {
+        if (File.Exists(path))
+        {
             reader = new StreamReader( path );
             string line = "";
 
-            while( true ) {
+            while (true)
+            {
                 line = reader.ReadLine();
-                if (line == null )
+                if (line == null)
                     break;
 
-                unityClasses.Add( line.Trim() );
+                unityClasses.Add(line.Trim());
             }
 
             reader.Close();
@@ -80,13 +83,14 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // set datatypes
         dataTypes = regularTypes;
 
-        foreach (string _class in unityClasses )
+        foreach (string _class in unityClasses)
             dataTypes = dataTypes.Replace( ")", "|"+_class+")");
 
         // loop trough all poject's file, extract the data types (classes, enums and structs)
         string[] paths = Directory.GetFiles( Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories );
         
-        foreach (string scriptPath in paths ) {
+        foreach (string scriptPath in paths )
+        {
             reader = new StreamReader( scriptPath );
             string scriptContent = reader.ReadToEnd();
             reader.Close();
@@ -94,7 +98,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             pattern = "\\b(?<type>class|interface|struct|enum)"+oblWS+"(?<name>"+commonName+"\\b)";
             MatchCollection allDataTypes = Regex.Matches( scriptContent, pattern );
 
-            foreach (Match aDataType in allDataTypes ) {
+            foreach (Match aDataType in allDataTypes )
+            {
                 string name = aDataType.Groups["name"].Value;
 
                 // discard results where the first letter is lowercase
@@ -119,7 +124,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// </summary>
     /// <param name="inputCode">The code in C# to be converted in UnityScript</param>
     /// <returns>The converted code in UnityScript</returns>
-    public string Convert (string inputCode) {
+    public string Convert (string inputCode)
+    {
         convertedCode = inputCode;
         Convert();
         return convertedCode;
@@ -134,12 +140,14 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// <summary>
     /// Create a random string
     /// </summary>
-    private string GetRandomString() {
+    private string GetRandomString()
+    {
         string randomString = "#comment#";
         string alphabet = "abcdeghijklmnopqrstuvwxyzABCDEGHIJKLMNOPQRSTUVWXYZ0123456789";
         // I removed f and F in alphabet because the F in patterns like [number]F will be stripped by the conversion of float values
 
-        while (randomString.Length < 29) {
+        while (randomString.Length < 29)
+        {
             int number = (int)Random.Range(0, alphabet.Length-1);
             randomString += alphabet[number].ToString();
         }
@@ -156,7 +164,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Assume at the beginning that convertedCode is the C# code to be converted
     /// convertedCode
     /// </summary>
-    private void Convert() {
+    private void Convert()
+    {
         // GET RID OF COMMENTS
 
         commentStrings.Clear();
@@ -164,11 +173,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // single line comments
         string[] lines = convertedCode.Split('\n');
 
-        foreach (string line in lines) {
+        foreach (string line in lines)
+        {
             pattern = "//.*$";
             Match comment = Regex.Match(line, pattern);
 
-            if (comment.Success) {
+            if (comment.Success)
+            {
                 string randomString = GetRandomString();
                 while (commentStrings.ContainsKey(randomString))
                     randomString = GetRandomString();
@@ -186,10 +197,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         int commentBlockIndex = -1;
         bool inACommentBlock = false;
 
-        for (int i = 0; i < convertedCode.Length; i++) {
-            if (convertedCode[i] == '/' && convertedCode[i+1] == '*') {
+        for (int i = 0; i < convertedCode.Length; i++)
+        {
+            if (convertedCode[i] == '/' && convertedCode[i+1] == '*') 
+            {
 
-                if (!inACommentBlock) {
+                if (!inACommentBlock) 
+                {
                     inACommentBlock = true;
                     commentBlocks.Add("");
                     commentBlockIndex++; 
@@ -198,10 +212,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 openedCommentBlocks++;
             }
 
-            if (convertedCode[i] == '*' && convertedCode[i+1] == '/') {
+            if (convertedCode[i] == '*' && convertedCode[i+1] == '/') 
+            {
                 openedCommentBlocks--;
 
-                if (openedCommentBlocks == 0) {
+                if (openedCommentBlocks == 0) 
+                {
                     inACommentBlock = false;
                     commentBlocks[commentBlockIndex] += "*/";
                 }
@@ -212,7 +228,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         }
 
 
-        foreach (string commentBlock in commentBlocks) {
+        foreach (string commentBlock in commentBlocks) 
+        {
             string randomString = GetRandomString();
             while (commentStrings.ContainsKey(randomString))
                 randomString = GetRandomString();
@@ -303,16 +320,19 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         pattern = "("+visibility+oblWS+")?delegate"+oblWS+"(?<type>"+commonCharsWithSpace+")"+oblWS+"(?<name>"+commonName+")"+optWS+"\\((?<args>"+argumentsChars+")\\)"+optWS+";";
         MatchCollection allDelegates = Regex.Matches(convertedCode, pattern);
 
-        foreach (Match aDelegate in allDelegates) {
+        foreach (Match aDelegate in allDelegates) 
+        {
             string type = aDelegate.Groups["type"].Value;
             string name = aDelegate.Groups["name"].Value;
             string delegateArgs = aDelegate.Groups["args"].Value;
             string USArgs = "";
 
-            if (delegateArgs.Trim() != "") {
+            if (delegateArgs.Trim() != "") 
+            {
                 string[] args = delegateArgs.Split(',');
 
-                foreach (string arg in args) {
+                foreach (string arg in args) 
+                {
                     string tempArg = arg.Trim();
                     // parameters are in UnityScript-style by now
     
@@ -377,7 +397,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         //convertedCode = "#pragma strict"+EOL+convertedCode;
 
         // REPLACING COMMENTS
-        foreach (KeyValuePair<string, string> comment in commentStrings) {
+        foreach (KeyValuePair<string, string> comment in commentStrings) 
+        {
             //Debug.Log("key="+comment.Key+ " value="+comment.Value);
             convertedCode = convertedCode.Replace(comment.Key, comment.Value);
         }
@@ -391,12 +412,14 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// <summary> 
     /// Convert stuffs related to classes : declaration, inheritance, parent constructor call, Assembly imports
     /// </summary>
-    void Classes () {
+    void Classes () 
+    {
         // CLASSES DECLARATION
         pattern = "(\\bclass"+oblWS+commonName+")(?<keyword>"+optWS+":"+optWS+")(?<parent>"+commonName+")"+optWS+"{";
         MatchCollection allClasses = Regex.Matches( convertedCode, pattern );
 
-        foreach (Match aClass in allClasses ) {
+        foreach (Match aClass in allClasses ) 
+        {
             // assume parent is a class unless
             // it is not in UnityClasses nor in projectClasses and its name begin by an uppercase I
             string parent = aClass.Groups["parent"].Value;
@@ -415,7 +438,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         "(?<end>"+optWS+"{)";
         allClasses = Regex.Matches( convertedCode, pattern );
 
-        foreach (Match aClass in allClasses ) {
+        foreach (Match aClass in allClasses )
+        {
             string parent = aClass.Groups["parent"].Value;
             string keyword = " extends ";
             
@@ -426,7 +450,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             // if keyword is implements, there is nothing more to do
             // but if keyword is extends, needs to add "implements" after the parent and strip the first coma (between implements and the first interface)
-            if (keyword == " extends " ) {
+            if (keyword == " extends " ) 
+            {
                 newClassDeclaration = newClassDeclaration.Replace( parent, parent+" implements ");
                 string newInterfaces = aClass.Groups["interfaces"].Value.TrimStart(' ', ','); // remove space and coma
                 newClassDeclaration = newClassDeclaration.Replace( aClass.Groups["interfaces"].Value, newInterfaces );
@@ -443,7 +468,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         "("+oblWS+"extends"+oblWS+commonName+")?[^{]*{";
         List<Match> allReverseClasses = ReverseMatches( convertedCode, pattern );
         
-        foreach (Match aClass in allReverseClasses) {
+        foreach (Match aClass in allReverseClasses) 
+        {
             Block classBlock = new Block( aClass, convertedCode );
             classBlock.newText = classBlock.text;
 
@@ -454,12 +480,14 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             // look for constructors in the class that call the parent constructor
             // if the class declaration doesn't contains "extends", a constructor has no parent to call
-            if (classBlock.declaration.Contains("extends")) { 
+            if (classBlock.declaration.Contains("extends")) 
+            { 
                 // all constructors in this class
                 pattern = "\\bpublic"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\([^\\)]*\\)(?<base>"+optWS+":"+optWS+"base"+optWS+"\\((?<args>[^\\)]*)\\))"+optWS+"{";
                 allConstructors = Regex.Matches( classBlock.text, pattern ); 
 
-                foreach (Match aConstructor in allConstructors) {
+                foreach (Match aConstructor in allConstructors) 
+                {
                     // remove :base() from the constructor declaration
                     string newConstructor = aConstructor.Value.Replace( aConstructor.Groups["base"].Value, "");
                     // add super(); to the constructor body
@@ -475,7 +503,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             pattern = "\\bpublic"+optWS+"(?<blockName>"+classBlock.name+")"+optWS+"\\(.*\\)(?<this>"+optWS+":"+optWS+"this"+optWS+"\\((?<args>.*)\\))"+optWS+"{";
             allConstructors = Regex.Matches( classBlock.newText, pattern );
 
-            foreach (Match aConstructor in allConstructors) {
+            foreach (Match aConstructor in allConstructors) 
+            {
                 // remove :this() from the constructor declaration
                 string newConstructor = aConstructor.Value.Replace( aConstructor.Groups["this"].Value, "");
                 // add Classname() to the constructor body
@@ -533,10 +562,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         pattern = "\\busing"+oblWS+"(?<assemblyName>"+commonNameWithSpace+")"+optWS+";";
         MatchCollection allImports = Regex.Matches( convertedCode, pattern );
 
-        foreach (Match import in allImports ) {
+        foreach (Match import in allImports ) 
+        {
             string assemblyName = import.Groups["assemblyName"].Value.Replace( " ", "");
 
-            if (importedAssemblies.Contains(assemblyName) ) {
+            if (importedAssemblies.Contains(assemblyName) ) 
+            {
                 convertedCode = convertedCode.Replace( import.Value, "// "+import.Value );
             }
             else {
@@ -555,15 +586,20 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     ///     actually this is alredy done by the regex itself, see commonName or commonChars
     /// make sure the name asn't more than tree spaces in it
     /// </summary>
-    bool IsAValidName( string text ) {
+    bool IsAValidName( string text ) 
+    {
         text = text.Trim();
 
         // check the number of spaces
-        int spaceCount = 0;        foreach (char letter in text ) {
+        int spaceCount = 0;
+
+        foreach (char letter in text) 
+        {            
             if (letter == ' ' )
                 spaceCount++;
 
-            if (spaceCount >= 3 ) {
+            if (spaceCount >= 3 ) 
+            {
                 Log( "IsAValidName() : Invalid name="+text );
                 return false;
             }
@@ -578,18 +614,28 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// <summary> 
     /// Convert stuffs related to variable declarations
     /// </summary>
-    void Variables () {
+    void Variables () 
+    {
+        // CONST
+        patterns.Add("(\\bconst"+oblWS+")(?<end>"+commonCharsWithSpace+oblWS+commonName+")"); 
+        replacements.Add("${end}");
+
+        DoReplacements();
+
         // MULTIPLE INLINE VARIABLE DECLARATION
             // multiple inline var declaration of the same type : "Type varName, varName = foo;"
             
-        if (convertMultipleVarDeclaration) {
+        if (convertMultipleVarDeclaration) 
+        {
             // using dataTypes here, instead of commonChars or commonCharsWithSpace 
             // drastically reduces the number of false positiv returned by the regex
             // the pattern discard all match that have a coma or a semi colon when setting the value of a variable (in a string or a method call)
-            pattern = "(?<varType>\\b"+dataTypes+")"+oblWS+"(?<varList>"+"[^,;{}]+"+optWS+"(="+optWS+"[^,;]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
-            MatchCollection allDeclarations = Regex.Matches( convertedCode, pattern );
+            pattern = "(?s)(?<varType>\\b"+dataTypes+")"+oblWS+
+            "(?<varList>[^,;{}]+"+optWS+"(="+optWS+"[^,;]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
+            MatchCollection allDeclarations = Regex.Matches( convertedCode, pattern, RegexOptions.Singleline );
 
-            foreach (Match aDeclaration in allDeclarations ) {
+            foreach (Match aDeclaration in allDeclarations ) 
+            {
                 //Debug.Log (aDeclaration.Value);
                 if (aDeclaration.Value.Contains("\n") ) // discard results on several lines
                     continue;
@@ -607,8 +653,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 string varType = aDeclaration.Groups["varType"].Value;
                 string newSyntax = "";
 
-                foreach (string varName in varList ) {
-                    if (varName.Contains("=") ) {
+                foreach (string varName in varList ) 
+                {
+                    if (varName.Contains("=") ) 
+                    {
                         // add the varType beetween the varName and the equal sign
                         string varDeclaration = varName.Replace( "=", ": "+varType+" =");
                         newSyntax += "var "+varDeclaration.Trim()+";"+EOL;
@@ -621,11 +669,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             }
         } // end if convertMultipleVarDeclaration
  
-
-        // CONST
-        patterns.Add("(\\bconst"+oblWS+")(?<end>"+commonCharsWithSpace+oblWS+commonName+")"); 
-        replacements.Add("${end}");
-
 
         // VAR DECLARATION IN FOREACH LOOP
         patterns.Add("(?<varType>\\b"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<in>"+oblWS+"in"+oblWS+")");
@@ -642,10 +685,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         string[] tempPatterns = { "(?<visibility>"+visibilityAndStatic+oblWS+")(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)",
         "(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>"+commonName+")(?<end>"+optWS+";)" };
 
-        foreach (string tempPattern in tempPatterns) {
+        foreach (string tempPattern in tempPatterns)
+        {
             MatchCollection allVariables = Regex.Matches( convertedCode, tempPattern );
 
-            foreach (Match aVariable in allVariables ) {
+            foreach (Match aVariable in allVariables ) 
+            {
                 string visibility = aVariable.Groups["visibility"].Value;
                 string type = aVariable.Groups["varType"].Value;
                 string name = aVariable.Groups["varName"].Value;
@@ -659,7 +704,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 );
 
                 bool isNotVarDeclaration = false;
-                foreach (string forbiddenType in forbiddenTypes) {
+                foreach (string forbiddenType in forbiddenTypes) 
+                {
                     if (type.Trim().Contains(forbiddenType))
                         isNotVarDeclaration = true;
                 }
@@ -684,10 +730,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         tempPatterns = new string[] { "(?<visibility>"+visibilityAndStatic+oblWS+")(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)",
         "(?<varType>"+commonCharsWithSpace+")"+oblWS+"(?<varName>\\b"+commonName+")(?<varValue>"+optWS+"="+optWS+"[^;]+;)" };
         
-        foreach (string tempPattern in tempPatterns) {
+        foreach (string tempPattern in tempPatterns) 
+        {
             MatchCollection allVariables = Regex.Matches(convertedCode, tempPattern);
 
-            foreach (Match aVariable in allVariables ) {
+            foreach (Match aVariable in allVariables) 
+            {
                 string visibility = aVariable.Groups["visibility"].Value;
                 string type = aVariable.Groups["varType"].Value.Replace( "HideInInspector", "").Replace( "System.NonSerialized", "");
                 string name = aVariable.Groups["varName"].Value;
@@ -701,12 +749,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 );
 
                 bool isNotAVarDelcaration = false;
-                foreach (string forbiddenType in forbiddenTypes) {
+                foreach (string forbiddenType in forbiddenTypes) 
+                {
                     if (type.Trim().Contains(forbiddenType))
                         isNotAVarDelcaration = true;
                 }
 
-                if (isNotAVarDelcaration || forbiddenTypes.Contains(type.Trim()) )
+                if (isNotAVarDelcaration || forbiddenTypes.Contains(type.Trim()))
                     continue;
                 
                 // when HideInInspector or System.NonSerialized are n the same line as the var declaration
@@ -729,28 +778,34 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         
         }; 
         
-        for (int i = 0; i < tempPatterns.Length; i++) {
+        for (int i = 0; i < tempPatterns.Length; i++) 
+        {
             MatchCollection allCasts = Regex.Matches(convertedCode, tempPatterns[i]);
 
-            foreach (Match aCast in allCasts) {
+            foreach (Match aCast in allCasts) 
+            {
                 string type = aCast.Groups["type"].Value;
                 string afterCast = aCast.Groups["afterCast"].Value;
 
-                if (i == 0) { // first pattern
+                if (i == 0) 
+                { // first pattern
                     // find the closing parenthesis
                     int oppenedParenthesis = 1;
                     afterCast = afterCast.TrimStart('(');
                     string newAfterCast = "";
 
-                    foreach (char letter in afterCast) {
+                    foreach (char letter in afterCast) 
+                    {
                         newAfterCast += letter.ToString();
 
-                        if (letter == '(') {
+                        if (letter == '(') 
+                        {
                             oppenedParenthesis++;
                             continue;
                         }
 
-                        if (letter == ')') {
+                        if (letter == ')') 
+                        {
                             oppenedParenthesis--;
 
                             if (oppenedParenthesis == 0 ) // we have reached the final closing parenthesis
@@ -763,7 +818,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     afterCast = newAfterCast.TrimEnd(')');
                 }
 
-                if (regularTypes.Contains(type.Trim())) { 
+                if (regularTypes.Contains(type.Trim())) 
+                { 
                     // the type is a value type which does not need the "as" keyword to be cast in UnityScript
                     // just keep the "aftercast" without the parenthesis
                     if (afterCast.StartsWith("("))
@@ -810,7 +866,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         pattern = "(?s)(="+optWS+"){(?<values>.*)}(?<end>"+optWS+";)"; // the (?s) means that the dot represent every character, including new line \n
         MatchCollection allMatches = Regex.Matches( convertedCode, pattern );
         
-        foreach (Match aMatch in allMatches ) {
+        foreach (Match aMatch in allMatches ) 
+        {
             string newText = aMatch.Value.Replace("{", "[").Replace("}", "]");
             convertedCode = convertedCode.Replace( aMatch.Value, newText );
         }
@@ -833,7 +890,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         pattern = "(="+optWS+")@(?<text>"+optWS+"\"[^;]+;)";
         allMatches = Regex.Matches( convertedCode, pattern );
 
-        foreach (Match aMatch in allMatches ) {
+        foreach (Match aMatch in allMatches ) 
+        {
             string newText = aMatch.Value.Replace ("@\"", "\"").Replace ("\\", "\\\\");
             convertedCode = convertedCode.Replace( aMatch.Value, newText );
         }
@@ -845,7 +903,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// <summary> 
     /// Convert stuffs related to methods
     /// </summary>
-    void Functions() {
+    void Functions() 
+    {
 
         // ABSTRACT
         
@@ -853,7 +912,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         pattern = "(\\babstract"+oblWS+")(?<body>"+commonCharsWithSpace+oblWS+commonName+optWS+"\\(.*\\))("+optWS+";)";
         MatchCollection allFunctionsDeclarations = Regex.Matches(convertedCode, pattern);
 
-        foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
+        foreach (Match aFunctionDeclaration in allFunctionsDeclarations) 
+        {
             //Debug.Log( "Abstract method : "+aFunctionDeclaration.Value );
             string newFunc = aFunctionDeclaration.Groups["body"].Value+" {}";
             convertedCode = convertedCode.Replace( aFunctionDeclaration.Value, newFunc );
@@ -865,14 +925,16 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         pattern = "interface"+oblWS+commonName+optWS+"{";
         List<Match> allInterfaces = ReverseMatches (convertedCode, pattern);
         
-        foreach (Match anInterface in allInterfaces) {
+        foreach (Match anInterface in allInterfaces) 
+        {
             Block interfaceBlock = new Block(anInterface, convertedCode);
 
             // convert function
             pattern = "(?<returnType>"+commonCharsWithSpace+")"+oblWS+"(?<functionCorp>"+commonName+optWS+"\\("+argumentsChars+"\\))(?<end>"+optWS+";)";
             MatchCollection allFunctions = Regex.Matches(interfaceBlock.text, pattern);
 
-            foreach (Match aFunction in allFunctions) {
+            foreach (Match aFunction in allFunctions) 
+            {
                 string type = aFunction.Groups["returnType"].Value;
 
                 if (type ==  "void") 
@@ -891,7 +953,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             pattern = "(?<blockType>"+commonCharsWithSpace+")"+oblWS+"(?<blockName>"+commonName+")"+optWS+"{";
             List<Match> allProperties = ReverseMatches(interfaceBlock.text, pattern);
 
-            foreach (Match property in allProperties) {
+            foreach (Match property in allProperties) 
+            {
                 string type = property.Groups["blockType"].Value;
                 string name = property.Groups["blockName"].Value;
 
@@ -914,7 +977,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 pattern = "set"+optWS+";";
                 Match setterMatch = Regex.Match(PropBlock.text, pattern);
 
-                if (setterMatch.Success) {
+                if (setterMatch.Success) 
+                {
                     if (USProperty != "")
                         USProperty += EOL;
 
@@ -936,7 +1000,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<returnType>"+commonCharsWithSpace+")"+oblWS+"(?<functionName>"+commonName+")"+optWS+"(?<args>\\("+argumentsChars+"\\))(?<end>"+optWS+"{)"; 
         allFunctionsDeclarations = Regex.Matches(convertedCode, pattern);
 
-        foreach (Match aFunctionDeclaration in allFunctionsDeclarations) {
+        foreach (Match aFunctionDeclaration in allFunctionsDeclarations) 
+        {
             string visibility = aFunctionDeclaration.Groups["visibility"].Value;
             string returnType = aFunctionDeclaration.Groups["returnType"].Value;
             string functionName = aFunctionDeclaration.Groups["functionName"].Value;
@@ -946,7 +1011,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             if (returnType == "else" && functionName == "if") // do not match else if () statement
                 continue;
 
-            if (returnType == "new") // do not match class instanciatton inside an if statement   ie : new Rect ()) {}  => it shouldn't anymore anyway, thanks to argumentsChars instead of ".*"
+            if (returnType == "new") // do not match class instanciatton inside an if statement   ie : new Rect ()) => it shouldn't anymore anyway, thanks to argumentsChars instead of ".*"
                 continue;
 
             if (returnType.Contains ("override"))
@@ -955,7 +1020,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             // if we are there, it's really a function declaration that has to be converted
             if (returnType == "void")
                 returnType = "";
-            else if (returnType == "public") { // a constructor
+            else if (returnType == "public") 
+            { // a constructor
                 visibility = returnType+" ";
                 returnType = "";
             }
@@ -968,13 +1034,15 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
         // remove out keyword in arguments
-        if (removeOutKeyword) {
+        if (removeOutKeyword) 
+        {
             patterns.Add("(,|\\()"+optWS+"out"+oblWS+"("+commonCharsWithoutComma+")");
             replacements.Add("$1$4");
         }
 
         // remove ref keyword in arguments  => let in so it will throw an error and the dev can figure out what to do 
-        if (removeRefKeyword) {
+        if (removeRefKeyword) 
+        {
             patterns.Add("(,|\\()"+optWS+"ref"+oblWS+"("+commonCharsWithoutComma+")");
             replacements.Add("$1$4");
         }
@@ -1002,13 +1070,15 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\("+argumentsChars+"\\)("+optWS+":"+optWS+commonCharsWithSpace+")?"+optWS+"{"; 
         List<Match> allReverseFunctionsDeclarations = ReverseMatches(convertedCode, pattern); // see comments below for why ReverseMatches() is used instead of Regex.Matches()
 
-        foreach (Match aFunctionDeclaration in allReverseFunctionsDeclarations) {
+        foreach (Match aFunctionDeclaration in allReverseFunctionsDeclarations) 
+        {
             Block functionBlock = new Block(aFunctionDeclaration, convertedCode);
 
             pattern = "var"+oblWS+"(?<varName>"+commonName+")"+optWS+":"+optWS+"(?<varType>"+commonCharsWithSpace+")"+optWS+"(?<ending>(=|;|in))";
             List<Match> allVariablesDeclarations = ReverseMatches( functionBlock.text, pattern );
 
-            foreach (Match aVariableDeclaration in allVariablesDeclarations) {
+            foreach (Match aVariableDeclaration in allVariablesDeclarations) 
+            {
                 string varName = aVariableDeclaration.Groups["varName"].Value;
                 string varType = EscapeRegexChars( aVariableDeclaration.Groups["varType"].Value );
                 string ending = aVariableDeclaration.Groups["ending"].Value; 
@@ -1045,21 +1115,25 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// <summary>
     /// Convert Properties declarations
     /// </summary>
-    void Properties() {
+    void Properties() 
+    {
         // CONVERT PROPERTIES
 
         pattern = "(?<visibility>"+visibilityAndStatic+oblWS+")?(?<override>\\boverride"+oblWS+")?(?<blockType>"+commonCharsWithSpace+")"+oblWS+"(?<blockName>"+commonName+")"+optWS+"{";
         List<Match> allProperties = ReverseMatches(convertedCode, pattern);
 
-        foreach (Match aProp in allProperties) {
+        foreach (Match aProp in allProperties) 
+        {
             // first check if this is really a property declaration
             string[] forbiddenBlockTypes = {"enum", "class", "extends", "implements", "new", "else", "struct", "interface"};
             
             bool isAPropDeclaration = true;
             string blockType = aProp.Groups["blockType"].Value;
            
-            foreach (string type in forbiddenBlockTypes) {
-                if (Regex.Match( blockType, "\\b"+type+"\\b" ).Success ) {
+            foreach (string type in forbiddenBlockTypes) 
+            {
+                if (Regex.Match( blockType, "\\b"+type+"\\b" ).Success ) 
+                {
                     isAPropDeclaration = false;
                     break;
                 }
@@ -1071,9 +1145,10 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             string[] forbiddenBlockNames = {"get", "set", "else", "if"};
 
-            foreach (string name in forbiddenBlockNames) {
-                //if (aProp.Groups["blockName"].Value.Contains( name ) ) {
-                if (Regex.Match( aProp.Groups["blockName"].Value, "\\b"+name+"\\b" ).Success) {
+            foreach (string name in forbiddenBlockNames) 
+            {
+                if (Regex.Match( aProp.Groups["blockName"].Value, "\\b"+name+"\\b" ).Success) 
+                {
                     isAPropDeclaration = false;
                     break;
                 }
@@ -1095,13 +1170,15 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             // search for the getter
             pattern = "get"+optWS+"({|;)";
-            Match getterMatch = Regex.Match( PropBlock.text, pattern );
+            Match getterMatch = Regex.Match(PropBlock.text, pattern);
 
-            if (getterMatch.Success) {
+            if (getterMatch.Success) 
+            {
                 visibility = aProp.Groups["visibility"].Value; // the getter has the visibilty of the property
 
                 // if the match value contains a curly bracket, it's not an empty getter, so I have to get its content
-                if (getterMatch.Value.Contains("{") ) {
+                if (getterMatch.Value.Contains("{")) 
+                {
                     Block getterBlock = new Block(getterMatch, PropBlock.text);
 
                     property += visibility+"function get "+PropBlock.name+"(): "+PropBlock.type+" ";
@@ -1109,32 +1186,36 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 }
                 else { // empty getter "get;"
                     property += 
-                    visibility+"function get "+PropBlock.name+"(): "+PropBlock.type+" {"+EOL
-                        +"\treturn "+PropBlock.name.ToLower ()+";"+EOL
-                    +"}"+EOL;
+                    visibility+"function get "+PropBlock.name+"(): "+PropBlock.type+EOL+
+                    "{"+EOL+
+                        "\treturn "+PropBlock.name.ToLower ()+";"+EOL+
+                    "}"+EOL;
                 }
             }
 
             // now search for the setter
             pattern = "(?<visibility>(protected|private|public)"+oblWS+")?set"+optWS+"({|;)";
-            Match setterMatch = Regex.Match( PropBlock.text, pattern );
+            Match setterMatch = Regex.Match(PropBlock.text, pattern);
 
-            if (setterMatch.Success) {
+            if (setterMatch.Success) 
+            {
                 visibility = setterMatch.Groups["visibility"].Value;
-                if (visibility == "" )
+                if (visibility == "")
                     visibility = "public ";
 
-                if (setterMatch.Value.Contains("{") ) {
-                    Block setterBlock = new Block( setterMatch, PropBlock.text );
+                if (setterMatch.Value.Contains("{")) 
+                {
+                    Block setterBlock = new Block(setterMatch, PropBlock.text);
 
                     property +=  visibility+"function set "+PropBlock.name+"(value: "+PropBlock.type+") ";
                     property += setterBlock.text+EOL;
                 }
                 else { // empty setter "set;"
                     property += 
-                    visibility+"function set "+PropBlock.name+"(value: "+PropBlock.type+") {"+EOL
-                        +"\t"+PropBlock.name.ToLower ()+" = value;"+EOL
-                    +"}"+EOL;
+                    visibility+"function set "+PropBlock.name+"(value: "+PropBlock.type+")"+EOL+
+                    "{"+EOL+
+                        "\t"+PropBlock.name.ToLower ()+" = value;"+EOL+
+                    "}"+EOL;
                 }
             }
 
@@ -1151,7 +1232,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Add the keyword private when no visibility (or just static) is set (the default visibility is public in JS but private in C#)
     /// Works also for functions, classes and enums
     /// </summary>
-    void AddVisibility() {
+    void AddVisibility()
+    {
         // do not match protected or private that precede declaration
         // stil match public and static, as we need to check if a visibility keyword precede static itself
         // [^ed\\W]{1}"+oblWS+"(?<type>var|function) matche everything where a non white space charac that is not e or d
@@ -1159,14 +1241,17 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         pattern = "[^ed\\s]{1}"+oblWS+"(?<type>var|function)"+oblWS+commonName+"\\b"; 
         List<Match> allDeclarations = ReverseMatches( convertedCode, pattern );
         
-        foreach (Match declaration in allDeclarations) {
+        foreach (Match declaration in allDeclarations) 
+        {
             // public or static
-            if (declaration.Value[0] == 'c') { 
+            if (declaration.Value[0] == 'c') 
+            { 
                 // if static, need to check before it if a visibility is set
                 string keyword = convertedCode.Substring( declaration.Index-5, 6 );
                 //Debug.Log(keyword);
 
-                if (keyword == "static") {
+                if (keyword == "static") 
+                {
                     // same here
                     // do not match when public, private or protected precede
                     pattern = "[^ecd\\s]{1}"+oblWS+"\\bstati"+declaration.Value; 
@@ -1191,7 +1276,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         pattern = "function"+oblWS+"(?<blockName>"+commonName+")"+optWS+"\\(.*\\)("+optWS+":"+optWS+commonCharsWithSpace+")?"+optWS+"{";
         List<Match> allFunctions = ReverseMatches( convertedCode, pattern );
 
-        foreach (Match aFunction in allFunctions) {
+        foreach (Match aFunction in allFunctions) 
+        {
             Block function = new Block(aFunction, convertedCode);
 
             if (function.isEmpty)
