@@ -41,13 +41,13 @@ public class CSharpToUnityScriptExtension : EditorWindow
 
 
     // the directory where to get the scripts to be converted
-    public string m_sourceDirectory = "/CSharpToUnityScript/ScriptsToBeConverted/";
+    public string sourceDirectory = "/CSharpToUnityScript/ScriptsToBeConverted/";
 
     // the directory where to put the converted scripts
-    public string m_targetDirectory = "/CSharpToUnityScript/ConvertedScripts/";
+    public string targetDirectory = "/CSharpToUnityScript/ConvertedScripts/";
 
     // a list of structure that contains all needed infos about the script to be converted
-    protected List<Script> m_scriptsToConvertList = new List<Script>();
+    protected List<Script> scriptsToConvertList = new List<Script>();
 
     // the instance of the converter class
     CSharpToUnityScriptConverter converter;
@@ -76,8 +76,8 @@ public class CSharpToUnityScriptExtension : EditorWindow
     {
         GUILayout.Label("The two paths below are relative to the \"Assets\" directory");
 
-        m_sourceDirectory = EditorGUILayout.TextField("Source directory : ", m_sourceDirectory);
-        m_targetDirectory = EditorGUILayout.TextField("Target directory : ", m_targetDirectory);
+        sourceDirectory = EditorGUILayout.TextField("Source directory : ", sourceDirectory);
+        targetDirectory = EditorGUILayout.TextField("Target directory : ", targetDirectory);
         GUILayout.Label("A copy of the content of the source directory will be created inside the target directory with the converted scripts.");
 
         GUILayout.Space(10);
@@ -85,39 +85,39 @@ public class CSharpToUnityScriptExtension : EditorWindow
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Convert", GUILayout.MaxWidth(200))) 
         {
-            if (m_scriptsToConvertList.Count > 0)
+            if (scriptsToConvertList.Count > 0)
                 return;
 
-             if (!m_sourceDirectory.StartsWith("/"))
-                m_sourceDirectory = "/"+m_sourceDirectory;
+            if (!sourceDirectory.StartsWith("/"))
+                sourceDirectory = "/"+sourceDirectory;
 
-            if (!Directory.Exists(Application.dataPath+m_sourceDirectory)) 
+            if (!Directory.Exists(Application.dataPath+sourceDirectory)) 
             {
-                Debug.LogError("C# to UnityScript converter : Abording preparation work because the source directory ["+m_sourceDirectory+"] does not exists !");
+                Debug.LogError("C# to UnityScript converter : Abording convertion because the source directory ["+sourceDirectory+"] does not exists !");
                 return;
             }
 
 
-            string[] paths = Directory.GetFiles(Application.dataPath+m_sourceDirectory, "*.cs", SearchOption.AllDirectories); // only C# scripts in the whole hyerarchie of the source directory
+            string[] paths = Directory.GetFiles(Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories); // only C# scripts in the whole hyerarchie of the source directory
 
-            // fill m_scriptsToConvertList
+            // fill scriptsToConvertList
             foreach (string path in paths) 
             {
                 StreamReader reader = new StreamReader(path);
                 string text = reader.ReadToEnd();
                 reader.Close();
 
-                string relativePath = path.Replace(Application.dataPath+m_sourceDirectory, ""); // just keep the relative path from the source directory
-                m_scriptsToConvertList.Add(new Script(relativePath, text));
+                string relativePath = path.Replace(Application.dataPath+sourceDirectory, ""); // just keep the relative path from the source directory
+                scriptsToConvertList.Add(new Script(relativePath, text));
             }
             
 
-            if (!m_targetDirectory.StartsWith("/"))
-                m_targetDirectory = "/"+m_targetDirectory;
+            if (!targetDirectory.StartsWith("/"))
+                targetDirectory = "/"+targetDirectory;
             
-            if (m_scriptsToConvertList.Count > 0) 
+            if (scriptsToConvertList.Count > 0) 
             {
-                Debug.Log("Proceeding with the conversion of "+m_scriptsToConvertList.Count+" scripts.");
+                Debug.Log("Proceeding with the conversion of "+scriptsToConvertList.Count+" scripts.");
                 CSharpToUnityScriptConverter.importedAssemblies.Clear();
             }
             else
@@ -128,7 +128,7 @@ public class CSharpToUnityScriptExtension : EditorWindow
         if (GUILayout.Button("Reset/Abord", GUILayout.MaxWidth(200))) 
         {
             Debug.LogWarning("Abording conversion ! Refreshing project.");
-            m_scriptsToConvertList.Clear();
+            scriptsToConvertList.Clear();
             converter = null;
             AssetDatabase.Refresh();
         }
@@ -136,8 +136,8 @@ public class CSharpToUnityScriptExtension : EditorWindow
 
         GUILayout.Space(10);
 
-        if (m_scriptsToConvertList.Count > 0)
-            GUILayout.Label("Still "+m_scriptsToConvertList.Count+" scripts to convert.");
+        if (scriptsToConvertList.Count > 0)
+            GUILayout.Label(scriptsToConvertList.Count+" scripts left to convert.");
     }
 
 
@@ -149,34 +149,34 @@ public class CSharpToUnityScriptExtension : EditorWindow
     /// </summary>
     void Update() 
     {
-        if (m_scriptsToConvertList.Count > 0) 
+        if (scriptsToConvertList.Count > 0) 
         {
-            Script m_scriptInConversion = m_scriptsToConvertList[0];
+            Script scriptInConversion = scriptsToConvertList[0];
             
             // makes sure the target directory exists
-            string targetScriptPath = Application.dataPath+m_targetDirectory+m_scriptInConversion.relativePath;
+            string targetScriptPath = Application.dataPath+targetDirectory+scriptInConversion.relativePath;
             Directory.CreateDirectory(targetScriptPath); // make sure the directory exist, or create it
 
             // write the converted code into the file
             if (converter == null)
-                converter = new CSharpToUnityScriptConverter( m_sourceDirectory );
+                converter = new CSharpToUnityScriptConverter(sourceDirectory);
 
-            converter.Convert( m_scriptInConversion.text );
-            //CSharpToUnityScriptConverter converter = new CSharpToUnityScriptConverter(m_scriptInConversion.text);
+            converter.Convert(scriptInConversion.text);
+            //CSharpToUnityScriptConverter converter = new CSharpToUnityScriptConverter(scriptInConversion.text);
 
-            StreamWriter writer = new StreamWriter(targetScriptPath+m_scriptInConversion.name+".js");
+            StreamWriter writer = new StreamWriter(targetScriptPath+scriptInConversion.name+".js");
             writer.Write(converter.convertedCode);
             writer.Flush();
             writer.Close();
 
 
-            Debug.Log("Converted "+m_scriptInConversion.relativePath+m_scriptInConversion.name);
+            Debug.Log("Converted "+scriptInConversion.relativePath+scriptInConversion.name);
 
-            m_scriptsToConvertList.RemoveAt(0);
+            scriptsToConvertList.RemoveAt(0);
             Repaint(); // update the GUI
 
             // auto refresh the project once all files have been converted
-            if (m_scriptsToConvertList.Count <= 0) 
+            if (scriptsToConvertList.Count <= 0) 
             {
                 Debug.LogWarning("Conversion done ! Refreshing project.");
                 AssetDatabase.Refresh();

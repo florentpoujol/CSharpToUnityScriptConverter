@@ -21,6 +21,15 @@ cast without parenthesis stop at the first space
 (float) castwithoutspace
 
 
+- multile variable declaration will be messed up if 
+	- coma is used in values (in strings or with methods with more than one parameter)
+
+- multiple variable declaration will not work when :
+	- the declaration is on sevral lines and an opening bracket is used somewhere
+	- the value is set for the first variable and the value contains a semi colon
+
+
+
 
 ==================================================
 WHAT DOES NOT WORK (HAS NO EQUIVALENT) IN UNITYSCRIPT

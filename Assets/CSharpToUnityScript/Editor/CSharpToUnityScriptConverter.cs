@@ -616,35 +616,43 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// </summary>
     void Variables () 
     {
-        // CONST
+        // CONST just remove the keyword
         patterns.Add("(\\bconst"+oblWS+")(?<end>"+commonCharsWithSpace+oblWS+commonName+")"); 
         replacements.Add("${end}");
 
         DoReplacements();
 
-        // MULTIPLE INLINE VARIABLE DECLARATION
-            // multiple inline var declaration of the same type : "Type varName, varName = foo;"
-            
+        // MULTIPLE INLINE VARIABLE DECLARATION     "Type varName, varName = foo;"
         if (convertMultipleVarDeclaration) 
         {
-            // using dataTypes here, instead of commonChars or commonCharsWithSpace 
-            // drastically reduces the number of false positiv returned by the regex
+            // using dataTypes here, instead of commonChars or commonCharsWithSpace  drastically reduces the number of false positiv returned by the regex
             // the pattern discard all match that have a coma or a semi colon when setting the value of a variable (in a string or a method call)
-            pattern = "(?s)(?<varType>\\b"+dataTypes+")"+oblWS+
-            "(?<varList>[^,;{}]+"+optWS+"(="+optWS+"[^,;]+"+optWS+")?,{1}"+optWS+"[^;]*)+"+optWS+";";
-            MatchCollection allDeclarations = Regex.Matches( convertedCode, pattern, RegexOptions.Singleline );
+            pattern = "(?<varType>\\b"+dataTypes+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+"[^,;]+"+optWS+")?,[^;]+);";
 
-            foreach (Match aDeclaration in allDeclarations ) 
+            /*
+                Any method with two or more parameter will be matched
+             */
+
+            MatchCollection allDeclarations = Regex.Matches(convertedCode, pattern);
+
+            foreach (Match aDeclaration in allDeclarations) 
             {
-                //Debug.Log (aDeclaration.Value);
-                if (aDeclaration.Value.Contains("\n") ) // discard results on several lines
+                // discarding results that have several lines is effective to discard false positive
+                // but it discard all true positiv as well
+                if (aDeclaration.Value.Contains("\n") && aDeclaration.Value.Contains("{")) 
                     continue;
 
-                // look for method call pattern "method( arg1, arg2 );" to discard
+                // abstract methods will be matched : 
+                // "type variable, type variable2);" will be matched in "type Method(type variable, type variable2);"
+                // just check if the match has a closing parenthesis but no opening parenthesis
+                if (aDeclaration.Value.Contains(")") && !aDeclaration.Value.Contains("("))
+                    continue; 
+
+                // look for method call pattern "type variable = method(arg1, arg2 );" to discard
                 // will discard a legit match if a variable's value comes from a method with at least two parameters
                 pattern = "\\b"+commonName+optWS+"\\(.+,{1}[^\\)]+\\)";
-                if (Regex.Matches( aDeclaration.Value, pattern ).Count > 0 ){
-                    //Debug.Log ("Discarding : "+aDeclaration.Value);  
+                if (Regex.Matches(aDeclaration.Value, pattern).Count > 0){
+                    //Debug.Log ("Discarding method pattern (multiple var declaration): "+aDeclaration.Value);  
                     continue;
                 }
                 
@@ -653,19 +661,19 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 string varType = aDeclaration.Groups["varType"].Value;
                 string newSyntax = "";
 
-                foreach (string varName in varList ) 
+                foreach (string varName in varList) 
                 {
-                    if (varName.Contains("=") ) 
+                    if (varName.Contains("=")) 
                     {
                         // add the varType beetween the varName and the equal sign
-                        string varDeclaration = varName.Replace( "=", ": "+varType+" =");
+                        string varDeclaration = varName.Replace("=", ": "+varType+" =");
                         newSyntax += "var "+varDeclaration.Trim()+";"+EOL;
                     }
                     else 
                         newSyntax += "var "+varName.Trim()+": "+varType+";"+EOL;
                 }
 
-                convertedCode = convertedCode.Replace( aDeclaration.Value, newSyntax );
+                convertedCode = convertedCode.Replace(aDeclaration.Value, newSyntax);
             }
         } // end if convertMultipleVarDeclaration
  
