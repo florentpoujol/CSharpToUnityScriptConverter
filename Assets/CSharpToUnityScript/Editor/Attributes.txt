@@ -10,6 +10,7 @@ NotConvertedAttribute
 NotRenamedAttribute
 RPC
 RequireComponent
+Serializable
 System.Serializable
 SerializeField
 

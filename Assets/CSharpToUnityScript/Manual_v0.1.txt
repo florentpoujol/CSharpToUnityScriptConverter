@@ -17,7 +17,7 @@ a value contains a coma or a semi colon.
 TAKE NOTES OF :
 ==================================================
 
-cast without parenthesis stop at the first space
+cast without parenthesis stop at the first non alpha numeric character
 (float) castwithoutspace
 
 
@@ -27,6 +27,8 @@ cast without parenthesis stop at the first space
 - multiple variable declaration will not work when :
 	- the declaration is on sevral lines and an opening bracket is used somewhere
 	- the value is set for the first variable and the value contains a semi colon
+	- the value comes from a a method with at least two parameter
+	- at least two variables have their value comng from a method
 
 
 
@@ -36,7 +38,16 @@ WHAT DOES NOT WORK (HAS NO EQUIVALENT) IN UNITYSCRIPT
 ==================================================
 
 
-- Enums in UnityScript does not accepts negative values
+-	Enums does not accepts negative values
+
+-	"abstract" keyword
+	Abstract classes/methods are converted into regular classes/methods (the keyword is stripped)
+
+-	You can not have a method parameter nammed "get"
+
+-	static properties can't access another static property (get the error as the accessed property is non-static)
+
+-	you can't create assembly aliases (as in : using Alias=Assembly;   such pattern is not converted)
 
 
 - Keyword "params" in method parameters.
@@ -154,19 +165,12 @@ As of v0.1, nothing is done by the converter, everything is left out in the code
 		var array = new int[2][1];	=>	array is of type int ...
 
 		creating an empty two level jagged array is done :
-		var array = array.<int[]>(10);	=>	array is of type int[][]
-
-		// you can create single dimentionnal array like this
-		var array = array(int, 2); // the number is the size of the array    var array = new int[2];
-		var array = array.<int>(2);
+		var array = array.<int[]>(10);	=>	array is of type int[][]  <=>  int[10][]
 
 		You can also set the values
 		var array = [ [0], [1] ];		=>	array is of type int[][]
 		
-		actually you can create two level jagged array this way :
 		
-
-
 	MultiDimentionnal arrays :
 		var array: int[,];					=> 	Works
 		var array = new int[1,1]; 			=>	Works
@@ -180,9 +184,6 @@ As of v0.1, nothing is done by the converter, everything is left out in the code
   
   
 
-
-- I have found some [System.Serializable] over Enums, 
-but Enums can't inherit from System.Object
 
 
 - "out" and "ref" keywords.
@@ -224,12 +225,7 @@ UnityScript :
 
 
 
-- "abstract" keyword
-Abstract classes/methods does not exist in UnityScript.
-Abstract classes/methods are converted into regular classes/methods.
 
-
-- In UnityScript, you can not have a method parameter nammed "get"
 
 
 ==================================================
