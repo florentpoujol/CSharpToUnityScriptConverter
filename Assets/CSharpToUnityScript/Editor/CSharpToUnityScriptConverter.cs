@@ -838,9 +838,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // using dataTypes prevent to match if patterns like "if(var1) var2;"
         tempPatterns = new string[] { 
-        "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>\\(.+)(?<end>(;|}))",
+        "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>\\(.+\\))"+optWS+"(?<end>(;|}))",
         "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>"+commonChars+")", // don't allow space when there is no parenthesisf parenthes
-        
         }; 
         
         for (int i = 0; i < tempPatterns.Length; i++) 
