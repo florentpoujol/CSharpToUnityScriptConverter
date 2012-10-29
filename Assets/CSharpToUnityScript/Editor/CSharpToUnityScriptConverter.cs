@@ -118,21 +118,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     }
 
 
-    // ----------------------------------------------------------------------------------
-    
-    /// <summary>
-    ///  Main method that perform generic conversion and call the other method for specific conversion
-    /// </summary>
-    /// <param name="inputCode">The code in C# to be converted in UnityScript</param>
-    /// <returns>The converted code in UnityScript</returns>
-    public string Convert (string inputCode)
-    {
-        convertedCode = inputCode;
-        Convert();
-        return convertedCode;
-    }
-
-
     //----------------------------------------------------------------------------------
 
     // key: random string, value: comment being replaced
@@ -165,34 +150,17 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// Assume at the beginning that convertedCode is the C# code to be converted
     /// convertedCode
     /// </summary>
-    private void Convert()
+    /// <param name="inputCode">The code in C# to be converted in UnityScript</param>
+    /// <returns>The converted code in UnityScript</returns>
+    public string Convert (string inputCode)
     {
+        convertedCode = inputCode;
         // GET RID OF COMMENTS
 
         commentStrings.Clear();
 
-        // single line comments
-        string[] lines = convertedCode.Split('\n');
-
-        foreach (string line in lines)
-        {
-            pattern = "//.*$";
-            Match comment = Regex.Match(line, pattern);
-
-            if (comment.Success)
-            {
-                string randomString = GetRandomString();
-                while (commentStrings.ContainsKey(randomString))
-                    randomString = GetRandomString();
-
-                convertedCode = convertedCode.Replace(comment.Value, randomString);
-                commentStrings.Add(randomString, comment.Value);
-            }
-        }
-
         // block comment
-
-            // find all block comments (llow nested comments)
+        // find all block comments (allow nested comments)
         int openedCommentBlocks = 0;
         List<string> commentBlocks = new List<string>();
         int commentBlockIndex = -1;
@@ -200,9 +168,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         for (int i = 0; i < convertedCode.Length; i++)
         {
-            if (convertedCode[i] == '/' && convertedCode[i+1] == '*') 
+            if (convertedCode[i] == '/' && convertedCode[i+1] == '*' && convertedCode[i+2] != '/') 
             {
-
                 if (!inACommentBlock) 
                 {
                     inACommentBlock = true;
@@ -228,7 +195,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 commentBlocks[commentBlockIndex] += convertedCode[i].ToString();
         }
 
-
         foreach (string commentBlock in commentBlocks) 
         {
             string randomString = GetRandomString();
@@ -237,6 +203,26 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             convertedCode = convertedCode.Replace(commentBlock, randomString);
             commentStrings.Add(randomString, commentBlock);
+        }
+
+
+        // single line comments
+        string[] lines = convertedCode.Split('\n');
+
+        foreach (string line in lines)
+        {
+            pattern = "//.*$";
+            Match comment = Regex.Match(line, pattern);
+
+            if (comment.Success)
+            {
+                string randomString = GetRandomString();
+                while (commentStrings.ContainsKey(randomString))
+                    randomString = GetRandomString();
+
+                convertedCode = convertedCode.Replace(comment.Value, randomString);
+                commentStrings.Add(randomString, comment.Value);
+            }
         }
 
 
@@ -404,6 +390,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             //Debug.Log("key="+comment.Key+ " value="+comment.Value);
             convertedCode = convertedCode.Replace(comment.Key, comment.Value);
         }
+
+        return convertedCode;
     } // end of method Convert()
 
     
@@ -470,7 +458,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         
         foreach (Match aClass in allReverseClasses) 
         {
-            Block classBlock = new Block( aClass, convertedCode );
+            Block classBlock = new Block(aClass, convertedCode);
             classBlock.newText = classBlock.text;
 
             if (classBlock.isEmpty)
@@ -861,7 +849,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             foreach (Match aCast in allCasts) 
             {
-
                 string type = aCast.Groups["type"].Value;
                 string afterCast = aCast.Groups["afterCast"].Value;
                 string firstPatternEnd = aCast.Groups["end"].Value;;
@@ -911,7 +898,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
                     convertedCode = convertedCode.Replace(aCast.Value, afterCast);
                 }
-                else {
+                else
+                {
                     // (Type)(aftercast) => aftercast as Type
                     if (afterCast.StartsWith("(") )
                         afterCast = afterCast.Trim('(', ')');
