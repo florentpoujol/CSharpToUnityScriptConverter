@@ -59,11 +59,14 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         unityClasses.Clear();
         StreamReader reader;
 
+        // set dataTypes, with regularTypes + collections
+        dataTypes = regularTypes.TrimEnd(")")+"|"+collections.TrimStart("(");
+
         // reading unity classes
         string path = Application.dataPath+"/CSharpToUnityScript/Editor/UnityClasses.txt";
         if (File.Exists(path))
         {
-            reader = new StreamReader( path );
+            reader = new StreamReader(path);
             string line = "";
 
             while (true)
@@ -80,11 +83,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         else
             Debug.LogError( "CSharpToUnityScriptConverter : The file that contains all Unity classes does not exists at path ["+path+"]");
 
-        // set datatypes
-        dataTypes = regularTypes;
-
+        // adding UnityClasses to dataTypes
         foreach (string _class in unityClasses)
-            dataTypes = dataTypes.Replace( ")", "|"+_class+")");
+            dataTypes = dataTypes.Replace(")", "|"+_class+")");
 
         // loop trough all poject's file, extract the data types (classes, enums and structs)
         string[] paths = Directory.GetFiles( Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories );
