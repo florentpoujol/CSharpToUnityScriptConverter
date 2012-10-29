@@ -60,7 +60,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         StreamReader reader;
 
         // set dataTypes, with regularTypes + collections
-        dataTypes = regularTypes.TrimEnd(")")+"|"+collections.TrimStart("(");
+        dataTypes = regularTypes.TrimEnd(')')+"|"+collections.TrimStart('(');
 
         // reading unity classes
         string path = Application.dataPath+"/CSharpToUnityScript/Editor/UnityClasses.txt";
@@ -918,8 +918,16 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
                     convertedCode = convertedCode.Replace( aCast.Value, afterCast+" as "+type+firstPatternEnd );
                 }
-            }
-        }
+            } // end foreach (Match ...
+        } // end for()
+
+        // fixing some casting 
+
+        //  Method as Type([...]);   that must be   Method([...]) as Type;
+        patterns.Add("\\b(?<method>"+commonName+")"+oblWS+"as"+oblWS+"(?<type>"+commonName+")"+optWS+"(?<args>\\(.*\\))"+optWS+";");
+        replacements.Add("${method}${args} as ${type};");
+
+
 
 
         // ARRAYS
