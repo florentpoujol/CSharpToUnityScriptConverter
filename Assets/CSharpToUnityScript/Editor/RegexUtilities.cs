@@ -191,7 +191,7 @@ public class RegexUtilities {
 
     // regular data types (value types)
     protected string regularTypes = "(byte|char|string|String|short|int|long|float|double|decimal|bool|boolean|"+
-                                    "byte\[\]|char\[\]|string\[\]|String\[\]|short\[\]|int\[\]|long\[\]|float\[\]|double\[\]|decimal\[\]|bool\[\]|boolean\[\])";
+                                    "byte\\[\\]|char\\[\\]|string\\[\\]|String\\[\\]|short\\[\\]|int\\[\\]|long\\[\\]|float\\[\\]|double\\[\\]|decimal\\[\\]|bool\\[\\]|boolean\\[\\])";
 
     // end of line
     protected string EOL = System.Environment.NewLine; // may throw some "inconsistent line ending blabla" warnings in the console

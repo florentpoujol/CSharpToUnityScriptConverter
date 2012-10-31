@@ -76,7 +76,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     break;
 
                 unityClasses.Add(line.Trim());
-                unityClasses.Add(line.Trim()+"\[\]"); // array version
+                unityClasses.Add(line.Trim()+"\\[\\]"); // array version
             }
 
             reader.Close();
@@ -111,7 +111,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     continue;
 
                 dataTypes = dataTypes.Replace(")", "|"+name+")");
-                dataTypes = dataTypes.Replace(")", "|"+name+"\[\])"); // array version
+                dataTypes = dataTypes.Replace(")", "|"+name+"\\[\\])"); // array version
 
                 if (aDataType.Groups["type"].Value == "class")
                     projectClasses.Add(name);
@@ -1253,14 +1253,16 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         foreach (Match aProp in allProperties) 
         {
             // first check if this is really a property declaration
-            string[] forbiddenBlockTypes = {"enum", "class", "extends", "implements", "new", "else", "struct", "interface"};
-            
+            List<string> forbiddenBlockTypes = new List<string>(new string[] {
+                "enum", "class", "extends", "implements", "new", "else", "struct", "interface"
+            });
+
             bool isAPropDeclaration = true;
             string blockType = aProp.Groups["blockType"].Value;
-           
+
             foreach (string type in forbiddenBlockTypes) 
             {
-                if (Regex.Match( blockType, "\\b"+type+"\\b" ).Success ) 
+                if (blockType.Contains(type)) 
                 {
                     isAPropDeclaration = false;
                     break;
@@ -1269,7 +1271,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             if (!isAPropDeclaration)
                 continue;
- 
+            
+            if (forbiddenBlockTypes.Contains(blockType.Trim()))
+                continue;
 
             string[] forbiddenBlockNames = {"get", "set", "else", "if"};
 
@@ -1290,7 +1294,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             // Ok now we are sure this is a property declaration
             Block PropBlock = new Block(aProp, convertedCode);
-            PropBlock.type = PropBlock.type.Replace( "override", "");
+            PropBlock.type = PropBlock.type.Replace( "override", "").Replace("abstract", "");
             //Debug.Log ("property : "+aProp.Value+" | "+PropBlock.text);
 
             string property = "";
