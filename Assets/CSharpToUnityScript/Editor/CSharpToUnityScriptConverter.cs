@@ -76,16 +76,19 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     break;
 
                 unityClasses.Add(line.Trim());
+                unityClasses.Add(line.Trim()+"\[\]"); // array version
             }
 
             reader.Close();
         }
         else
-            Debug.LogError( "CSharpToUnityScriptConverter : The file that contains all Unity classes does not exists at path ["+path+"]");
+            Debug.LogError("CSharpToUnityScriptConverter : The file that contains all Unity classes does not exists at path ["+path+"]");
+
 
         // adding UnityClasses to dataTypes
         foreach (string _class in unityClasses)
             dataTypes = dataTypes.Replace(")", "|"+_class+")");
+
 
         // loop trough all poject's file, extract the data types (classes, enums and structs)
         string[] paths = Directory.GetFiles( Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories );
@@ -108,6 +111,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     continue;
 
                 dataTypes = dataTypes.Replace(")", "|"+name+")");
+                dataTypes = dataTypes.Replace(")", "|"+name+"\[\])"); // array version
 
                 if (aDataType.Groups["type"].Value == "class")
                     projectClasses.Add(name);
