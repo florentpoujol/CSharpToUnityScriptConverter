@@ -519,7 +519,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         replacements.Add("@${attribute}");
 
         // no script, with params
-        patterns.Add("\\["+optWS+"(?<attribute>DrawGizmo|Conditional|MenuItem)"+optWS+"(?<params>\\(.*\\))"+optWS+"\\]");
+        patterns.Add("\\["+optWS+"(?<attribute>DrawGizmo|Conditional|MenuItem|System.Obsolete)"+optWS+"(?<params>\\(.*\\))"+optWS+"\\]");
         replacements.Add("@${attribute}${params}");
         
         // require component  need to remove typeof()
