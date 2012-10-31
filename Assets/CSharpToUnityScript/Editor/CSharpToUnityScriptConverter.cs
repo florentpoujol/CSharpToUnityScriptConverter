@@ -689,12 +689,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
                         case '"': 
                             if (lastLetter.ToString()+letter.ToString() != "\\\"")
-                            {
                                 inAString = !inAString;
-                            }
-                            else
-                                Debug.Log("======================");
-
                             break;
                         
                         case '\'': inAChar = !inAChar; break;
@@ -726,7 +721,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
                     foreach (string varName in varList) 
                     {
-                        Debug.Log("varname="+varName);
                         if (varName.Contains("=")) 
                         {
                             // add the varType beetween the varName and the equal sign
@@ -735,11 +729,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                             newSyntax += "var "+varDeclaration.Trim()+";"+EOL;
                         }
                         else 
-                            newSyntax += "var "+varName.Trim()+": "+varType+";"+EOL;
-
-                        
+                            newSyntax += "var "+varName.Trim()+": "+varType+";"+EOL; 
                     }
-    Debug.Log("newsyntax="+newSyntax);
+
                     convertedCode = convertedCode.Replace(aDeclaration.Value, newSyntax);
                 }
             }
