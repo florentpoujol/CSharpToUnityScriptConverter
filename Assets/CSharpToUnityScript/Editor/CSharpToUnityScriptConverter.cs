@@ -833,13 +833,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         
         // CASTING
 
-        // pattern = "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>\\()";
-
-
         // using dataTypes prevent to match if patterns like "if(var1) var2;"
-        tempPatterns = new string[] { 
-        "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>\\(.+\\))"+optWS+"(?<end>(;|}))",
-        "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<afterCast>"+commonChars+")", // don't allow space when there is no parenthesisf parenthes
+        pattern = "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"\\((?<castedExp>.+)"+optWS+"(?<end>(;|}))";
+        
+        tempPatterns = new string[] {
+        pattern, pattern, pattern , pattern,
+        "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<castedExp>"+commonChars+")", // don't allow space when there is no parenthesis
         }; 
         
         for (int i = 0; i < tempPatterns.Length; i++) 
@@ -849,25 +848,21 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             foreach (Match aCast in allCasts) 
             {
                 string type = aCast.Groups["type"].Value;
-                string afterCast = aCast.Groups["afterCast"].Value;
+                string castedExp = aCast.Groups["castedExp"].Value; // casted expression
                 string firstPatternEnd = aCast.Groups["end"].Value;;
 
-                if (i == 0) 
+                if (i < 4) 
                 {
-                    // find the closing parenthesis
+                    // the first pattern match more than the casted expression
+                    // we will find the casted expression based on the parenthesis
                     int oppenedParenthesis = 1;
-                    afterCast = afterCast.TrimStart('(');
-                    string newAfterCast = "";
-
-                    foreach (char letter in afterCast) 
+                    string afterCastExp = castedExp;
+                    castedExp = "";
+                    
+                    foreach (char letter in afterCastExp) 
                     {
-                        newAfterCast += letter.ToString();
-
-                        if (letter == '(') 
-                        {
+                        if (letter == '(')
                             oppenedParenthesis++;
-                            continue;
-                        }
 
                         if (letter == ')') 
                         {
@@ -875,35 +870,31 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
                             if (oppenedParenthesis == 0 ) // we have reached the final closing parenthesis
                                 break;
-
-                            continue;
                         }
+
+                        castedExp += letter.ToString();
                     }
 
-                    afterCast = newAfterCast.TrimEnd(')');
+                    // castedExp contains only the content of the casted expression without the parenthesis 
+                    // remove that from afterCastExp and you get what was behind the casted expression
+                    // to happend to firstPatternEnd
+                    afterCastExp = afterCastExp.Replace(castedExp+")", "");
+                    firstPatternEnd = afterCastExp+firstPatternEnd;
                 }
 
                 if (regularTypes.Contains(type.Trim())) 
                 { 
-                    // the type is a value type which does not need the "as" keyword to be cast in UnityScript
-                    // just keep the "aftercast" without the parenthesis
-                    if (afterCast.StartsWith("("))
-                        afterCast = afterCast.Trim('(', ')');
-
                     if (type.Trim() == "int")
-                        afterCast = "parseInt("+afterCast+")"+firstPatternEnd;
+                        castedExp = "parseInt("+castedExp+")"+firstPatternEnd;
                     else if (type.Trim() == "float")
-                        afterCast = "parseFloat("+afterCast+")"+firstPatternEnd;
+                        castedExp = "parseFloat("+castedExp+")"+firstPatternEnd;
 
-                    convertedCode = convertedCode.Replace(aCast.Value, afterCast);
+                    convertedCode = convertedCode.Replace(aCast.Value, castedExp);
                 }
                 else
                 {
                     // (Type)(aftercast) => aftercast as Type
-                    if (afterCast.StartsWith("(") )
-                        afterCast = afterCast.Trim('(', ')');
-
-                    convertedCode = convertedCode.Replace( aCast.Value, afterCast+" as "+type+firstPatternEnd );
+                    convertedCode = convertedCode.Replace( aCast.Value, castedExp+" as "+type+firstPatternEnd );
                 }
             } // end foreach (Match ...
         } // end for()

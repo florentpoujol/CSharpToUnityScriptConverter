@@ -13,6 +13,7 @@ a value contains a coma or a semi colon.
 
 
 
+
 ==================================================
 TAKE NOTES OF :
 ==================================================
@@ -30,7 +31,7 @@ cast without parenthesis stop at the first non alpha numeric character
 	- the value comes from a a method with at least two parameter
 	- at least two variables have their value comng from a method
 
-
+- casting with parenthesis will only convert one pattern fr each
 
 
 ==================================================
