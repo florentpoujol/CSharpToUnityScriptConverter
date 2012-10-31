@@ -121,12 +121,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     //----------------------------------------------------------------------------------
 
     // key: random string, value: comment being replaced
-    private Dictionary<string, string> commentStrings = new Dictionary<string, string>(); 
+    Dictionary<string, string> commentStrings = new Dictionary<string, string>(); 
 
     /// <summary>
     /// Create a random string
     /// </summary>
-    private string GetRandomString()
+    string GetRandomString()
     {
         string randomString = "#comment#";
         string alphabet = "abcdeghijklmnopqrstuvwxyzABCDEGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -613,6 +613,15 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
     
     // ----------------------------------------------------------------------------------
+	
+    int Count(string s, char l)
+    {
+        int count = 0;
+        foreach(char letter in s)
+            if (letter == l) count++;
+        return count;
+    }
+
 
     /// <summary> 
     /// Convert stuffs related to variable declarations
@@ -629,52 +638,110 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         if (convertMultipleVarDeclaration) 
         {
             // using dataTypes here, instead of commonChars or commonCharsWithSpace drastically reduces the number of false positiv returned by the regex
-            // the pattern discard all match that have a semi colon when setting the value of a variable (ie in a string)
-            pattern = "(?<varType>\\b"+dataTypes+")"+oblWS+"(?<varList>"+commonName+optWS+"(="+optWS+"[^,;]+"+optWS+")?,[^;]+);";
+            // the pattern stop the match all the first semi-colon after the first coma
+            pattern = "(?<varType>\\b"+dataTypes+")"+oblWS+"(?<varList>"+commonName+optWS+"(=[^,]+)?,[^;]+);";
             MatchCollection allDeclarations = Regex.Matches(convertedCode, pattern);
 
             foreach (Match aDeclaration in allDeclarations) 
             {
+                string match = aDeclaration.Value;
 
-                // discarding results that have several lines is effective to discard false positive
-                // but it discard all true positiv as well
-                // just checking if the match as several line and an opening bracket (suposedely a method or class declaration)
-                if (aDeclaration.Value.Contains("\n") && aDeclaration.Value.Contains("{")) 
+                // match with an opening bracket but no closing bracket are method or class declaration
+                // unless there is no semi-colon at all within the brackets
+                if (match.Contains("{") && ! match.Contains("}"))
                     continue;
 
-                // interface methods will be matched : 
-                // "type variable, type variable2);" will be matched in "type Method(type variable, type variable2);"
-                // just check if the match has a closing parenthesis but no opening parenthesis
-                if (aDeclaration.Value.Contains(")") && !aDeclaration.Value.Contains("("))
-                    continue;
-
-                // look for method call pattern "type variable = method(arg1, arg2 );" to discard
-                // will discard a legit match if a variable's value comes from a method with at least two parameters
-                // or that at least two variables have their value coming from a method
-                pattern = "\\b"+commonName+optWS+"\\([^,]+,[^\\)]+\\)";
-                if (Regex.Matches(aDeclaration.Value, pattern).Count > 0){
-                    //Debug.Log ("Discarding method pattern (multiple var declaration): "+aDeclaration.Value);  
-                    continue;
+                // when the match begins in method parameters, the opening parenthesis will not be matched
+                // so either we won't find an opening parenthesis (when no parenthesis before the first semi-colon, lile interface methods)
+                // either the first opening parenthesis will be after the closing parenthesis
+                if (
+                    (match.Contains(")") && ! match.Contains("(")) ||
+                    (match.Contains("(") && match.IndexOf(')') < match.IndexOf('('))
+                ) {
+                        continue;
                 }
                 
-                // split the varlist using the coma
-                string[] varList = aDeclaration.Groups["varList"].Value.Split(',');
-                string varType = aDeclaration.Groups["varType"].Value;
-                string newSyntax = "";
+                // parse varList to know where to cut
+                // ie not inside a method call or array or multidim arra
+                List<string> varList = new List<string>();
+                varList.Add("");
+                int varListIndex = 0;
+                char lastLetter = ' ';
 
-                foreach (string varName in varList) 
+                int openedParenthesis = 0;
+                int openedCurlyBracket = 0;
+                int openedSquareBracket = 0;
+                bool inAString = false;
+                bool inAChar = false;
+
+                foreach (char letter in aDeclaration.Groups["varList"].Value)
                 {
-                    if (varName.Contains("=")) 
+                    switch (letter) 
                     {
-                        // add the varType beetween the varName and the equal sign
-                        string varDeclaration = varName.Replace("=", ": "+varType+" =");
-                        newSyntax += "var "+varDeclaration.Trim()+";"+EOL;
-                    }
-                    else 
-                        newSyntax += "var "+varName.Trim()+": "+varType+";"+EOL;
-                }
+                        case '(': openedParenthesis++; break;
+                        case ')': openedParenthesis--; break;
 
-                convertedCode = convertedCode.Replace(aDeclaration.Value, newSyntax);
+                        case '{': openedCurlyBracket++; break;
+                        case '}': openedCurlyBracket--; break;
+                       
+                        case '[': openedSquareBracket++; break;
+                        case ']': openedSquareBracket--; break;
+
+                        case '"': 
+                            if (lastLetter.ToString()+letter.ToString() != "\\\"")
+                            {
+                                inAString = !inAString;
+                            }
+                            else
+                                Debug.Log("======================");
+
+                            break;
+                        
+                        case '\'': inAChar = !inAChar; break;
+                        
+                    }
+
+                    if (letter == ',' &&
+                        openedParenthesis == 0 && 
+                        openedCurlyBracket == 0 &&
+                        openedSquareBracket == 0 && 
+                        ! inAString && ! inAChar)
+                    {
+                        // we are outside of any struture, this must a colon between variable
+                        varList.Add("");
+                        varListIndex++;
+                        continue;
+                    }
+                    
+                    varList[varListIndex] += letter.ToString();
+                    lastLetter = letter;
+                }
+                
+                if (varList.Count > 1) 
+                // if varList.Count == 1, the match must have been a method
+                // type variable = Method(param1, param2);
+                {
+                    string varType = aDeclaration.Groups["varType"].Value;
+                    string newSyntax = "";
+
+                    foreach (string varName in varList) 
+                    {
+                        Debug.Log("varname="+varName);
+                        if (varName.Contains("=")) 
+                        {
+                            // add the varType beetween the varName and the equal sign
+                            // variable = value,  =>  var variable: type = value
+                            string varDeclaration = varName.Insert(varName.IndexOf('='), ": "+varType+" ");
+                            newSyntax += "var "+varDeclaration.Trim()+";"+EOL;
+                        }
+                        else 
+                            newSyntax += "var "+varName.Trim()+": "+varType+";"+EOL;
+
+                        
+                    }
+    Debug.Log("newsyntax="+newSyntax);
+                    convertedCode = convertedCode.Replace(aDeclaration.Value, newSyntax);
+                }
             }
         } // end if convertMultipleVarDeclaration
  
@@ -855,20 +922,20 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 {
                     // the first pattern match more than the casted expression
                     // we will find the casted expression based on the parenthesis
-                    int oppenedParenthesis = 1;
+                    int openedParenthesis = 1;
                     string afterCastExp = castedExp;
                     castedExp = "";
                     
                     foreach (char letter in afterCastExp) 
                     {
                         if (letter == '(')
-                            oppenedParenthesis++;
+                            openedParenthesis++;
 
                         if (letter == ')') 
                         {
-                            oppenedParenthesis--;
+                            openedParenthesis--;
 
-                            if (oppenedParenthesis == 0 ) // we have reached the final closing parenthesis
+                            if (openedParenthesis == 0 ) // we have reached the final closing parenthesis
                                 break;
                         }
 

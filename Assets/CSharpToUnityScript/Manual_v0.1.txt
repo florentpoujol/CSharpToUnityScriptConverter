@@ -23,13 +23,8 @@ cast without parenthesis stop at the first non alpha numeric character
 
 
 - multile variable declaration will be messed up if 
-	- coma is used in values (in strings or with methods with more than one parameter)
+	- a semi-colon is used in a value
 
-- multiple variable declaration will not work when :
-	- the declaration is on sevral lines and an opening bracket is used somewhere
-	- the value is set for the first variable and the value contains a semi colon
-	- the value comes from a a method with at least two parameter
-	- at least two variables have their value comng from a method
 
 - casting with parenthesis will only convert one pattern fr each
 
