@@ -134,7 +134,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     {
         string randomString = "#comment#";
         string alphabet = "abcdeghijklmnopqrstuvwxyzABCDEGHIJKLMNOPQRSTUVWXYZ0123456789";
-        // I removed f and F in alphabet because the F in patterns like [number]F will be stripped by the conversion of float values
+        // I removed f and F in alphabet because the F in patterns like [number]F 
+        // will be stripped by the conversion of float values
 
         while (randomString.Length < 29)
         {
@@ -159,6 +160,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     public string Convert (string inputCode)
     {
         convertedCode = inputCode;
+
         // GET RID OF COMMENTS
 
         commentStrings.Clear();
@@ -211,8 +213,16 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
         // single line comments
+        
+        // LINE ENDING
+        // windows : \r\n
+        // Linux :   \n
+        // mac :     \r
         string[] lines = convertedCode.Split('\n');
 
+        if (lines.Length == 1) // file has Mac line ending
+            lines = convertedCode.Split('\r');
+        
         foreach (string line in lines)
         {
             pattern = "//.*$";
@@ -406,11 +416,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     /// </summary>
     void Classes() 
     {
+        
         // CLASSES DECLARATION
         pattern = "(\\bclass"+oblWS+commonName+")(?<keyword>"+optWS+":"+optWS+")(?<parent>"+commonName+")"+optWS+"{";
-        MatchCollection allClasses = Regex.Matches( convertedCode, pattern );
+        MatchCollection allClasses = Regex.Matches(convertedCode, pattern);
 
-        foreach (Match aClass in allClasses ) 
+        foreach (Match aClass in allClasses) 
         {
             // assume parent is a class unless
             // it is not in UnityClasses nor in projectClasses and its name begin by an uppercase I
@@ -428,9 +439,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         pattern = "(\\bclass"+oblWS+commonName+")(?<keyword>"+optWS+":"+optWS+")(?<parent>"+commonName+")"+
         "(?<interfaces>("+optWS+","+optWS+commonName+")+)"+
         "(?<end>"+optWS+"{)";
-        allClasses = Regex.Matches( convertedCode, pattern );
+        allClasses = Regex.Matches(convertedCode, pattern);
 
-        foreach (Match aClass in allClasses )
+        foreach (Match aClass in allClasses)
         {
             string parent = aClass.Groups["parent"].Value;
             string keyword = " extends ";
@@ -1012,7 +1023,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         replacements.Add("$1");
 
         DoReplacements();
-
+        string test = "  \"  ";
 
         // remove @ in  'string aVariable = @"a string";"  and add a extra \ to the existing \
         pattern = "(="+optWS+")@(?<text>"+optWS+"\"[^;]+;)";
@@ -1020,7 +1031,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         foreach (Match aMatch in allMatches ) 
         {
-            string newText = aMatch.Value.Replace ("@\"", "\"").Replace ("\\", "\\\\");
+            string newText = aMatch.Value.Replace ("@\"", "\""); // .Replace ("\\", "\\\\")
             convertedCode = convertedCode.Replace( aMatch.Value, newText );
         }
     } // end of method Variable()

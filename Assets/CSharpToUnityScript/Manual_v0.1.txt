@@ -60,7 +60,7 @@ C# :
 	Method( "", 1, 2 );
 	Method( "", 1, 2, 3 );
 
-	UnityScript :
+UnityScript :
 	function Method( values: int[] ) {}
 	Method( [1, 2] );
 	Method( [1, 2, 3] );
@@ -69,9 +69,6 @@ C# :
 	Method( "", [1, 2] );
 	Method( "", [1, 2, 3] );
 
-
-- Keyword "ref" in method parameters (they are left, so that they pop errors)
-There are no easy way to pass a value type as reference in UnityScript, you will have to deal with it.
 
 
 - "delegate" and "event" does not exists in UnityScript but can be simulated to some extends.
@@ -179,15 +176,12 @@ As of v0.1, nothing is done by the converter, everything is left out in the code
 		It seems that you can't set a multidimentionnal array while declaring it;
   
   
-
-
-
 - "out" and "ref" keywords.
 In UnityScript, you don't need these keywords when you call a C# method (ie : the 'hitInfo' parameter of Physics.Raycast()).
 But there is no way in UnityScript to create such behavior in the method declaration.
 Remember that you can still use C# classes from UnityScript scripts if they (the C# scripts) are compiled first.
 
-Here is one hack : You use an intermediary variable which contains the value
+There are no easy way to pass a value type as reference in UnityScript but here is one hack : You use an intermediary variable which contains the value.
 
 C# :
 	void RefMethod(ref int arg) {
