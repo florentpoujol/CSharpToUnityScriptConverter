@@ -629,13 +629,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     
     // ----------------------------------------------------------------------------------
 	
-    int Count(string s, char l)
-    {
-        int count = 0;
-        foreach(char letter in s)
-            if (letter == l) count++;
-        return count;
-    }
+    // int Count(string s, char l)
+    // {
+    //     int count = 0;
+    //     foreach(char letter in s)
+    //         if (letter == l) count++;
+    //     return count;
+    // }
 
 
     /// <summary> 
@@ -823,7 +823,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 // check if type is equal to some patterns
                 forbiddenTypes = new List<string>( 
                     new string[] { 
-                        "import", "using", "return", "if", "else", "endif", "as" // "yield return", "yield"
+                        "import", "using", "return", "if", "else", "endif", "as", "else return" // "yield return", "yield"
                         }
                 );
 
