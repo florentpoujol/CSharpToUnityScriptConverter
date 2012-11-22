@@ -91,18 +91,18 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
         // loop trough all poject's file, extract the data types (classes, enums and structs)
-        string[] paths = Directory.GetFiles( Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories );
+        string[] paths = Directory.GetFiles(Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories);
         
-        foreach (string scriptPath in paths )
+        foreach (string scriptPath in paths)
         {
             reader = new StreamReader( scriptPath );
             string scriptContent = reader.ReadToEnd();
             reader.Close();
 
             pattern = "\\b(?<type>class|interface|struct|enum)"+oblWS+"(?<name>"+commonName+"\\b)";
-            MatchCollection allDataTypes = Regex.Matches( scriptContent, pattern );
+            MatchCollection allDataTypes = Regex.Matches( scriptContent, pattern);
 
-            foreach (Match aDataType in allDataTypes )
+            foreach (Match aDataType in allDataTypes)
             {
                 string name = aDataType.Groups["name"].Value;
 
@@ -995,20 +995,44 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         //patterns.Add("\\b(?<type>"+commonName+optWS+"\\[,*\\])"+oblWS+"(?<name>"+commonName+")"+optWS+"=");
         // replacements.Add("");
 
-        // = new String[] {}; => = {};
-        patterns.Add("(?<equal>="+optWS+")?new"+oblWS+commonName+optWS+"(\\[[0-9, ]*\\])+(?<end>"+optWS+"{)");
+        // new Type[] {};    =>   {};
+        patterns.Add("(?<equal>="+optWS+")?new"+oblWS+commonName+optWS+"(\\[[0-9, ]*\\])+(?<end>"+optWS+"\\{)");
         replacements.Add("${equal}${end}");
 
         DoReplacements(); 
 
         // replace curly brackets by square bracket
-        pattern = "(?s)((=|return|\\()"+optWS+"){(?<values>.*)}(?<end>"+optWS+"(;|\\)))"; // the (?s) means that the dot represent every character, including new line \n
-        MatchCollection allMatches = Regex.Matches( convertedCode, pattern );
+        pattern = "(?s)((=|return|\\()"+optWS+")(?<arrayContent>\\{.*\\})(?<end>"+optWS+"(;|\\)))"; // the (?s) means that the dot represent every character, including new line \n
+        MatchCollection allMatches = Regex.Matches(convertedCode, pattern);
         
         foreach (Match aMatch in allMatches)
         {
-            string newText = aMatch.Value.Replace("{", "[").Replace("}", "]");
-            convertedCode = convertedCode.Replace(aMatch.Value, newText);
+            // The pattern will have matched more than we need
+            // as with cast above, find the matching closing curly bracket
+            // and replace curly bracket by square bracket inside that array content only
+            int openedBrackets = 0;
+            string CSarrayContent = "";
+            
+            foreach (char letter in aMatch.Groups["arrayContent"].Value)
+            {
+                if (letter == '{')
+                    openedBrackets++;
+
+                if (letter == '}') 
+                {
+                    openedBrackets--;
+
+                    if (openedBrackets == 0 ) { // we have reached the final closing bracket
+                        CSarrayContent += letter.ToString();
+                        break;
+                    }
+                }
+
+                CSarrayContent += letter.ToString();
+            }
+            
+            string USarrayContent = CSarrayContent.Replace("{", "[").Replace("}", "]");
+            convertedCode = convertedCode.Replace(CSarrayContent, USarrayContent);
         }
 
 
@@ -1023,11 +1047,11 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         replacements.Add("$1");
 
         DoReplacements();
-        string test = "  \"  ";
+        
 
         // remove @ in  'string aVariable = @"a string";"  and add a extra \ to the existing \
         pattern = "(="+optWS+")@(?<text>"+optWS+"\"[^;]+;)";
-        allMatches = Regex.Matches( convertedCode, pattern );
+        allMatches = Regex.Matches(convertedCode, pattern);
 
         foreach (Match aMatch in allMatches ) 
         {
