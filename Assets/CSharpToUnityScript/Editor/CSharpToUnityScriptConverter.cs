@@ -1187,8 +1187,11 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             if (returnType == "new") // do not match class instanciatton inside an if statement   ie : new Rect ()) => it shouldn't anymore anyway, thanks to argumentsChars instead of ".*"
                 continue;
 
-            if (returnType.Contains ("override"))
+            if (returnType.Contains("override"))
                 returnType = returnType.Replace("override", "").Trim();  // this will left the override keyword after the prefix
+
+            if (returnType.Contains("new"))
+                returnType = returnType.Replace("new", "").Trim();  // this will left the override keyword after the prefix
 
             // if we are there, it's really a function declaration that has to be converted
             if (returnType == "void")
