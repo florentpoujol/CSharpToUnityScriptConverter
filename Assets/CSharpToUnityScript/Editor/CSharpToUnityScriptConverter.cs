@@ -1003,36 +1003,43 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // replace curly brackets by square bracket
         pattern = "(?s)((=|return|\\()"+optWS+")(?<arrayContent>\\{.*\\})(?<end>"+optWS+"(;|\\)))"; // the (?s) means that the dot represent every character, including new line \n
-        MatchCollection allMatches = Regex.Matches(convertedCode, pattern);
         
-        foreach (Match aMatch in allMatches)
+        while (true)
         {
-            // The pattern will have matched more than we need
-            // as with cast above, find the matching closing curly bracket
-            // and replace curly bracket by square bracket inside that array content only
-            int openedBrackets = 0;
-            string CSarrayContent = "";
+            allMatches = Regex.Matches(convertedCode, pattern);
+
+            if (allMatches.Count <= 0)
+                break; // get out of the loop when no more pattern is matched
             
-            foreach (char letter in aMatch.Groups["arrayContent"].Value)
+            foreach (Match aMatch in allMatches)
             {
-                if (letter == '{')
-                    openedBrackets++;
-
-                if (letter == '}') 
+                // The pattern will have matched more than we need
+                // as with cast above, find the matching closing curly bracket
+                // and replace curly bracket by square bracket inside that array content only
+                int openedBrackets = 0;
+                string CSarrayContent = "";
+                
+                foreach (char letter in aMatch.Groups["arrayContent"].Value)
                 {
-                    openedBrackets--;
+                    if (letter == '{')
+                        openedBrackets++;
 
-                    if (openedBrackets == 0 ) { // we have reached the final closing bracket
-                        CSarrayContent += letter.ToString();
-                        break;
+                    if (letter == '}') 
+                    {
+                        openedBrackets--;
+
+                        if (openedBrackets == 0 ) { // we have reached the final closing bracket
+                            CSarrayContent += letter.ToString();
+                            break;
+                        }
                     }
-                }
 
-                CSarrayContent += letter.ToString();
+                    CSarrayContent += letter.ToString();
+                }
+                
+                string USarrayContent = CSarrayContent.Replace("{", "[").Replace("}", "]");
+                convertedCode = convertedCode.Replace(CSarrayContent, USarrayContent);
             }
-            
-            string USarrayContent = CSarrayContent.Replace("{", "[").Replace("}", "]");
-            convertedCode = convertedCode.Replace(CSarrayContent, USarrayContent);
         }
 
 

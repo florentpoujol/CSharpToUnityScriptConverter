@@ -202,6 +202,8 @@ public class RegexUtilities {
 
 	protected string pattern;
     protected string replacement;
+
+    protected MatchCollection allMatches;
 	
     // translated code to be returned
     public string convertedCode = "";
