@@ -18,7 +18,7 @@ a value contains a coma or a semi colon.
 TAKE NOTES OF :
 ==================================================
 
-cast without parenthesis stop at the first non alpha numeric character
+cast without parenthesis stop at the first non alpha numeric character or parenthesis
 (float) castwithoutspace
 
 

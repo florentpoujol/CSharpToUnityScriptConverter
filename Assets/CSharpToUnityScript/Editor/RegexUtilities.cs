@@ -113,7 +113,7 @@ public class RegexUtilities {
             }
 
             // no matching closing bracket has been found
-            Debug.LogError( "RegexUtilities.Block.GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning -1. match=["+match.Value+"] startIndex=["+startIndex+"] ["+
+            Debug.LogError("RegexUtilities.Block.GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning -1. match=["+match.Value+"] startIndex=["+startIndex+"] ["+
                 refText[startIndex-1]+"|"+refText[startIndex]+"|"+refText[startIndex+1]+"] text=["+refText+"]." );
             return -1;
         }

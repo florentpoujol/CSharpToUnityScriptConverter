@@ -1453,12 +1453,13 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         }
         
         
-        // all variables gets a public or static public visibility but this shouldn't happend inside functions and properties, so remove that
-        pattern = "function"+oblWS+"((get|set)"+oblWS+")?(?<blockName>"+commonName+")"+optWS+"\\(.*\\)("+optWS+":"+optWS+commonCharsWithSpace+")?"+optWS+"{";
-        List<Match> allFunctions = ReverseMatches( convertedCode, pattern );
+        // all variables gets a private or static private visibility but this shouldn't happend inside functions and properties, so remove that
+        pattern = "function"+oblWS+"((get|set)"+oblWS+")?(?<blockName>"+commonName+")"+optWS+"\\([^{]*\\)("+optWS+":"+optWS+commonCharsWithSpace+")?"+optWS+"{";
+        MatchCollection allFunctions = Regex.Matches(convertedCode, pattern);
 
         foreach (Match aFunction in allFunctions) 
         {
+            Debug.Log("function : "+aFunction.Value);
             Block function = new Block(aFunction, convertedCode);
 
             if (function.isEmpty)
@@ -1469,8 +1470,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             patterns.Add("(\\bstatic"+oblWS+")?private"+oblWS+"var\\b");
             replacements.Add("$1var");
 
-            function.newText = DoReplacements( function.text );
-            convertedCode = convertedCode.Replace( function.text, function.newText );
+            function.newText = DoReplacements(function.text);
+            convertedCode = convertedCode.Replace(function.text, function.newText);
         }
 
 
