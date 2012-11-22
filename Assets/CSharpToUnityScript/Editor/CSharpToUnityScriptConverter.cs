@@ -909,15 +909,19 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         // using dataTypes prevent to match if patterns like "if(var1) var2;"
         pattern = "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"\\((?<castedExp>.+)"+optWS+"(?<end>(;|}))";
-        
-        tempPatterns = new string[] {
-        pattern, pattern, pattern , pattern,
-        "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<castedExp>"+commonChars+")", // don't allow space when there is no parenthesis
-        }; 
-        
-        for (int i = 0; i < tempPatterns.Length; i++) 
+        bool firstPattern = true;
+
+        while (firstPattern)
         {
-            MatchCollection allCasts = Regex.Matches(convertedCode, tempPatterns[i]);
+            MatchCollection allCasts = Regex.Matches(convertedCode, pattern);
+
+            if (allCasts.Count <= 0) 
+            {
+                pattern = "\\("+optWS+"(?<type>"+dataTypes+")"+optWS+"\\)"+optSpaces+"(?<castedExp>"+commonChars+")";
+                // don't allow space when there is no parenthesis
+                allCasts = Regex.Matches(convertedCode, pattern);
+                firstPattern = false; // will exit the loop at the end
+            }
 
             foreach (Match aCast in allCasts) 
             {
@@ -925,7 +929,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 string castedExp = aCast.Groups["castedExp"].Value; // casted expression
                 string firstPatternEnd = aCast.Groups["end"].Value;;
 
-                if (i < 4) 
+                if (firstPattern) 
                 {
                     // the first pattern match more than the casted expression
                     // we will find the casted expression based on the parenthesis
@@ -971,7 +975,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     convertedCode = convertedCode.Replace( aCast.Value, castedExp+" as "+type+firstPatternEnd );
                 }
             } // end foreach (Match ...
-        } // end for()
+        } // end while(true)
 
         // fixing some casting 
 
