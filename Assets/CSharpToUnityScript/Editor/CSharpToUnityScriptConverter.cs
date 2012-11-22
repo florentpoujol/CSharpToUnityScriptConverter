@@ -629,15 +629,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
     
     // ----------------------------------------------------------------------------------
 	
-    // int Count(string s, char l)
-    // {
-    //     int count = 0;
-    //     foreach(char letter in s)
-    //         if (letter == l) count++;
-    //     return count;
-    // }
-
-
     /// <summary> 
     /// Convert stuffs related to variable declarations
     /// </summary>
@@ -958,6 +949,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                     // to happend to firstPatternEnd
                     afterCastExp = afterCastExp.Replace(castedExp+")", "");
                     firstPatternEnd = afterCastExp+firstPatternEnd;
+                }
+
+                if (castedExp.EndsWith(","))
+                {
+                    castedExp = castedExp.TrimEnd(',');
+                    firstPatternEnd = ","+firstPatternEnd;
                 }
 
                 if (regularTypes.Contains(type.Trim())) 
@@ -1459,7 +1456,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
         foreach (Match aFunction in allFunctions) 
         {
-            Debug.Log("function : "+aFunction.Value);
             Block function = new Block(aFunction, convertedCode);
 
             if (function.isEmpty)
