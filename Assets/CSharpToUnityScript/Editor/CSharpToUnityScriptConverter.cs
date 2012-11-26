@@ -230,6 +230,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
             if (comment.Success)
             {
+                if (comment.Value.Trim() == "//") // commented line does not have any character
+                    continue; // continue because it would convert every // in the file and mess up with the following comments
+
                 string randomString = GetRandomString();
                 while (commentStrings.ContainsKey(randomString))
                     randomString = GetRandomString();
@@ -237,11 +240,22 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 convertedCode = convertedCode.Replace(comment.Value, randomString);
                 commentStrings.Add(randomString, comment.Value);
             }
+            else
+            {
+                pattern = "#(region|REGION|define|DEFINE).*$";
+                Match match = Regex.Match(line, pattern);
+
+                if (match.Success)
+                    convertedCode = convertedCode.Replace(match.Value, "");
+            }
         }
 
 
-        // GENERIC COLLECTIONS
+        // #REGION
+        patterns.Add("\\#(endregion|ENDREGION)");
+        replacements.Add("");
 
+        // GENERIC COLLECTIONS
         // Add a dot before the opening chevron  List.<float>
         patterns.Add(genericCollections+optWS+"<");
         replacements.Add("$1$2.<");
@@ -294,6 +308,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         // yield return new WaitForSecond(1.0f); => yield WaitForSecond(1.0f);
         patterns.Add("yield"+optWS+"return"+optWS+"(null|0|new)");
         replacements.Add("yield ");
+
+        patterns.Add("yield"+optWS+"return"+optWS+"StartCoroutine");
+        replacements.Add("StartCoroutine");
 
         DoReplacements();
     
@@ -350,6 +367,14 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
             else
                 type = "";
 
+            // a delegate name can be used with an "instanciation" syntax when setting the value of a variable to a method
+            // ie variable = new DelegateName(MethodName)
+            patterns.Add("="+optWS+"new"+oblWS+name+optWS+"\\("+optWS+"(?<methodName>"+commonCharsWithSpace+")"+optWS+"\\)");
+            replacements.Add("= ${methodName}");
+
+            // or when setting a variable's type
+            // ie : DelegateName variable;
+            // =>  var variable: function();
             patterns.Add("\\b"+name+"\\b");
             replacements.Add("function("+USArgs+")"+type);
 
@@ -381,17 +406,11 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         replacements.Add( "$1boolean${end}");
 
 
-        // #REGION
-        patterns.Add("\\#(region|REGION)"+oblSpaces+commonChars+"("+oblSpaces+commonChars+")*");
-        replacements.Add("");
+        // JAGGED ARRAYS
+        // new type[num][]   =>   new array.<type[]>(num)
+        patterns.Add("(?<varName>\\bvar"+oblWS+commonName+optWS+")(:"+optWS+commonChars+optWS+"\\["+optWS+"\\]"+optWS+"\\["+optWS+"\\]"+optWS+")?="+optWS+"new"+oblWS+"(?<type>"+commonChars+")"+optWS+"\\["+optWS+"(?<number>[0-9]?)"+optWS+"\\]"+optWS+"\\["+optWS+"\\]");
+        replacements.Add("${varName} = new array.<${type}[]>(${number})");
         
-        patterns.Add("\\#(endregion|ENDREGION)");
-        replacements.Add("");
-
-
-        // DEFINE
-        patterns.Add("\\#(define|DEFINE)"+oblSpaces+commonName+"("+oblSpaces+commonName+")*");
-        replacements.Add("");
         
 
         DoReplacements();
@@ -657,18 +676,18 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 if (match.Contains("{") && ! match.Contains("}"))
                     continue;
 
-                // when the match begins in method parameters, the opening parenthesis will not be matched
-                // so either we won't find an opening parenthesis (when no parenthesis before the first semi-colon, lile interface methods)
-                // either the first opening parenthesis will be after the closing parenthesis
+                // when the match begins inside method parameters, the opening parenthesis will not be matched
+                // so either we won't find an opening parenthesis (when no parenthesis before the first semi-colon, it is an interface/abstract methods)
+                // either the first opening parenthesis will be after the first closing parenthesis
                 if (
                     (match.Contains(")") && ! match.Contains("(")) ||
                     (match.Contains("(") && match.IndexOf(')') < match.IndexOf('('))
                 ) {
-                        continue;
+                    continue;
                 }
                 
                 // parse varList to know where to cut
-                // ie not inside a method call or array or multidim arra
+                // ie not inside a method call or array or multidim array
                 List<string> varList = new List<string>();
                 varList.Add("");
                 int varListIndex = 0;
@@ -708,7 +727,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                         openedSquareBracket == 0 && 
                         ! inAString && ! inAChar)
                     {
-                        // we are outside of any struture, this must a colon between variable
+                        // we are outside of any struture, this must be a coma between variable
                         varList.Add("");
                         varListIndex++;
                         continue;
@@ -719,8 +738,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 }
                 
                 if (varList.Count > 1) 
-                // if varList.Count == 1, the match must have been a method
-                // type variable = Method(param1, param2);
+                // if varList.Count == 1,   no coma outside a structure has been found in the match, so that must not be what we are loking for
                 {
                     string varType = aDeclaration.Groups["varType"].Value;
                     string newSyntax = "";
@@ -731,7 +749,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                         {
                             // add the varType beetween the varName and the equal sign
                             // variable = value,  =>  var variable: type = value
-                            string varDeclaration = varName.Insert(varName.IndexOf('='), ": "+varType+" ");
+                            string varDeclaration = varName.Replace("=", ": "+varType+" =");
                             newSyntax += "var "+varDeclaration.Trim()+";"+EOL;
                         }
                         else 
@@ -1452,7 +1470,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         
         // all variables gets a private or static private visibility but this shouldn't happend inside functions and properties, so remove that
         pattern = "function"+oblWS+"((get|set)"+oblWS+")?(?<blockName>"+commonName+")"+optWS+"\\([^{]*\\)("+optWS+":"+optWS+commonCharsWithSpace+")?"+optWS+"{";
-        MatchCollection allFunctions = Regex.Matches(convertedCode, pattern);
+        List<Match> allFunctions = ReverseMatches(convertedCode, pattern);
 
         foreach (Match aFunction in allFunctions) 
         {

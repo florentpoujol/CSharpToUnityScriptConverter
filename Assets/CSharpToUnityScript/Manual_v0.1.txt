@@ -160,6 +160,8 @@ As of v0.1, nothing is done by the converter, everything is left out in the code
 		creating an empty two level jagged array is done :
 		var array = array.<int[]>(10);	=>	array is of type int[][]  <=>  int[10][]
 
+		Using "array.<type[]>" as a type does not work, thought.
+
 		You can also set the values
 		var array = [ [0], [1] ];		=>	array is of type int[][]
 		
