@@ -410,9 +410,12 @@ public class CSharpToUnityScriptConverter: RegexUtilities
         replacements.Add( "$1boolean${end}");
 
 
-        // JAGGED ARRAYS
+        // JAGGED ARRAYS 
         // new type[num][]   =>   new array.<type[]>(num)
-        patterns.Add("(?<varName>\\bvar"+oblWS+commonName+optWS+")(:"+optWS+commonChars+optWS+"\\["+optWS+"\\]"+optWS+"\\["+optWS+"\\]"+optWS+")?="+optWS+"new"+oblWS+"(?<type>"+commonChars+")"+optWS+"\\["+optWS+"(?<number>[0-9]?)"+optWS+"\\]"+optWS+"\\["+optWS+"\\]");
+        string numberOrCommonChars = "([A-Za-z0-9<>,'\"_\\. ]*)"; // this is commonCharsWithSpace, which may begin by a number, and without square brackets
+
+        patterns.Add("(?<varName>\\bvar"+oblWS+commonName+optWS+")(:"+optWS+commonChars+optWS+"\\["+optWS+"\\]"+optWS+"\\["+optWS+"\\]"+optWS+")?="+
+            optWS+"new"+oblWS+"(?<type>"+commonChars+")"+optWS+"\\[(?<number>"+numberOrCommonChars+")?\\]"+optWS+"\\["+optWS+"\\]");
         replacements.Add("${varName} = new array.<${type}[]>(${number})");
         
         
@@ -669,7 +672,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities
             // using dataTypes here, instead of commonChars or commonCharsWithSpace drastically reduces the number of false positiv returned by the regex
             // the pattern stop the match all the first semi-colon after the first coma
             
-            // 27/11/2012 added a semi colon in the first square bracket that resolved a lot of bug
+            // 27/11/2012 added a semi colon in the first square brackets that fixed a lot of bugs
             pattern = "(?<varType>\\b"+dataTypes+")"+oblWS+"(?<varList>"+commonName+optWS+"(=[^,;]+)?,[^;]+);";
             MatchCollection allDeclarations = Regex.Matches(convertedCode, pattern);
 
