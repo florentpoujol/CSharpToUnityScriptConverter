@@ -6,10 +6,14 @@
 ///
 /// Use instructions :
 /// 
-/// Initiate the converter by creating an instance of it
+/// Initiate the converter by creating an instance of it.
+/// You may pass a directory (relative to the Application.dataPath) to the contructor.
+/// It will look up the scripts in the directory and read all data types (class, struct, enum, interface), 
+/// which may contributes to a better conversion than if you don't do it
+/// 
 /// Then call the Convert(string inputCode) method with the input code (in C#) to be converted as parameter
-/// The converted code in UnityScript is then available in the public member convertedCode
-///
+/// The converted code in UnityScript is returned bu this method Convert() but is also available in the public member "convertedCode"
+/// 
 /// Created by Florent POUJOL
 /// florent.poujol@gmail.com
 /// http://www.florent-poujol.fr/en
@@ -92,7 +96,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities
 
 
         // loop trough all poject's file, extract the data types (classes, enums and structs)
-        if (sourceDirectory != "null") // allow to skip that part for the demo
+        if (sourceDirectory != "nodirectory") // allow to skip that part for the demo
         {
             string[] paths = Directory.GetFiles(Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories);
             
@@ -123,6 +127,11 @@ public class CSharpToUnityScriptConverter: RegexUtilities
         }
 
        // Debug.Log ("Data types : "+dataTypes);
+    }
+
+    public CSharpToUnityScriptConverter () : this("nodirectory")
+    {
+        
     }
 
 
