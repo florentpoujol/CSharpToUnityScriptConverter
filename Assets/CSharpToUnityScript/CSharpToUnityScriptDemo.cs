@@ -1,3 +1,15 @@
+/// <summary>
+/// CSharpToUnityScriptDemo class for Unity3D
+///
+/// This script allow uses the CSarpToUnityScriptConverter class
+/// to convert snippet of code from C# to UnityScript.
+/// 
+/// Created by Florent POUJOL
+/// florent.poujol@gmail.com
+/// http://www.florent-poujol.fr/en
+/// Profile on Unity's forums : http://forum.unity3d.com/members/23148-Lion
+/// </summary>
+
 using UnityEngine;
 
 public class CSharpToUnityScriptDemo : MonoBehaviour
