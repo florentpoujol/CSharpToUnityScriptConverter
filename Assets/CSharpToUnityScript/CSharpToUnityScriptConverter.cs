@@ -91,30 +91,33 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
 
 
         // loop trough all poject's file, extract the data types (classes, enums and structs)
-        string[] paths = Directory.GetFiles(Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories);
-        
-        foreach (string scriptPath in paths)
+        if (sourceDirectory != "null") // allow to skip that part for the demo
         {
-            reader = new StreamReader( scriptPath );
-            string scriptContent = reader.ReadToEnd();
-            reader.Close();
-
-            pattern = "\\b(?<type>class|interface|struct|enum)"+oblWS+"(?<name>"+commonName+"\\b)";
-            MatchCollection allDataTypes = Regex.Matches( scriptContent, pattern);
-
-            foreach (Match aDataType in allDataTypes)
+            string[] paths = Directory.GetFiles(Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories);
+            
+            foreach (string scriptPath in paths)
             {
-                string name = aDataType.Groups["name"].Value;
+                reader = new StreamReader(scriptPath);
+                string scriptContent = reader.ReadToEnd();
+                reader.Close();
 
-                // discard results where the first letter is lowercase
-                if (name[0] == char.ToLower(name[0]))
-                    continue;
+                pattern = "\\b(?<type>class|interface|struct|enum)"+oblWS+"(?<name>"+commonName+"\\b)";
+                MatchCollection allDataTypes = Regex.Matches(scriptContent, pattern);
 
-                dataTypes = dataTypes.Replace(")", "|"+name+")");
-                dataTypes = dataTypes.Replace(")", "|"+name+"\\[\\])"); // array version
+                foreach (Match aDataType in allDataTypes)
+                {
+                    string name = aDataType.Groups["name"].Value;
 
-                if (aDataType.Groups["type"].Value == "class")
-                    projectClasses.Add(name);
+                    // discard results where the first letter is lowercase
+                    if (name[0] == char.ToLower(name[0]))
+                        continue;
+
+                    dataTypes = dataTypes.Replace(")", "|"+name+")");
+                    dataTypes = dataTypes.Replace(")", "|"+name+"\\[\\])"); // array version
+
+                    if (aDataType.Groups["type"].Value == "class")
+                        projectClasses.Add(name);
+                }
             }
         }
 
