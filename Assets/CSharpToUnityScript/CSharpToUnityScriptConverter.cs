@@ -25,7 +25,8 @@ using System.Text.RegularExpressions; // Regex.Replace(), Match, Matches, MatchC
 using System.IO; // Directory File StreamReader/Writer
 
 
-public class CSharpToUnityScriptConverter: RegexUtilities {
+public class CSharpToUnityScriptConverter: RegexUtilities 
+{
 
     // list of the projct's classes. Filled in the constructor and used in Classes()
     static List<string> projectClasses = new List<string>();
@@ -667,7 +668,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
         {
             // using dataTypes here, instead of commonChars or commonCharsWithSpace drastically reduces the number of false positiv returned by the regex
             // the pattern stop the match all the first semi-colon after the first coma
-            pattern = "(?<varType>\\b"+dataTypes+")"+oblWS+"(?<varList>"+commonName+optWS+"(=[^,]+)?,[^;]+);";
+            
+            // 27/11/2012 added a semi colon in the first square bracket that resolved a lot of bug
+            pattern = "(?<varType>\\b"+dataTypes+")"+oblWS+"(?<varList>"+commonName+optWS+"(=[^,;]+)?,[^;]+);";
             MatchCollection allDeclarations = Regex.Matches(convertedCode, pattern);
 
             foreach (Match aDeclaration in allDeclarations) 
@@ -678,7 +681,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                 // unless there is no semi-colon at all within the brackets
                 if (match.Contains("{") && ! match.Contains("}"))
                     continue;
-
+                
                 // when the match begins inside method parameters, the opening parenthesis will not be matched
                 // so either we won't find an opening parenthesis (when no parenthesis before the first semi-colon, it is an interface/abstract methods)
                 // either the first opening parenthesis will be after the first closing parenthesis
@@ -721,7 +724,6 @@ public class CSharpToUnityScriptConverter: RegexUtilities {
                             break;
                         
                         case '\'': inAChar = !inAChar; break;
-                        
                     }
 
                     if (letter == ',' &&
