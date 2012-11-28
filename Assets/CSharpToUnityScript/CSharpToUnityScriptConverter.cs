@@ -8,8 +8,8 @@
 /// 
 /// Initiate the converter by creating an instance of it.
 /// You may pass a directory (relative to the Application.dataPath) to the contructor.
-/// It will look up the scripts in the directory and read all data types (class, struct, enum, interface), 
-/// which may contributes to a better conversion than if you don't do it
+/// It will look up the scripts in the directory and read all data types (class, struct, enum, interface) (even in .js and .boo scripts), 
+/// which may contributes to a better conversion than if you don't do it.
 /// 
 /// Then call the Convert(string inputCode) method with the input code (in C#) to be converted as parameter
 /// The converted code in UnityScript is returned bu this method Convert() but is also available in the public member "convertedCode"
@@ -57,21 +57,21 @@ public class CSharpToUnityScriptConverter: RegexUtilities
     /// Constructor and main method
     /// </summary>
     /// <param name="sourceDirectory">The directory where to look for files</param>
-    public CSharpToUnityScriptConverter (string sourceDirectory)
+    public CSharpToUnityScriptConverter(string sourceDirectory)
     {
         importedAssemblies.Clear();
         projectClasses.Clear();
         unityClasses.Clear();
-        StreamReader reader;
 
         // set dataTypes, with regularTypes + collections
         dataTypes = regularTypes.TrimEnd(')')+"|"+collections.TrimStart('(');
 
         // reading unity classes
-        string path = Application.dataPath+"/CSharpToUnityScript/Editor/UnityClasses.txt";
-        if (File.Exists(path))
+        TextAsset file = (TextAsset)Resources.Load("UnityClasses", typeof(TextAsset));
+
+        if (file != null)
         {
-            reader = new StreamReader(path);
+            StringReader reader = new StringReader(file.text);
             string line = "";
 
             while (true)
@@ -87,7 +87,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities
             reader.Close();
         }
         else
-            Debug.LogError("CSharpToUnityScriptConverter : The file that contains all Unity classes does not exists at path ["+path+"]");
+            Debug.LogWarning("CSharpToUnityScriptConverter() : File UnityClasses.txt not found inside a Resources directory.");
 
 
         // adding UnityClasses to dataTypes
@@ -96,15 +96,15 @@ public class CSharpToUnityScriptConverter: RegexUtilities
 
 
         // loop trough all poject's file, extract the data types (classes, enums and structs)
-        if (sourceDirectory != "nodirectory") // allow to skip that part for the demo
+        if (sourceDirectory != "") // allow to skip that part (ie : for the demo)
         {
             string[] paths = Directory.GetFiles(Application.dataPath+sourceDirectory, "*.cs", SearchOption.AllDirectories);
             
             foreach (string scriptPath in paths)
             {
-                reader = new StreamReader(scriptPath);
-                string scriptContent = reader.ReadToEnd();
-                reader.Close();
+                StreamReader sreader = new StreamReader(scriptPath);
+                string scriptContent = sreader.ReadToEnd();
+                sreader.Close();
 
                 pattern = "\\b(?<type>class|interface|struct|enum)"+oblWS+"(?<name>"+commonName+"\\b)";
                 MatchCollection allDataTypes = Regex.Matches(scriptContent, pattern);
@@ -129,10 +129,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities
        // Debug.Log ("Data types : "+dataTypes);
     }
 
-    public CSharpToUnityScriptConverter () : this("nodirectory")
-    {
-        
-    }
+    public CSharpToUnityScriptConverter() : this("") {}
 
 
     //----------------------------------------------------------------------------------
@@ -1134,6 +1131,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities
         {
             Block interfaceBlock = new Block(anInterface, convertedCode);
 
+            if (interfaceBlock.isEmpty)
+                continue;
+
             // convert function
             pattern = "(?<returnType>"+commonCharsWithSpace+")"+oblWS+"(?<functionCorp>"+commonName+optWS+"\\("+argumentsChars+"\\))(?<end>"+optWS+";)";
             MatchCollection allFunctions = Regex.Matches(interfaceBlock.text, pattern);
@@ -1168,6 +1168,8 @@ public class CSharpToUnityScriptConverter: RegexUtilities
                 
                 // Ok now we are sure this is a property declaration
                 Block PropBlock = new Block(property, interfaceBlock.text);
+                if (PropBlock.isEmpty)
+                    continue;
 
                 string USProperty = "";
 
@@ -1283,6 +1285,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities
         {
             Block functionBlock = new Block(aFunctionDeclaration, convertedCode);
 
+            if (functionBlock.isEmpty)
+                continue;
+
             pattern = "var"+oblWS+"(?<varName>"+commonName+")"+optWS+":"+optWS+"(?<varType>"+commonCharsWithSpace+")"+optWS+"(?<ending>(=|;|in))";
             List<Match> allVariablesDeclarations = ReverseMatches( functionBlock.text, pattern );
 
@@ -1375,6 +1380,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities
 
             // Ok now we are sure this is a property declaration
             Block PropBlock = new Block(aProp, convertedCode);
+            if (PropBlock.isEmpty)
+                continue;
+
             PropBlock.type = PropBlock.type.Replace( "override", "").Replace("abstract", "");
             //Debug.Log ("property : "+aProp.Value+" | "+PropBlock.text);
 
@@ -1393,6 +1401,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities
                 if (getterMatch.Value.Contains("{")) 
                 {
                     Block getterBlock = new Block(getterMatch, PropBlock.text);
+
+                    if (getterBlock.isEmpty)
+                        continue;
 
                     property += visibility+"function get "+PropBlock.name+"(): "+PropBlock.type+" ";
                     property += getterBlock.text+EOL;
@@ -1419,6 +1430,9 @@ public class CSharpToUnityScriptConverter: RegexUtilities
                 if (setterMatch.Value.Contains("{")) 
                 {
                     Block setterBlock = new Block(setterMatch, PropBlock.text);
+
+                    if (setterBlock.isEmpty)
+                        continue;
 
                     property +=  visibility+"function set "+PropBlock.name+"(value: "+PropBlock.type+") ";
                     property += setterBlock.text+EOL;

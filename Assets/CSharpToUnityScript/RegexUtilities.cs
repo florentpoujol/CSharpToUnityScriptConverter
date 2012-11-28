@@ -18,13 +18,15 @@ using System.Text.RegularExpressions;
 using System.IO;
 
 
-public class RegexUtilities {
+public class RegexUtilities 
+{
 
     /// <summary>
     /// A block is what is writtent between an opening and its matching closing curly brackets
     /// This struct
     /// </summary>
-	public struct Block {
+	public struct Block 
+    {
         public Match match; // the Match of the block's declaration
 
         public string refText; // the text in which the match has been found, and where to search for the block
@@ -50,7 +52,8 @@ public class RegexUtilities {
         /// </summary>
         /// <param name="p_match">Match of the block's declaration</param>
         /// <param name="p_refText">full reference text in which to search for the block</param>
-        public Block( Match p_match, string p_refText ) {
+        public Block(Match p_match, string p_refText) 
+        {
             match = p_match;
             refText = p_refText;
 
@@ -77,10 +80,11 @@ public class RegexUtilities {
 
             endIndex = GetEndOfBlockIndex();
             
-            if( endIndex == -1 )
+            if (endIndex == -1)
                 return;
 
-            if( endIndex <= startIndex ) {
+            if (endIndex <= startIndex) 
+            {
                 Debug.LogError ("RegexUtilities.Block.Block() : endIndex <= startIndex. Can't get block text. match=["+match.Value+"] startIndex=["+startIndex+"] endIndex=["+endIndex+"] refText=["+refText+"].");
                 return;
             }
@@ -97,14 +101,17 @@ public class RegexUtilities {
         /// Search for the block's closing curcly bracket, given the index in refText (startIndex) of the opening bracket
         /// </summary>
         /// <returns>The index in refText of the closing bracket, if one is found</returns>
-        int GetEndOfBlockIndex() {
+        int GetEndOfBlockIndex() 
+        {
             int openedBrackets = 0;
 
-            for (int i = startIndex; i < refText.Length; i++) {
+            for (int i = startIndex; i < refText.Length; i++) 
+            {
                 if (refText[i] == '{')
                     openedBrackets++;
 
-                if (refText[i] == '}') {
+                if (refText[i] == '}') 
+                {
                     openedBrackets--;
 
                     if (openedBrackets == 0)
@@ -114,7 +121,7 @@ public class RegexUtilities {
 
             // no matching closing bracket has been found
             Debug.LogError("RegexUtilities.Block.GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning -1. match=["+match.Value+"] startIndex=["+startIndex+"] ["+
-                refText[startIndex-1]+"|"+refText[startIndex]+"|"+refText[startIndex+1]+"] text=["+refText+"]." );
+                refText[startIndex-1]+"|"+refText[startIndex]+"|"+refText[startIndex+1]+"] text=["+refText+"].");
             return -1;
         }
     } // end of struct Block
@@ -133,7 +140,6 @@ public class RegexUtilities {
     // usefull when looking for a type (of variable or method)
     protected string commonChars = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_\\[\\]\\.]*)"; // 
     protected string commonCharsWithSpace = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_\\[\\]\\. ]*)"; // generic collections likes dictionnaries may have a space after the coma, for instance
-    protected string commonCharsWSpaceWoSquareBrackets = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_. ]*)";
     protected string commonCharsWithSpaceAndParenthesis = "([A-Za-z_]{1}[A-Za-z0-9<>,'\"_\\[\\]\\. \\(\\)]*)";
     protected string commonCharsWithoutComma = "([A-Za-z_]{1}[A-Za-z0-9<>'\"_\\[\\]\\.]*)"; // for use with variable or type as method parameter
     protected string commonCharsWoCommaWSpace = "([A-Za-z_]{1}[A-Za-z0-9<>'\"_\\[\\]\\. ]*)";
@@ -232,8 +238,8 @@ public class RegexUtilities {
 
         try { // some regex may throws nasty exceptions
             for( int i = 0; i < patterns.Count; i++ ) {
-                Log( "pattern="+patterns[i] );
-                Log( "replacement="+replacements[i] );
+                // Log( "pattern="+patterns[i] );
+                // Log( "replacement="+replacements[i] );
                 text = Regex.Replace( text, patterns[i], replacements[i] );
             }
         }
@@ -258,11 +264,11 @@ public class RegexUtilities {
     /// Log infos
     /// </summary>
     protected void Log( string line ) {
-        if( writer == null )
-            writer = new StreamWriter( Application.dataPath+"/GitIgnore/csharptounityscript_log.txt", false ); // empty the file first
+        // if( writer == null )
+        //     writer = new StreamWriter( Application.dataPath+"/GitIgnore/csharptounityscript_log.txt", false ); // empty the file first
 
-        writer.WriteLine( line );
-        writer.Flush();
+        // writer.WriteLine( line );
+        // writer.Flush();
     }
 
 
