@@ -6,6 +6,12 @@ More precisely, the extension provides a very good quality mass-conversion solut
 Current version : 1.0
 Last edit of this manual on the 30th of November 2012.
 
+#Contact
+
+florent dot poujol at gmail dot com
+http://www.florent-poujol.fr/en
+My profile on Unity's forums : http://forum.unity3d.com/members/23148-Lion
+
 #How to buy
 
 You will be able to buy this extension from the offical Unity Asset Store and from GamePrefabs.com at some point during the first week of December 2012.
@@ -58,35 +64,38 @@ Casts without parenthesis around the casted expression stops at the first non al
 Multiple inline variable declaration will be messed up or won't be converted at all if a semi-colon is found anywhere whithin the whole delcaration, before the semi-colon that closes the expression.
 Also having curly brackets and/or parenthesis inside values or instance may lead the expression not to be converted.
 
-#What does not work in UnityScript
+#Features not supported by UnityScript
 
 This sections shows which features does not work in UnityScript, and try to provide a work around when possible.
 
 In some cases, the converter could deal with the situation itself, but it is just not (yet) implemented.
 
-##Features not supported by UnityScript, but dealt with by the converter
+##Features dealt with by the converter
 
 * abstract keyword : abstract classes/methods are converted into regular classes/methods.
+* virtual keyword : it is just removed
+* Probably some others
 
+##Features that could be deal with by the converter (but that curently aren't)
 
-## The converter could do something about that but does not do anything in the current version
-
-* You can not have a method parameter nammed "get".
+* You ca'nt have a method parameter nammed "get".
 * You can't create assembly aliases (using Alias=Assembly;)
 
+##Hopeless features
 
-## The converter can not do anything, you have to deal with the situation yourself
+The converter can not do anything about them, you have to deal with the situation yourself.
 
 * Enums does not accepts negative values.
 * Static properties can't access another static property (you get the same error as if the accessed property is non-static).
 
 
-###Keyword "params" in method parameters
+###Params keyword
 
 They are left, so they pop errors in the Unity console.
 The solution is to remove the "params" keyword from the method declaration, then wrap the parameters in an array in the method call.
 
-C#:
+C# :
+
 	void Method( params int[] values ) {}
 	Method( 1, 2 );
 	Method( 1, 2, 3 );
@@ -96,6 +105,7 @@ C#:
 	Method( "", 1, 2, 3 );
 
 UnityScript :
+
 	function Method( values: int[] ) {}
 	Method( [1, 2] );
 	Method( [1, 2, 3] );
@@ -112,14 +122,17 @@ They does not exists in UnityScript but can be simulated to some extends.
 You can't create custom-nammed delegate or callable types as in C# or Boo but you can express specific method signatures as Boo does :
 
 C# :
+
 	delegate string DelegateName(int arg);
 	DelegateName variabmeName = MethodName;
 
 Boo :
+
 	CallableName as callable(int) as string
 	variableName as CallableName = MethodName
 
 UnityScript :
+
 	// "Function" is a global callable type, that match any signatures. You should be able to use it wherever you use a delegate in C#
 	// But you can also be more specific :
 
@@ -136,6 +149,7 @@ ie : Every occurence of "DelegateName" would be replaced by "function(int)"
 Events does not exists, but they are just a specialized collection of method, something you can reproduce in UnityScript, while it require some code refactoring.
 
 C# :
+
 	delegate void FooBarSignature(int data);
 	// the event that will store the methods
 	event FooBarSignature foobarMethods;
@@ -152,6 +166,7 @@ C# :
 	foobarMethods( 1 );
 
 UnityScript :
+
 	// the event can be simulated by any kind of list
 	var foobarMethodsList: List.<function(int)> = new List.<function(int)>();
 
@@ -175,55 +190,63 @@ UnityScript :
 As of v1.0, nothing is done by the converter, everything is left untouched in the code.
 
 ###Arrays
-	Single dimentionnal arrays convert just fine.
-	But :
+Single dimentionnal arrays should convert just fine.
 
-	The syntax of a multidimensionnal array in C#, become a jagged array in US :
-	C# 	{ {0}, {1} } 	is of type int[,]
-	US 	[ [0], [1] ]	is of type int[][] (same case in Boo)
+The syntax of a multidimensionnal array in C#, becomes a jagged array in US :
+C# :
+	{ {0}, {1} } // is of type int[,]
+US :
+	[ [0], [1] ] // is of type int[][] (same case in Boo)
 
 
-	Here is some examples of what works, what doesn't :
+Here is some examples of what works, what doesn't :
 
-	Jagged arrays :
-		var array: int[][];			=>	display the error UCE0001: ';' expected. Insert a semicolon at the end.
-		var array = new int[1][2];   	=>  display the error : IndexOutOfRangeException: Array index is out of range.
-		var array = new int[2][1];	=>	array is of type int ...
+Jagged arrays :
+	// syntax that does not work
+	var jaggedArray: int[][];			=>	display the error UCE0001: ';' expected. Insert a semicolon at the end.
+	var jaggedArray = new int[1][2];  	=>  display the error : IndexOutOfRangeException: Array index is out of range.
+	var jaggedArray = new int[2][1];	=>	array is of type int ...
 
-		creating an empty two level jagged array is done :
-		var array = array.<int[]>(10);	=>	array is of type int[][]  <=>  int[10][]
+Creating an empty two level jagged array is done like this :
+	var jaggedArray = array.<int[]>(10); // jaggedArray is of type int[][]  <=>  int[10][]
+The declaration of variable with empty array setting is the only thing that is handled by the converter.
+	Type[][] variable = new Type[num][];
+	// is converted into
+	var variable = array.<Type[]>(num);
 
-		Using "array.<type[]>" as a type does not work, thought.
-
-		You can also set the values
-		var array = [ [0], [1] ];		=>	array is of type int[][]
+I don't no what is the equivalent of the expression "Type[][]" in UnityScript. So they are left in the code and pop errors.
+You can also create a jagged array by setting its value right aways
+	var array = [ [0], [1] ]; // array is of type int[][]
 		
 		
-	MultiDimentionnal arrays :
-		var array: int[,];					=> 	Works
-		var array = new int[1,1]; 			=>	Works
-		var array: int[,] = new int[1,1]; 	=>	Works
+MultiDimentionnal arrays :
+	var array: int[,];					// 	Works
+	var array = new int[1,1]; 			//	Works
+	var array: int[,] = new int[1,1]; 	//	Works
 
-		You can also use Boo's syntax :
-		var array = matrix(int, 1, 1);
-		var array: int[,] = matrix(int, 1, 1);
+You can also use Boo's syntax :
+	var array = matrix(int, 1, 1);
+	var array: int[,] = matrix(int, 1, 1);
 
-		It seems that you can't set a multidimentionnal array while declaring it;
+It seems that you can't set the value of a multidimentionnal array while declaring it.
   
   
-- "out" and "ref" keywords.
+###Out and Ref keywords
+
 In UnityScript, you don't need these keywords when you call a C# method (ie : the 'hitInfo' parameter of Physics.Raycast()).
 But there is no way in UnityScript to create such behavior in the method declaration.
 Remember that you can still use C# classes from UnityScript scripts if they (the C# scripts) are compiled first.
 
-There are no easy way to pass a value type as reference in UnityScript but here is one hack : You use an intermediary variable which contains the value.
+There are no easy way to pass a value type as reference in UnityScript but here is one hack : you can use an intermediary variable which contains the value.
 
 C# :
-	void RefMethod(ref int arg) {
+	void RefMethod(ref int arg)
+	{
 		arg = 20;
 	}
 
-	void Start() {
+	void Start()
+	{
 		int refVar = 5;
 
 		RefMethod(ref refVar);
@@ -234,11 +257,13 @@ C# :
 UnityScript :
 	var ref = Array();
 
-	function RefMethod() {
+	function RefMethod()
+	{
 		ref["refVar"] = 20;
 	}
 
-	function Start() {
+	function Start()
+	{
 		var refVar = 5;
 
 		ref["refvar"] = refVar;
@@ -249,11 +274,9 @@ UnityScript :
 	}
 
 
+#Improving the conversion
 
-
-
-
-==================================================
-
-==================================================
+Sometimes, someting that convert just fine in most of the scripts will just not convert at all or be messed up in another script, for no apparent reason.
+If that happens, please contact me (see section at the top) and give me your script if it's not top-secret.
+TSuch behaviour is often du to a particular syntactic situation that makes the converter not recogize (or recogize whereas it shouldn't) a pattern.
 
