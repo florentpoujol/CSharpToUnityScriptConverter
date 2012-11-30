@@ -22,7 +22,6 @@
 
 
 using UnityEngine; 
-using UnityEditor; // EditorGUILayout
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions; // Regex.Replace(), Match, Matches, MatchCollection...
