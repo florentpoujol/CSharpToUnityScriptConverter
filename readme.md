@@ -16,6 +16,10 @@ My profile on Unity's forums : http://forum.unity3d.com/members/23148-Lion
 
 You will be able to buy this extension from the offical Unity Asset Store and from GamePrefabs.com at some point during the first week of December 2012.
 
+You want to try before bying ? No problem !
+Head over to my website to [test the live demo](http://www.florent-poujol.fr/en/unity3d/c-to-unityscript-converter).
+Unlike the extension, you can convert only 100 lives at a time but the quality of the conversion is identical !
+
 #How to install
 
 Extract the CSharpToUnityScriptConverter.unitypackage in your Asset folder.
@@ -205,7 +209,7 @@ Jagged arrays :
 	// syntax that does not work
 	var jaggedArray: int[][];			=>	display the error UCE0001: ';' expected. Insert a semicolon at the end.
 	var jaggedArray = new int[1][2];  	=>  display the error : IndexOutOfRangeException: Array index is out of range.
-	var jaggedArray = new int[2][1];	=>	array is of type int ...
+	var jaggedArray = new int[2][1];	=>	jaggedArray is of type int ...
 
 Creating an empty two level jagged array is done like this :
 	var jaggedArray = array.<int[]>(10); // jaggedArray is of type int[][]  <=>  int[10][]
@@ -214,8 +218,8 @@ The declaration of variable with empty array setting is the only thing that is h
 	// is converted into
 	var variable = array.<Type[]>(num);
 
-I don't no what is the equivalent of the expression "Type[][]" in UnityScript. So they are left in the code and pop errors.
-You can also create a jagged array by setting its value right aways
+But I don't know what is the equivalent of the expression "Type[][]" in UnityScript. So they are left in the code and pop errors.
+You can also create a jagged array by setting its value right away :
 	var array = [ [0], [1] ]; // array is of type int[][]
 		
 		
@@ -278,5 +282,7 @@ UnityScript :
 
 Sometimes, someting that convert just fine in most of the scripts will just not convert at all or be messed up in another script, for no apparent reason.
 If that happens, please contact me (see section at the top) and give me your script if it's not top-secret.
-TSuch behaviour is often du to a particular syntactic situation that makes the converter not recogize (or recogize whereas it shouldn't) a pattern.
+
+Such behaviour is often du to a particular syntactic situation that makes the converter not recogize a pattern (or recogize when it shouldn't).
+By gathering scripts where this happends, I may be able to find what triggers the situation.
 
