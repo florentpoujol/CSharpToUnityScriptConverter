@@ -39,6 +39,10 @@ More precisely, the extension provides a very good quality mass-conversion solut
 <p>Current version : 1.0
 Last edit of this manual on the 30th of November 2012.</p>
 
+<h1>How to buy</h1>
+
+<p>You will be able to buy this extension from the offical Unity Asset Store and from GamePrefabs.com at some point during the first week of December 2012.</p>
+
 <h1>How to install</h1>
 
 <p>Extract the CSharpToUnityScriptConverter.unitypackage in your Asset folder.
@@ -63,6 +67,221 @@ If you hit the convert button again, it will convert again the whole source dire
 <p>The conversion speed is about 10Ko or a couple hundreds of lines per second.</p>
 
 <h1>Options</h1>
+
+<p>You may choose if you want the converter to try to convert multiple inline variable declarations.
+    // stuffs like :
+    int var1, var2 = 2, var3, var4;</p>
+
+<p>Despite all my efforts, the converter may still match a few false positive.
+If you are confident that the code you want to convert does not contains such declarations, or only a few of them, you better leave the box unticked.</p>
+
+<h1>Quality of the conversion</h1>
+
+<p>Be advised that UnityScript has less features than C#.
+That means that in some case, there is just no way to express in UnityScript what the C# does.</p>
+
+<p>In some other cases, you will need to refactor part of the UnityScript code (when it's not done by the converter itself) to make it do the same thing as the C# code.</p>
+
+<p>Finally, in some yet other cases, the conversion may not be performed, depending on the syntactic environnement.</p>
+
+<h2>Take note of</h2>
+
+<p>Casts without parenthesis around the casted expression stops at the first non alphanumeric character.</p>
+
+<p>Multiple inline variable declaration will be messed up or won't be converted at all if a semi-colon is found anywhere whithin the whole delcaration, before the semi-colon that closes the expression.
+Also having curly brackets and/or parenthesis inside values or instance may lead the expression not to be converted.</p>
+
+<h1>What does not work in UnityScript</h1>
+
+<p>This sections shows which features does not work in UnityScript, and try to provide a work around when possible.</p>
+
+<p>In some cases, the converter could deal with the situation itself, but it is just not (yet) implemented.</p>
+
+<h2>Features not supported by UnityScript, but dealt with by the converter</h2>
+
+<ul>
+<li>abstract keyword : abstract classes/methods are converted into regular classes/methods.</li>
+</ul><h2>The converter could do something about that but does not do anything in the current version</h2>
+
+<ul>
+<li>You can not have a method parameter nammed "get".</li>
+<li>You can't create assembly aliases (using Alias=Assembly;)</li>
+</ul><h2>The converter can not do anything, you have to deal with the situation yourself</h2>
+
+<ul>
+<li>Enums does not accepts negative values.</li>
+<li>Static properties can't access another static property (you get the same error as if the accessed property is non-static).</li>
+</ul><h3>Keyword "params" in method parameters</h3>
+
+<p>They are left, so they pop errors in the Unity console.
+The solution is to remove the "params" keyword from the method declaration, then wrap the parameters in an array in the method call.</p>
+
+<p>C#:
+    void Method( params int[] values ) {}
+    Method( 1, 2 );
+    Method( 1, 2, 3 );</p>
+
+<pre><code>void Method( string firstParam, params int[] values ) {}
+Method( "", 1, 2 );
+Method( "", 1, 2, 3 );
+</code></pre>
+
+<p>UnityScript :
+    function Method( values: int[] ) {}
+    Method( [1, 2] );
+    Method( [1, 2, 3] );</p>
+
+<pre><code>function Method( firestParam: String, values: int[] ) {}
+Method( "", [1, 2] );
+Method( "", [1, 2, 3] );
+</code></pre>
+
+<h2>Delegates and Events</h2>
+
+<p>They does not exists in UnityScript but can be simulated to some extends.</p>
+
+<p>You can't create custom-nammed delegate or callable types as in C# or Boo but you can express specific method signatures as Boo does :</p>
+
+<p>C# :
+    delegate string DelegateName(int arg);
+    DelegateName variabmeName = MethodName;</p>
+
+<p>Boo :
+    CallableName as callable(int) as string
+    variableName as CallableName = MethodName</p>
+
+<p>UnityScript :
+    // "Function" is a global callable type, that match any signatures. You should be able to use it wherever you use a delegate in C#
+    // But you can also be more specific :</p>
+
+<pre><code>function(int): String
+function(String, boolean) // same as    function(String, boolean): void
+var variableName: function(int): String = MethodName;
+</code></pre>
+
+<p>You also still have access to .Net's Action&lt;&gt; and Func&lt;&gt; generic delegates.</p>
+
+<p>The converter convert every occurence of a delegate name to its US conterpart.
+ie : Every occurence of "DelegateName" would be replaced by "function(int)"</p>
+
+<p>Events does not exists, but they are just a specialized collection of method, something you can reproduce in UnityScript, while it require some code refactoring.</p>
+
+<p>C# :
+    delegate void FooBarSignature(int data);
+    // the event that will store the methods
+    event FooBarSignature foobarMethods;</p>
+
+<pre><code>[...]
+
+// a method to be called when the event is thrown
+void AMethod( int param ) {}
+
+// registering methods
+foobarMethods += AMethod;
+
+// throwing an event
+foobarMethods( 1 );
+</code></pre>
+
+<p>UnityScript :
+    // the event can be simulated by any kind of list
+    var foobarMethodsList: List. = new List.();</p>
+
+<pre><code>function foorbarMethods( param: int ) {
+    for (var method: function(int) in foobarMethodsList)
+        method( param );
+}
+
+[...]
+
+// a method to be called when the event is thrown
+function AMethod( param: int ) {}
+
+// registering methods, this is what you need to go over and change yourself
+foobarMethodsList.Add( AMethod );
+
+// throwing an event
+foorbarMethods( 1 );
+</code></pre>
+
+<p>As of v1.0, nothing is done by the converter, everything is left untouched in the code.</p>
+
+<h3>Arrays</h3>
+
+<pre><code>Single dimentionnal arrays convert just fine.
+But :
+
+The syntax of a multidimensionnal array in C#, become a jagged array in US :
+C#  { {0}, {1} }    is of type int[,]
+US  [ [0], [1] ]    is of type int[][] (same case in Boo)
+
+
+Here is some examples of what works, what doesn't :
+
+Jagged arrays :
+    var array: int[][];         =&gt;  display the error UCE0001: ';' expected. Insert a semicolon at the end.
+    var array = new int[1][2];      =&gt;  display the error : IndexOutOfRangeException: Array index is out of range.
+    var array = new int[2][1];  =&gt;  array is of type int ...
+
+    creating an empty two level jagged array is done :
+    var array = array.&lt;int[]&gt;(10);  =&gt;  array is of type int[][]  &lt;=&gt;  int[10][]
+
+    Using "array.&lt;type[]&gt;" as a type does not work, thought.
+
+    You can also set the values
+    var array = [ [0], [1] ];       =&gt;  array is of type int[][]
+
+
+MultiDimentionnal arrays :
+    var array: int[,];                  =&gt;  Works
+    var array = new int[1,1];           =&gt;  Works
+    var array: int[,] = new int[1,1];   =&gt;  Works
+
+    You can also use Boo's syntax :
+    var array = matrix(int, 1, 1);
+    var array: int[,] = matrix(int, 1, 1);
+
+    It seems that you can't set a multidimentionnal array while declaring it;
+</code></pre>
+
+<ul>
+<li>"out" and "ref" keywords.
+In UnityScript, you don't need these keywords when you call a C# method (ie : the 'hitInfo' parameter of Physics.Raycast()).
+But there is no way in UnityScript to create such behavior in the method declaration.
+Remember that you can still use C# classes from UnityScript scripts if they (the C# scripts) are compiled first.</li>
+</ul><p>There are no easy way to pass a value type as reference in UnityScript but here is one hack : You use an intermediary variable which contains the value.</p>
+
+<p>C# :
+    void RefMethod(ref int arg) {
+        arg = 20;
+    }</p>
+
+<pre><code>void Start() {
+    int refVar = 5;
+
+    RefMethod(ref refVar);
+
+    Debug.Log(refVar); // will display 20
+}
+</code></pre>
+
+<p>UnityScript :
+    var ref = Array();</p>
+
+<pre><code>function RefMethod() {
+    ref["refVar"] = 20;
+}
+
+function Start() {
+    var refVar = 5;
+
+    ref["refvar"] = refVar;
+    RefMethod();
+    refVar = ref["refvar"];
+
+    print(refVar); // will print 20
+}
+</code></pre>
         </section>
 
         <footer>
