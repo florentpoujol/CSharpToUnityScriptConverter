@@ -1,18 +1,35 @@
 #What does it do ?
 
 This extension for Unity3D does a damn good at converting C# scripts into UnityScript scripts.
-More precisely, the extension provides a very good quality mass-conversion solution to translate C# into UnityScript.
+More precisely, the extension provides a very good quality mass-conversion solution to translate C# code into UnityScript.
 
 Current version : 1.0
-Last edit of this manual on the 30th of November 2012
+Last edit of this manual on the 30th of November 2012.
 
 #How to install
 
 Extract the CSharpToUnityScriptConverter.unitypackage in your Asset folder.
-The folder Assets/CSharpToUnityScript will have been created.
+It will have created the "Assets/CSharpToUnityScript" folder.
 
-Put the C# scripts script
+Open the extension via the menu "Script Converters > C# To UnityScript".
 
+#How to use
+
+The extension will convert any C# scripts found in the "source" directory and create their UnityScript conterpart in the "target" directory.
+
+By default, the source directory is "Assets/CSharpToUnityScript/Source" and the target directory will be "Assets/CSharpToUnityScript/ConvertedScripts". You may change these paths via the appropriate fields.
+
+Put the C# scripts in your source directory then hit the "convert" button.
+The extension tab shows you how many files are left to be converted.
+The console display the name of the files when their conversion is completed.
+
+If you have many files being converted and want to abord the conversion, just hit the "Abord" button.
+This won't stops the conversion of the current file but it won't convert any more file after that.
+If you hit the convert button again, it will convert again the whole source directory.
+
+The conversion speed is about 10Ko or a couple hundreds of lines per second.
+
+#Options
 
 
 
