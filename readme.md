@@ -6,6 +6,10 @@ More precisely, the extension provides a very good quality mass-conversion solut
 Current version : 1.0
 Last edit of this manual on the 30th of November 2012.
 
+#How to buy
+
+You will be able to buy this extension from the offical Unity Asset Store and from GamePrefabs.com at some point during the first week of December 2012.
+
 #How to install
 
 Extract the CSharpToUnityScriptConverter.unitypackage in your Asset folder.
@@ -31,46 +35,58 @@ The conversion speed is about 10Ko or a couple hundreds of lines per second.
 
 #Options
 
+You may choose if you want the converter to try to convert multiple inline variable declarations.
+	// stuffs like :
+	int var1, var2 = 2, var3, var4;
+
+Despite all my efforts, the converter may still match a few false positive.
+If you are confident that the code you want to convert does not contains such declarations, or only a few of them, you better leave the box unticked.
+
+#Quality of the conversion
+
+Be advised that UnityScript has less features than C#.
+That means that in some case, there is just no way to express in UnityScript what the C# does.
+
+In some other cases, you will need to refactor part of the UnityScript code (when it's not done by the converter itself) to make it do the same thing as the C# code.
+
+Finally, in some yet other cases, the conversion may not be performed, depending on the syntactic environnement.
+
+##Take note of
+
+Casts without parenthesis around the casted expression stops at the first non alphanumeric character.
+
+Multiple inline variable declaration will be messed up or won't be converted at all if a semi-colon is found anywhere whithin the whole delcaration, before the semi-colon that closes the expression.
+Also having curly brackets and/or parenthesis inside values or instance may lead the expression not to be converted.
+
+#What does not work in UnityScript
+
+This sections shows which features does not work in UnityScript, and try to provide a work around when possible.
+
+In some cases, the converter could deal with the situation itself, but it is just not (yet) implemented.
+
+##Features not supported by UnityScript, but dealt with by the converter
+
+* abstract keyword : abstract classes/methods are converted into regular classes/methods.
 
 
-==================================================
-TAKE NOTES OF :
-==================================================
+## The converter could do something about that but does not do anything in the current version
 
-cast without parenthesis stop at the first non alpha numeric character or parenthesis
-(float) castwithoutspace
+* You can not have a method parameter nammed "get".
+* You can't create assembly aliases (using Alias=Assembly;)
 
 
-- multile variable declaration will be messed up if 
-	- a semi-colon is used in a value
+## The converter can not do anything, you have to deal with the situation yourself
+
+* Enums does not accepts negative values.
+* Static properties can't access another static property (you get the same error as if the accessed property is non-static).
 
 
-- casting with parenthesis will only convert one pattern fr each
+###Keyword "params" in method parameters
 
+They are left, so they pop errors in the Unity console.
+The solution is to remove the "params" keyword from the method declaration, then wrap the parameters in an array in the method call.
 
-==================================================
-WHAT DOES NOT WORK (HAS NO EQUIVALENT) IN UNITYSCRIPT
-==================================================
-
-
--	Enums does not accepts negative values
-
--	"abstract" keyword
-	Abstract classes/methods are converted into regular classes/methods (the keyword is stripped)
-
--	You can not have a method parameter nammed "get"
-
--	static properties can't access another static property (get the error as the accessed property is non-static)
-
--	you can't create assembly aliases (as in : using Alias=Assembly;   such pattern is not converted)
-
-
-- Keyword "params" in method parameters.
-They are left, so they pop errors in the Unity console
-The solution is to remove the "params" keyword from the method declaration,
-then wrap the parameters in an array in the method call.
-
-C# :
+C#:
 	void Method( params int[] values ) {}
 	Method( 1, 2 );
 	Method( 1, 2, 3 );
@@ -89,11 +105,11 @@ UnityScript :
 	Method( "", [1, 2, 3] );
 
 
+##Delegates and Events
 
-- "delegate" and "event" does not exists in UnityScript but can be simulated to some extends.
+They does not exists in UnityScript but can be simulated to some extends.
 
-You can't create custom-nammed delegate or callable types as in C# or Boo but you can express specific method signatures as Boo does.
-ie :
+You can't create custom-nammed delegate or callable types as in C# or Boo but you can express specific method signatures as Boo does :
 
 C# :
 	delegate string DelegateName(int arg);
@@ -104,8 +120,8 @@ Boo :
 	variableName as CallableName = MethodName
 
 UnityScript :
-	"Function" is a global callable type, that match any signatures. You should be able to use it wherever you use a delegate in C#
-	But you can also be more specific :
+	// "Function" is a global callable type, that match any signatures. You should be able to use it wherever you use a delegate in C#
+	// But you can also be more specific :
 
 	function(int): String
 	function(String, boolean) // same as    function(String, boolean): void
@@ -113,12 +129,11 @@ UnityScript :
 
 You also still have access to .Net's Action<> and Func<> generic delegates.
 
-
-As of v0.1, the converter convert every occurence of a delegate name to its US conterpart.
+The converter convert every occurence of a delegate name to its US conterpart.
 ie : Every occurence of "DelegateName" would be replaced by "function(int)"
 
 
-Events does not exists, but they are just a specialized collection of method, something you can easily reproduce in UnityScript, while it require some code refactoring.
+Events does not exists, but they are just a specialized collection of method, something you can reproduce in UnityScript, while it require some code refactoring.
 
 C# :
 	delegate void FooBarSignature(int data);
@@ -157,10 +172,9 @@ UnityScript :
 	foorbarMethods( 1 );
 
 
-As of v0.1, nothing is done by the converter, everything is left out in the code.
+As of v1.0, nothing is done by the converter, everything is left untouched in the code.
 
-
-- Arrays
+###Arrays
 	Single dimentionnal arrays convert just fine.
 	But :
 
