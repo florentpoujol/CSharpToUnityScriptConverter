@@ -41,17 +41,18 @@ Last edit of this manual on the 30th of November 2012.</p>
 
 <h1>Contact</h1>
 
-<p>florent dot poujol at gmail dot com
-<a href="http://www.florent-poujol.fr/en">http://www.florent-poujol.fr/en</a>
-My profile on Unity's forums : <a href="http://forum.unity3d.com/members/23148-Lion">http://forum.unity3d.com/members/23148-Lion</a></p>
-
-<h1>How to buy</h1>
+<ul>
+<li>florent dot poujol at gmail dot com</li>
+<li><a href="http://www.florent-poujol.fr/en">http://www.florent-poujol.fr/en</a></li>
+<li>My profile on Unity's forums : <a href="http://forum.unity3d.com/members/23148-Lion">http://forum.unity3d.com/members/23148-Lion</a>
+</li>
+</ul><h1>How to buy</h1>
 
 <p>You will be able to buy this extension from the offical Unity Asset Store and from GamePrefabs.com at some point during the first week of December 2012.</p>
 
 <p>You want to try before bying ? No problem !
 Head over to my website to <a href="http://www.florent-poujol.fr/en/unity3d/c-to-unityscript-converter">test the live demo</a>.
-Unlike the extension, you can convert only 100 lives at a time but the quality of the conversion is identical !</p>
+Unlike with the extension, you can convert only 100 lines at a time but the quality of the conversion is identical !</p>
 
 <h1>How to install</h1>
 
@@ -78,9 +79,10 @@ If you hit the convert button again, it will convert again the whole source dire
 
 <h1>Options</h1>
 
-<p>You may choose if you want the converter to try to convert multiple inline variable declarations.
-    // stuffs like :
-    int var1, var2 = 2, var3, var4;</p>
+<p>You may choose if you want the converter to try to convert multiple inline variable declarations.</p>
+
+<pre><code>int var1, var2 = 2, var3, var4;
+</code></pre>
 
 <p>Despite all my efforts, the converter may still match a few false positive.
 If you are confident that the code you want to convert does not contains such declarations, or only a few of them, you better leave the box unticked.</p>
@@ -112,18 +114,33 @@ Also having curly brackets and/or parenthesis inside values or instance may lead
 <ul>
 <li>abstract keyword : abstract classes/methods are converted into regular classes/methods.</li>
 <li>virtual keyword : it is just removed</li>
-<li>Probably some others</li>
+<li>...</li>
 </ul><h2>Features that could be deal with by the converter (but that curently aren't)</h2>
 
+<p>If these features are not currently converted by the converter, it does not mens, they will never be.</p>
+
 <ul>
-<li>You ca'nt have a method parameter nammed "get".</li>
+<li>You can't have a method parameter nammed "get".</li>
 <li>You can't create assembly aliases (using Alias=Assembly;)</li>
-</ul><h2>Hopeless features</h2>
+<li>Operator overloading. <a href="http://docs.codehaus.org/display/BOO/Operator+overloading">It works like in Boo</a>.</li>
+<li>Closures. Excerp from the Unity Doc :</li>
+</ul><h1></h1>
 
-<p>The converter can not do anything about them, you have to deal with the situation yourself.</p>
+<pre><code>list.Sort(function(x:String, y:String) {
+    return x.CompareTo(y);
+});
+
+list.Sort(function(x, y) x.CompareTo(y));
+</code></pre>
+
+<h2>Hopeless features</h2>
+
+<p>The converter can not do anything about them (it does in some very specific cases), you have to deal with the situation yourself.</p>
 
 <ul>
-<li>Enums does not accepts negative values.</li>
+<li>Linq.</li>
+<li>The where clause.</li>
+<li>Enums do not accept negative values.</li>
 <li>Static properties can't access another static property (you get the same error as if the accessed property is non-static).</li>
 </ul><h3>Params keyword</h3>
 
@@ -234,38 +251,56 @@ foorbarMethods( 1 );
 <p>Single dimentionnal arrays should convert just fine.</p>
 
 <p>The syntax of a multidimensionnal array in C#, becomes a jagged array in US :
-C# :
-    { {0}, {1} } // is of type int[,]
-US :
-    [ [0], [1] ] // is of type int[]<a href="same%20case%20in%20Boo"></a></p>
+C# :</p>
+
+<pre><code>{ {0}, {1} } // is of type int[,]
+</code></pre>
+
+<p>US :</p>
+
+<pre><code>[ [0], [1] ] // is of type int[][] (same case in Boo)
+</code></pre>
 
 <p>Here is some examples of what works, what doesn't :</p>
 
-<p>Jagged arrays :
-    // syntax that does not work
-    var jaggedArray: int[][];           =&gt;  display the error UCE0001: ';' expected. Insert a semicolon at the end.
-    var jaggedArray = new int[1][2];    =&gt;  display the error : IndexOutOfRangeException: Array index is out of range.
-    var jaggedArray = new int[2][1];    =&gt;  jaggedArray is of type int ...</p>
+<p>Jagged arrays :</p>
 
-<p>Creating an empty two level jagged array is done like this :
-    var jaggedArray = array.(10); // jaggedArray is of type int[][]  &lt;=&gt;  int[10][]
-The declaration of variable with empty array setting is the only thing that is handled by the converter.
-    Type[][] variable = new Type[num][];
-    // is converted into
-    var variable = array.(num);</p>
+<pre><code>// syntaxes that do not work
+var jaggedArray: int[][];           =&gt;  display the error UCE0001: ';' expected. Insert a semicolon at the end.
+var jaggedArray = new int[1][2];    =&gt;  display the error : IndexOutOfRangeException: Array index is out of range.
+var jaggedArray = new int[2][1];    =&gt;  jaggedArray is of type int ...
+</code></pre>
+
+<p>Creating an empty two level jagged array is done like this :</p>
+
+<pre><code>var jaggedArray = array.&lt;int[]&gt;(10); // jaggedArray is of type int[][]  &lt;=&gt;  int[10][]
+</code></pre>
+
+<p>The declaration of empty jagged arrays is the only thing that is handled by the converter.</p>
+
+<pre><code>Type[][] variable = new Type[num][];
+// is converted into
+var variable = array.&lt;Type[]&gt;(num);
+</code></pre>
 
 <p>But I don't know what is the equivalent of the expression "Type[][]" in UnityScript. So they are left in the code and pop errors.
-You can also create a jagged array by setting its value right away :
-    var array = [ [0], [1] ]; // array is of type int[][]</p>
+You can also create a jagged array by setting its value right away :</p>
 
-<p>MultiDimentionnal arrays :
-    var array: int[,];                  //  Works
-    var array = new int[1,1];           //  Works
-    var array: int[,] = new int[1,1];   //  Works</p>
+<pre><code>var array = [ [0], [1] ]; // array is of type int[][]
+</code></pre>
 
-<p>You can also use Boo's syntax :
-    var array = matrix(int, 1, 1);
-    var array: int[,] = matrix(int, 1, 1);</p>
+<p>MultiDimentionnal arrays :</p>
+
+<pre><code>var array: int[,];                  //  Works
+var array = new int[1,1];           //  Works
+var array: int[,] = new int[1,1];   //  Works
+</code></pre>
+
+<p>You can also use Boo's syntax :</p>
+
+<pre><code>var array = matrix(int, 1, 1);
+var array: int[,] = matrix(int, 1, 1);
+</code></pre>
 
 <p>It seems that you can't set the value of a multidimentionnal array while declaring it.</p>
 
@@ -275,15 +310,16 @@ You can also create a jagged array by setting its value right away :
 But there is no way in UnityScript to create such behavior in the method declaration.
 Remember that you can still use C# classes from UnityScript scripts if they (the C# scripts) are compiled first.</p>
 
-<p>There are no easy way to pass a value type as reference in UnityScript but here is one hack : you can use an intermediary variable which contains the value.</p>
+<p>There is no easy way to pass a value type as reference in UnityScript but here is one hugly hack : you can use an intermediary variable which contains the value if you really need to.</p>
 
-<p>C# :
-    void RefMethod(ref int arg)
-    {
-        arg = 20;
-    }</p>
+<p>C# :</p>
 
-<pre><code>void Start()
+<pre><code>void RefMethod(ref int arg)
+{
+    arg = 20;
+}
+
+void Start()
 {
     int refVar = 5;
 
@@ -293,10 +329,11 @@ Remember that you can still use C# classes from UnityScript scripts if they (the
 }
 </code></pre>
 
-<p>UnityScript :
-    var ref = Array();</p>
+<p>UnityScript :</p>
 
-<pre><code>function RefMethod()
+<pre><code>var ref = Array();
+
+function RefMethod()
 {
     ref["refVar"] = 20;
 }
@@ -318,8 +355,8 @@ function Start()
 <p>Sometimes, someting that convert just fine in most of the scripts will just not convert at all or be messed up in another script, for no apparent reason.
 If that happens, please contact me (see section at the top) and give me your script if it's not top-secret.</p>
 
-<p>Such behaviour is often du to a particular syntactic situation that makes the converter not recogize a pattern (or recogize when it shouldn't).
-By gathering scripts where this happends, I may be able to find what triggers the situation.</p>
+<p>Such behaviour is often due to a particular syntactic setting that makes the converter not recogize a pattern (or recogize one when it shouldn't).
+By gathering scripts where this happends, I may be able to find what triggers the situation and improve the converter.</p>
         </section>
 
         <footer>
