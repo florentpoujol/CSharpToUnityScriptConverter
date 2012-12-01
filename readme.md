@@ -8,9 +8,9 @@ Last edit of this manual on the 30th of November 2012.
 
 #Contact
 
-florent dot poujol at gmail dot com
-http://www.florent-poujol.fr/en
-My profile on Unity's forums : http://forum.unity3d.com/members/23148-Lion
+* florent dot poujol at gmail dot com
+* http://www.florent-poujol.fr/en
+* My profile on Unity's forums : http://forum.unity3d.com/members/23148-Lion
 
 #How to buy
 
@@ -18,7 +18,7 @@ You will be able to buy this extension from the offical Unity Asset Store and fr
 
 You want to try before bying ? No problem !
 Head over to my website to [test the live demo](http://www.florent-poujol.fr/en/unity3d/c-to-unityscript-converter).
-Unlike the extension, you can convert only 100 lives at a time but the quality of the conversion is identical !
+Unlike with the extension, you can convert only 100 lines at a time but the quality of the conversion is identical !
 
 #How to install
 
@@ -46,7 +46,7 @@ The conversion speed is about 10Ko or a couple hundreds of lines per second.
 #Options
 
 You may choose if you want the converter to try to convert multiple inline variable declarations.
-	// stuffs like :
+
 	int var1, var2 = 2, var3, var4;
 
 Despite all my efforts, the converter may still match a few false positive.
@@ -78,18 +78,32 @@ In some cases, the converter could deal with the situation itself, but it is jus
 
 * abstract keyword : abstract classes/methods are converted into regular classes/methods.
 * virtual keyword : it is just removed
-* Probably some others
+* ...
 
 ##Features that could be deal with by the converter (but that curently aren't)
 
-* You ca'nt have a method parameter nammed "get".
+If these features are not currently converted by the converter, it does not mens, they will never be.
+
+* You can't have a method parameter nammed "get".
 * You can't create assembly aliases (using Alias=Assembly;)
+* Operator overloading. [It works like in Boo](http://docs.codehaus.org/display/BOO/Operator+overloading).
+* Closures. Excerp from the Unity Doc :
+
+========
+
+	list.Sort(function(x:String, y:String) {
+		return x.CompareTo(y);
+	});
+
+	list.Sort(function(x, y) x.CompareTo(y));
 
 ##Hopeless features
 
-The converter can not do anything about them, you have to deal with the situation yourself.
+The converter can not do anything about them (it does in some very specific cases), you have to deal with the situation yourself.
 
-* Enums does not accepts negative values.
+* Linq.
+* The where clause.
+* Enums do not accept negative values.
 * Static properties can't access another static property (you get the same error as if the accessed property is non-static).
 
 
@@ -149,7 +163,6 @@ You also still have access to .Net's Action<> and Func<> generic delegates.
 The converter convert every occurence of a delegate name to its US conterpart.
 ie : Every occurence of "DelegateName" would be replaced by "function(int)"
 
-
 Events does not exists, but they are just a specialized collection of method, something you can reproduce in UnityScript, while it require some code refactoring.
 
 C# :
@@ -191,6 +204,7 @@ UnityScript :
 	foorbarMethods( 1 );
 
 
+
 As of v1.0, nothing is done by the converter, everything is left untouched in the code.
 
 ###Arrays
@@ -198,37 +212,46 @@ Single dimentionnal arrays should convert just fine.
 
 The syntax of a multidimensionnal array in C#, becomes a jagged array in US :
 C# :
+
 	{ {0}, {1} } // is of type int[,]
 US :
+
 	[ [0], [1] ] // is of type int[][] (same case in Boo)
 
 
 Here is some examples of what works, what doesn't :
 
 Jagged arrays :
-	// syntax that does not work
+
+	// syntaxes that do not work
 	var jaggedArray: int[][];			=>	display the error UCE0001: ';' expected. Insert a semicolon at the end.
 	var jaggedArray = new int[1][2];  	=>  display the error : IndexOutOfRangeException: Array index is out of range.
 	var jaggedArray = new int[2][1];	=>	jaggedArray is of type int ...
 
 Creating an empty two level jagged array is done like this :
+
 	var jaggedArray = array.<int[]>(10); // jaggedArray is of type int[][]  <=>  int[10][]
-The declaration of variable with empty array setting is the only thing that is handled by the converter.
+
+The declaration of empty jagged arrays is the only thing that is handled by the converter.
+
 	Type[][] variable = new Type[num][];
 	// is converted into
 	var variable = array.<Type[]>(num);
 
 But I don't know what is the equivalent of the expression "Type[][]" in UnityScript. So they are left in the code and pop errors.
 You can also create a jagged array by setting its value right away :
+
 	var array = [ [0], [1] ]; // array is of type int[][]
 		
 		
 MultiDimentionnal arrays :
+
 	var array: int[,];					// 	Works
 	var array = new int[1,1]; 			//	Works
 	var array: int[,] = new int[1,1]; 	//	Works
 
 You can also use Boo's syntax :
+
 	var array = matrix(int, 1, 1);
 	var array: int[,] = matrix(int, 1, 1);
 
@@ -241,9 +264,10 @@ In UnityScript, you don't need these keywords when you call a C# method (ie : th
 But there is no way in UnityScript to create such behavior in the method declaration.
 Remember that you can still use C# classes from UnityScript scripts if they (the C# scripts) are compiled first.
 
-There are no easy way to pass a value type as reference in UnityScript but here is one hack : you can use an intermediary variable which contains the value.
+There is no easy way to pass a value type as reference in UnityScript but here is one hugly hack : you can use an intermediary variable which contains the value if you really need to.
 
 C# :
+
 	void RefMethod(ref int arg)
 	{
 		arg = 20;
@@ -259,6 +283,7 @@ C# :
 	}
 
 UnityScript :
+
 	var ref = Array();
 
 	function RefMethod()
@@ -283,6 +308,6 @@ UnityScript :
 Sometimes, someting that convert just fine in most of the scripts will just not convert at all or be messed up in another script, for no apparent reason.
 If that happens, please contact me (see section at the top) and give me your script if it's not top-secret.
 
-Such behaviour is often du to a particular syntactic situation that makes the converter not recogize a pattern (or recogize when it shouldn't).
-By gathering scripts where this happends, I may be able to find what triggers the situation.
+Such behaviour is often due to a particular syntactic setting that makes the converter not recogize a pattern (or recogize one when it shouldn't).
+By gathering scripts where this happends, I may be able to find what triggers the situation and improve the converter.
 
