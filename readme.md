@@ -3,8 +3,14 @@
 This extension for Unity3D does a damn good at converting C# scripts into UnityScript scripts.
 More precisely, the extension provides a very good quality mass-conversion solution to translate C# code into UnityScript.
 
-Current version : 1.0
-Last edit of this manual on the 30th of November 2012.
+Main features :
+* very thorough and intelligent conversion (this is simply the best converter on the market)
+* mass conversion : from one file to whole hierarchies
+* ultra fast : 300+ lines/second (try this by hand !)
+* dead-easy setup and use : drop files in a folder then hit a button
+
+* Current version : 1.0
+* Last edit of this manual on the 02nd of December 2012.
 
 #Contact
 
@@ -23,7 +29,7 @@ Unlike with the extension, you can convert only 100 lines at a time but the qual
 #How to install
 
 Extract the CSharpToUnityScriptConverter.unitypackage in your Asset folder.
-It will have created the "Assets/CSharpToUnityScript" folder.
+It will have created the "Assets/CSharpToUnityScriptConverter" folder.
 
 Open the extension via the menu "Script Converters > C# To UnityScript".
 
@@ -31,7 +37,7 @@ Open the extension via the menu "Script Converters > C# To UnityScript".
 
 The extension will convert any C# scripts found in the "source" directory and create their UnityScript conterpart in the "target" directory.
 
-By default, the source directory is "Assets/CSharpToUnityScript/Source" and the target directory will be "Assets/CSharpToUnityScript/ConvertedScripts". You may change these paths via the appropriate fields.
+By default, the source directory is "Assets/CSharpToUnityScriptConverter/Source" and the target directory will be "Assets/CSharpToUnityScriptConverter/ConvertedScripts". You may change these paths via the appropriate fields.
 
 Put the C# scripts in your source directory then hit the "convert" button.
 The extension tab shows you how many files are left to be converted.
@@ -61,12 +67,13 @@ In some other cases, you will need to refactor part of the UnityScript code (whe
 
 Finally, in some yet other cases, the conversion may not be performed, depending on the syntactic environnement.
 
-##Take note of
+##Be advised
 
-Casts without parenthesis around the casted expression stops at the first non alphanumeric character.
-
-Multiple inline variable declaration will be messed up or won't be converted at all if a semi-colon is found anywhere whithin the whole delcaration, before the semi-colon that closes the expression.
+* Casts without parenthesis around the casted expression stops at the first non alphanumeric character.
+* Multiple inline variable declaration will be messed up or won't be converted at all if a semi-colon is found anywhere whithin the whole delcaration, before the semi-colon that closes the expression.
 Also having curly brackets and/or parenthesis inside values or instance may lead the expression not to be converted.
+* Commented code is ignored, and thus does not gets converted. Comments are actually stripped from the files before the conversion then put back in after.
+* Don't bother with error message like "RegexUtilities.Block.GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning -1. [...]", it does not necessarily means that the conversion of something is broken.
 
 #Features not supported by UnityScript
 
@@ -87,7 +94,7 @@ If these features are not currently converted by the converter, it does not mens
 * You can't have a method parameter nammed "get".
 * You can't create assembly aliases (using Alias=Assembly;)
 * Operator overloading. [It works like in Boo](http://docs.codehaus.org/display/BOO/Operator+overloading).
-* Closures. Excerp from the Unity Doc :
+* Closures. Excerpt from the Unity Doc :
 
 ========
 
