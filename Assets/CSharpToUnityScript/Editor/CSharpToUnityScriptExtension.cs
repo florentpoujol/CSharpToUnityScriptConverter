@@ -41,10 +41,10 @@ public class CSharpToUnityScriptExtension : EditorWindow
 
 
     // the directory where to get the scripts to be converted
-    public string sourceDirectory = "/CSharpToUnityScript/Source/";
+    public string sourceDirectory = "/CSharpToUnityScriptConverter/Source/";
 
     // the directory where to put the converted scripts
-    public string targetDirectory = "/CSharpToUnityScript/ConvertedScripts/";
+    public string targetDirectory = "/CSharpToUnityScriptConverter/ConvertedScripts/";
 
     // a list of structure that contains all needed infos about the script to be converted
     protected List<Script> scriptsToConvertList = new List<Script>();
@@ -130,7 +130,7 @@ public class CSharpToUnityScriptExtension : EditorWindow
                 }
 
 
-                if (GUILayout.Button("Reset/Abord", GUILayout.MaxWidth(200))) 
+                if (GUILayout.Button("Abord", GUILayout.MaxWidth(200))) 
                 {
                     Debug.LogWarning("Abording conversion ! Refreshing project.");
                     scriptsToConvertList.Clear();
