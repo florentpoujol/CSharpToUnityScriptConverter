@@ -239,7 +239,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities
 
             if (comment.Success)
             {
-                if (comment.Value.Trim() == "//") // commented line does not have any character
+                if (comment.Value.Trim() == "//" || comment.Value.Trim() == "///") // commented line does not have any character
                     continue; // continue because it would convert every // in the file and mess up with the following comments
 
                 string randomString = GetRandomString();
