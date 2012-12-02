@@ -72,7 +72,7 @@ public class CSharpToUnityScriptExtension : EditorWindow
     /// Method that will be called when the extension will be openen in the Unity editor
     // The MenuItem attribute defineds which menu item will trigger the call to this method
     /// </summary>
-    [MenuItem("Script Converters/C# To UnityScript")]
+    [MenuItem("Tools/C# To UnityScript Converter")]
     static void ShowWindow() 
     {
         CSharpToUnityScriptExtension window = (CSharpToUnityScriptExtension)EditorWindow.GetWindow(typeof(CSharpToUnityScriptExtension));

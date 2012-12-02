@@ -33,7 +33,7 @@ Unlike with the extension, you can convert only 100 lines at a time but the qual
 Extract the CSharpToUnityScriptConverter.unitypackage in your Asset folder.
 It will have created the "Assets/CSharpToUnityScriptConverter" folder.
 
-Open the extension via the menu "Script Converters > C# To UnityScript".
+Open the extension via the menu "Tools > C# To UnityScript Converter".
 
 #How to use
 
