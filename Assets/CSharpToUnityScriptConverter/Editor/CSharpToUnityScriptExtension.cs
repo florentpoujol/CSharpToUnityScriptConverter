@@ -1,9 +1,22 @@
+/// <summary>
+/// CSharpToUnityScriptExtension class for Unity3D
+///
+/// This class is part of the "C# To UnityScript Converter" extension for Unity3D.
+/// It uses the CSharpToUnityScriptConverter class to convert scripts from C# to UnityScript.
+///
+/// Check out the online manual at : http://florentpoujol.github.com/CSharpToUnityScriptConverter
+///
+/// Created by Florent POUJOL
+/// florent.poujol@gmail.com
+/// http://www.florent-poujol.fr/en
+/// Profile on Unity's forums : http://forum.unity3d.com/members/23148-Lion
+/// </summary>
+
 
 using UnityEngine;
 using UnityEditor;
 using System.Collections; // Stack
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using System.Collections.Generic; // List
 using System.IO; // StreamReader/Writer
 
 
@@ -43,7 +56,7 @@ public class CSharpToUnityScriptExtension : EditorWindow
     // the directory where to get the scripts to be converted
     public string sourceDirectory = "/CSharpToUnityScriptConverter/Source/";
 
-    // the directory where to put the converted scripts
+    // the directory where to write the converted scripts
     public string targetDirectory = "/CSharpToUnityScriptConverter/ConvertedScripts/";
 
     // a list of structure that contains all needed infos about the script to be converted
@@ -82,7 +95,7 @@ public class CSharpToUnityScriptExtension : EditorWindow
 
             sourceDirectory = EditorGUILayout.TextField("Source directory : ", sourceDirectory);
             targetDirectory = EditorGUILayout.TextField("Target directory : ", targetDirectory);
-            GUILayout.Label("A copy of the content of the source directory will be created inside the target directory with the converted scripts.");
+            //GUILayout.Label("A copy of the content of the source directory will be created inside the target directory with the converted scripts.");
 
             GUILayout.Space(10);
 
@@ -132,7 +145,7 @@ public class CSharpToUnityScriptExtension : EditorWindow
 
                 if (GUILayout.Button("Abord", GUILayout.MaxWidth(200))) 
                 {
-                    Debug.LogWarning("Abording conversion ! Refreshing project.");
+                    Debug.LogWarning("Abording conversion and refreshing project.");
                     scriptsToConvertList.Clear();
                     converter = null;
                     AssetDatabase.Refresh();
@@ -176,11 +189,11 @@ public class CSharpToUnityScriptExtension : EditorWindow
             if (converter == null)
                 converter = new CSharpToUnityScriptConverter(sourceDirectory);
 
-            converter.Convert(scriptInConversion.text);
+            // converter.Convert(scriptInConversion.text);
             //CSharpToUnityScriptConverter converter = new CSharpToUnityScriptConverter(scriptInConversion.text);
 
             StreamWriter writer = new StreamWriter(targetScriptPath+scriptInConversion.name+".js");
-            writer.Write(converter.convertedCode);
+            writer.Write(converter.Convert(scriptInConversion.text));
             writer.Flush();
             writer.Close();
 
