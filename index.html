@@ -36,10 +36,18 @@
 <p>This extension for Unity3D does a damn good at converting C# scripts into UnityScript scripts.
 More precisely, the extension provides a very good quality mass-conversion solution to translate C# code into UnityScript.</p>
 
-<p>Current version : 1.0
-Last edit of this manual on the 30th of November 2012.</p>
+<p>Main features :</p>
 
-<h1>Contact</h1>
+<ul>
+<li>
+<strong>very thorough and intelligent</strong> conversion (this is simply the best converter on the market !)</li>
+<li>mass-conversion : from one file to <strong>whole hierarchies</strong>
+</li>
+<li>**ultrafast **: 300+ lines/second (try this by hand !)</li>
+<li><p><strong>dead easy</strong> setup and use : drop files in a folder then hit a button</p></li>
+<li><p>Current version : 1.0</p></li>
+<li><p>Last edit of this manual on the 02nd of December 2012.</p></li>
+</ul><h1>Contact</h1>
 
 <ul>
 <li>florent dot poujol at gmail dot com</li>
@@ -57,7 +65,7 @@ Unlike with the extension, you can convert only 100 lines at a time but the qual
 <h1>How to install</h1>
 
 <p>Extract the CSharpToUnityScriptConverter.unitypackage in your Asset folder.
-It will have created the "Assets/CSharpToUnityScript" folder.</p>
+It will have created the "Assets/CSharpToUnityScriptConverter" folder.</p>
 
 <p>Open the extension via the menu "Script Converters &gt; C# To UnityScript".</p>
 
@@ -65,7 +73,7 @@ It will have created the "Assets/CSharpToUnityScript" folder.</p>
 
 <p>The extension will convert any C# scripts found in the "source" directory and create their UnityScript conterpart in the "target" directory.</p>
 
-<p>By default, the source directory is "Assets/CSharpToUnityScript/Source" and the target directory will be "Assets/CSharpToUnityScript/ConvertedScripts". You may change these paths via the appropriate fields.</p>
+<p>By default, the source directory is "Assets/CSharpToUnityScriptConverter/Source" and the target directory will be "Assets/CSharpToUnityScriptConverter/ConvertedScripts". You may change these paths via the appropriate fields.</p>
 
 <p>Put the C# scripts in your source directory then hit the "convert" button.
 The extension tab shows you how many files are left to be converted.
@@ -96,14 +104,15 @@ That means that in some case, there is just no way to express in UnityScript wha
 
 <p>Finally, in some yet other cases, the conversion may not be performed, depending on the syntactic environnement.</p>
 
-<h2>Take note of</h2>
+<h2>Be advised</h2>
 
-<p>Casts without parenthesis around the casted expression stops at the first non alphanumeric character.</p>
-
-<p>Multiple inline variable declaration will be messed up or won't be converted at all if a semi-colon is found anywhere whithin the whole delcaration, before the semi-colon that closes the expression.
-Also having curly brackets and/or parenthesis inside values or instance may lead the expression not to be converted.</p>
-
-<h1>Features not supported by UnityScript</h1>
+<ul>
+<li>Casts without parenthesis around the casted expression stops at the first non alphanumeric character.</li>
+<li>Multiple inline variable declaration will be messed up or won't be converted at all if a semi-colon is found anywhere whithin the whole delcaration, before the semi-colon that closes the expression.
+Also having curly brackets and/or parenthesis inside values or instance may lead the expression not to be converted.</li>
+<li>Commented code is ignored, and thus does not gets converted. Comments are actually stripped from the files before the conversion then put back in after.</li>
+<li>Don't bother with error message like "RegexUtilities.Block.GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning -1. [...]", it does not necessarily means that the conversion of something is broken.</li>
+</ul><h1>Features not supported by UnityScript</h1>
 
 <p>This sections shows which features does not work in UnityScript, and try to provide a work around when possible.</p>
 
@@ -123,7 +132,7 @@ Also having curly brackets and/or parenthesis inside values or instance may lead
 <li>You can't have a method parameter nammed "get".</li>
 <li>You can't create assembly aliases (using Alias=Assembly;)</li>
 <li>Operator overloading. <a href="http://docs.codehaus.org/display/BOO/Operator+overloading">It works like in Boo</a>.</li>
-<li>Closures. Excerp from the Unity Doc :</li>
+<li>Closures. Excerpt from the Unity Doc :</li>
 </ul><h1></h1>
 
 <pre><code>list.Sort(function(x:String, y:String) {
