@@ -4,6 +4,9 @@
 /// This class provide some structs, variables and methods 
 ///   to facilitate the use of regexes by the CSharpToUnityScriptConverter class
 ///
+/// Version : Goes with CSharpToUnityScriptConverter v1.0
+/// Release : 02 december 2012 
+///
 /// Created by Florent POUJOL
 /// florent.poujol@gmail.com
 /// http://www.florent-poujol.fr/en

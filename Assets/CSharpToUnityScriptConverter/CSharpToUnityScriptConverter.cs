@@ -14,6 +14,9 @@
 /// Then call the Convert(string inputCode) method with the input code (in C#) to be converted as parameter
 /// The converted code in UnityScript is returned bu this method Convert() but is also available in the public member "convertedCode"
 /// 
+/// Version : 1.0
+/// Release : 02 december 2012 
+///
 /// Created by Florent POUJOL
 /// florent.poujol@gmail.com
 /// http://www.florent-poujol.fr/en
