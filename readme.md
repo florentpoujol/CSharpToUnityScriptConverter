@@ -4,10 +4,11 @@ This extension for Unity3D does a damn good at converting C# scripts into UnityS
 More precisely, the extension provides a very good quality mass-conversion solution to translate C# code into UnityScript.
 
 Main features :
-* very thorough and intelligent conversion (this is simply the best converter on the market)
-* mass conversion : from one file to whole hierarchies
-* ultra fast : 300+ lines/second (try this by hand !)
-* dead-easy setup and use : drop files in a folder then hit a button
+* **very thorough and intelligent** conversion (this is simply the best converter on the market)
+* mass conversion : from one file to **whole hierarchies**
+* **ultra fast** : 300+ lines/second (try this by hand !)
+* **dead-easy** setup and use : drop files in a folder then hit a button
+
 
 * Current version : 1.0
 * Last edit of this manual on the 02nd of December 2012.
