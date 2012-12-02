@@ -5,13 +5,14 @@ More precisely, the extension provides a very good quality mass-conversion solut
 
 Main features :
 * **very thorough and intelligent** conversion (this is simply the best converter on the market)
-* mass conversion : from one file to **whole hierarchies**
+* **mass conversion** : from one file to whole hierarchies
 * **ultra fast** : 300+ lines/second (try this by hand !)
-* **dead-easy** setup and use : drop files in a folder then hit a button
+* **dead-easy setup and use** : drop files in a folder then hit a button
 
+======
+Current version : 1.0
 
-* Current version : 1.0
-* Last edit of this manual on the 02nd of December 2012.
+Last edit of this manual on the 02nd of December 2012.
 
 #Contact
 
