@@ -45,7 +45,8 @@ public class CSharpToUnityScriptExtension : EditorWindow
                 name = relativePath;
                 relativePath = "";
             }
-            else {
+            else 
+            {
                 name = relativePath.Substring(lastSlashIndex);
                 relativePath = relativePath.Substring(0, lastSlashIndex);
             }
@@ -72,7 +73,7 @@ public class CSharpToUnityScriptExtension : EditorWindow
     /// Method that will be called when the extension will be openen in the Unity editor
     // The MenuItem attribute defineds which menu item will trigger the call to this method
     /// </summary>
-    [MenuItem("Tools/C# To UnityScript Converter")]
+    [MenuItem("Window/C# To UnityScript Converter")]
     static void ShowWindow() 
     {
         CSharpToUnityScriptExtension window = (CSharpToUnityScriptExtension)EditorWindow.GetWindow(typeof(CSharpToUnityScriptExtension));

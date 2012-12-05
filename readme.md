@@ -12,7 +12,7 @@ Main features :
 ======
 Current version : 1.0
 
-Last edit of this manual on the 02nd of December 2012.
+Last edit of this manual : 05 December 2012.
 
 #Contact
 
@@ -22,7 +22,7 @@ Last edit of this manual on the 02nd of December 2012.
 
 #How to buy
 
-You will be able to buy this extension from the offical Unity Asset Store and from GamePrefabs.com at some point during the first week of December 2012.
+You can buy this extension **[on the Unity Asset Store](http://u3d.as/content/florent-poujol/c-to-unity-script-converter/3Jp).**
 
 You want to try before bying ? No problem !
 Head over to my website to [test the live demo](http://www.florent-poujol.fr/en/unity3d/c-to-unityscript-converter).
@@ -63,7 +63,7 @@ If you are confident that the code you want to convert does not contains such de
 #Quality of the conversion
 
 Be advised that UnityScript has less features than C#.
-That means that in some case, there is just no way to express in UnityScript what the C# does.
+That means that in some case, there is just no way to express in UnityScript what the C# code does.
 
 In some other cases, you will need to refactor part of the UnityScript code (when it's not done by the converter itself) to make it do the same thing as the C# code.
 
@@ -91,7 +91,7 @@ In some cases, the converter could deal with the situation itself, but it is jus
 
 ##Features that could be deal with by the converter (but that curently aren't)
 
-If these features are not currently converted by the converter, it does not mens, they will never be.
+If these features are not currently converted by the converter, it does not means they will never be in the future.
 
 * You can't have a method parameter nammed "get".
 * You can't create assembly aliases (using Alias=Assembly;)
@@ -108,7 +108,7 @@ If these features are not currently converted by the converter, it does not mens
 
 ##Hopeless features
 
-The converter can not do anything about them (it does in some very specific cases), you have to deal with the situation yourself.
+The converter can't do anything about them (well, it does in some very specific cases), you have to deal with the situation yourself.
 
 * Linq.
 * The where clause.
@@ -144,9 +144,9 @@ UnityScript :
 
 ##Delegates and Events
 
-They does not exists in UnityScript but can be simulated to some extends.
+They do not exists in UnityScript but can be simulated to some extends.
 
-You can't create custom-nammed delegate or callable types as in C# or Boo but you can express specific method signatures as Boo does :
+You can't create custom-nammed delegates or callable types as in C# or Boo but you can express specific method signatures as Boo does :
 
 C# :
 
@@ -170,9 +170,9 @@ UnityScript :
 You also still have access to .Net's Action<> and Func<> generic delegates.
 
 The converter convert every occurence of a delegate name to its US conterpart.
-ie : Every occurence of "DelegateName" would be replaced by "function(int)"
+ie : Every occurence of "DelegateName" would be replaced by "function(int)".
 
-Events does not exists, but they are just a specialized collection of method, something you can reproduce in UnityScript, while it require some code refactoring.
+Events do not exists, but they are just a specialized collection of methods, something you can reproduce in UnityScript, while it require some refactoring.
 
 C# :
 
@@ -220,6 +220,7 @@ As of v1.0, nothing is done by the converter, everything is left untouched in th
 Single dimentionnal arrays should convert just fine.
 
 The syntax of a multidimensionnal array in C#, becomes a jagged array in US :
+
 C# :
 
 	{ {0}, {1} } // is of type int[,]
@@ -239,7 +240,7 @@ Jagged arrays :
 
 Creating an empty two level jagged array is done like this :
 
-	var jaggedArray = array.<int[]>(10); // jaggedArray is of type int[][]  <=>  int[10][]
+	var jaggedArray = array.<int[]>(10); // jaggedArray is of type int[][] (int[10][])
 
 The declaration of empty jagged arrays is the only thing that is handled by the converter.
 
@@ -315,8 +316,10 @@ UnityScript :
 #Improving the conversion
 
 Sometimes, someting that convert just fine in most of the scripts will just not convert at all or be messed up in another script, for no apparent reason.
-If that happens, please contact me (see section at the top) and give me your script if it's not top-secret.
+If that happens, please contact me (see contacts at the top) and give me your script if it's not top-secret.
 
 Such behaviour is often due to a particular syntactic setting that makes the converter not recogize a pattern (or recogize one when it shouldn't).
-By gathering scripts where this happends, I may be able to find what triggers the situation and improve the converter.
+By gathering scripts where this happens, I may be able to find what triggers the situation and improve the converter.
 
+
+Thanks for reading this far !

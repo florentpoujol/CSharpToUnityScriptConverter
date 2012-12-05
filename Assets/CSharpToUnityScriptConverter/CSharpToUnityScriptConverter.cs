@@ -169,7 +169,7 @@ public class CSharpToUnityScriptConverter: RegexUtilities
     /// </summary>
     /// <param name="inputCode">The code in C# to be converted in UnityScript</param>
     /// <returns>The converted code in UnityScript</returns>
-    public string Convert (string inputCode)
+    public string Convert(string inputCode)
     {
         convertedCode = inputCode;
 
