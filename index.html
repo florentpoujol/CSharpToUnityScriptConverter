@@ -51,7 +51,7 @@ More precisely, the extension provides a very good quality mass-conversion solut
 
 <p>Current version : 1.0</p>
 
-<p>Last edit of this manual on the 02nd of December 2012.</p>
+<p>Last edit of this manual : 05 December 2012.</p>
 
 <h1>Contact</h1>
 
@@ -62,7 +62,7 @@ More precisely, the extension provides a very good quality mass-conversion solut
 </li>
 </ul><h1>How to buy</h1>
 
-<p>You will be able to buy this extension from the offical Unity Asset Store and from GamePrefabs.com at some point during the first week of December 2012.</p>
+<p>You can buy this extension <strong><a href="http://u3d.as/content/florent-poujol/c-to-unity-script-converter/3Jp">on the Unity Asset Store</a>.</strong></p>
 
 <p>You want to try before bying ? No problem !
 Head over to my website to <a href="http://www.florent-poujol.fr/en/unity3d/c-to-unityscript-converter">test the live demo</a>.
@@ -104,7 +104,7 @@ If you are confident that the code you want to convert does not contains such de
 <h1>Quality of the conversion</h1>
 
 <p>Be advised that UnityScript has less features than C#.
-That means that in some case, there is just no way to express in UnityScript what the C# does.</p>
+That means that in some case, there is just no way to express in UnityScript what the C# code does.</p>
 
 <p>In some other cases, you will need to refactor part of the UnityScript code (when it's not done by the converter itself) to make it do the same thing as the C# code.</p>
 
@@ -132,7 +132,7 @@ Also having curly brackets and/or parenthesis inside values or instance may lead
 <li>...</li>
 </ul><h2>Features that could be deal with by the converter (but that curently aren't)</h2>
 
-<p>If these features are not currently converted by the converter, it does not mens, they will never be.</p>
+<p>If these features are not currently converted by the converter, it does not means they will never be in the future.</p>
 
 <ul>
 <li>You can't have a method parameter nammed "get".</li>
@@ -150,7 +150,7 @@ list.Sort(function(x, y) x.CompareTo(y));
 
 <h2>Hopeless features</h2>
 
-<p>The converter can not do anything about them (it does in some very specific cases), you have to deal with the situation yourself.</p>
+<p>The converter can't do anything about them (well, it does in some very specific cases), you have to deal with the situation yourself.</p>
 
 <ul>
 <li>Linq.</li>
@@ -186,9 +186,9 @@ Method( "", [1, 2, 3] );
 
 <h2>Delegates and Events</h2>
 
-<p>They does not exists in UnityScript but can be simulated to some extends.</p>
+<p>They do not exists in UnityScript but can be simulated to some extends.</p>
 
-<p>You can't create custom-nammed delegate or callable types as in C# or Boo but you can express specific method signatures as Boo does :</p>
+<p>You can't create custom-nammed delegates or callable types as in C# or Boo but you can express specific method signatures as Boo does :</p>
 
 <p>C# :</p>
 
@@ -215,9 +215,9 @@ var variableName: function(int): String = MethodName;
 <p>You also still have access to .Net's Action&lt;&gt; and Func&lt;&gt; generic delegates.</p>
 
 <p>The converter convert every occurence of a delegate name to its US conterpart.
-ie : Every occurence of "DelegateName" would be replaced by "function(int)"</p>
+ie : Every occurence of "DelegateName" would be replaced by "function(int)".</p>
 
-<p>Events does not exists, but they are just a specialized collection of method, something you can reproduce in UnityScript, while it require some code refactoring.</p>
+<p>Events do not exists, but they are just a specialized collection of methods, something you can reproduce in UnityScript, while it require some refactoring.</p>
 
 <p>C# :</p>
 
@@ -265,8 +265,9 @@ foorbarMethods( 1 );
 
 <p>Single dimentionnal arrays should convert just fine.</p>
 
-<p>The syntax of a multidimensionnal array in C#, becomes a jagged array in US :
-C# :</p>
+<p>The syntax of a multidimensionnal array in C#, becomes a jagged array in US :</p>
+
+<p>C# :</p>
 
 <pre><code>{ {0}, {1} } // is of type int[,]
 </code></pre>
@@ -288,7 +289,7 @@ var jaggedArray = new int[2][1];    =&gt;  jaggedArray is of type int ...
 
 <p>Creating an empty two level jagged array is done like this :</p>
 
-<pre><code>var jaggedArray = array.&lt;int[]&gt;(10); // jaggedArray is of type int[][]  &lt;=&gt;  int[10][]
+<pre><code>var jaggedArray = array.&lt;int[]&gt;(10); // jaggedArray is of type int[][] (int[10][])
 </code></pre>
 
 <p>The declaration of empty jagged arrays is the only thing that is handled by the converter.</p>
@@ -368,10 +369,12 @@ function Start()
 <h1>Improving the conversion</h1>
 
 <p>Sometimes, someting that convert just fine in most of the scripts will just not convert at all or be messed up in another script, for no apparent reason.
-If that happens, please contact me (see section at the top) and give me your script if it's not top-secret.</p>
+If that happens, please contact me (see contacts at the top) and give me your script if it's not top-secret.</p>
 
 <p>Such behaviour is often due to a particular syntactic setting that makes the converter not recogize a pattern (or recogize one when it shouldn't).
-By gathering scripts where this happends, I may be able to find what triggers the situation and improve the converter.</p>
+By gathering scripts where this happens, I may be able to find what triggers the situation and improve the converter.</p>
+
+<p>Thanks for reading this far !</p>
         </section>
 
         <footer>
