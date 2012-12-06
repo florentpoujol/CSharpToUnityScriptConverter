@@ -19,10 +19,11 @@ Last edit of this manual : 05 December 2012.
 * florent dot poujol at gmail dot com
 * http://www.florent-poujol.fr/en
 * My profile on Unity's forums : http://forum.unity3d.com/members/23148-Lion
+* Twitter : @Lion_2
 
 #How to buy
 
-You can buy this extension **[on the Unity Asset Store](http://u3d.as/content/florent-poujol/c-to-unity-script-converter/3Jp).**
+You can get it **[on the Unity Asset Store](http://u3d.as/content/florent-poujol/c-to-unity-script-converter/3Jp).**
 
 You want to try before bying ? No problem !
 Head over to my website to [test the live demo](http://www.florent-poujol.fr/en/unity3d/c-to-unityscript-converter).
