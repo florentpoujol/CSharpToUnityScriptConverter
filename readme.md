@@ -16,9 +16,10 @@ Last edit of this manual : 05 December 2012.
 
 #Contact
 
-* florent dot poujol at gmail dot com
-* http://www.florent-poujol.fr/en
-* My profile on Unity's forums : http://forum.unity3d.com/members/23148-Lion
+* [Support thread on Unity's forums](http://forum.unity3d.com/threads/161475-Efficient-C-to-UnityScript-converter)
+* Email : florent dot poujol at gmail dot com
+* Website : http://www.florent-poujol.fr/en
+* [My profile on Unity's forums](http://forum.unity3d.com/members/23148-Lion)
 * Twitter : [@Lion_2](https://twitter.com/Lion_2)
 
 #How to buy
@@ -64,7 +65,7 @@ If you are confident that the code you want to convert does not contains such de
 #Quality of the conversion
 
 Be advised that UnityScript has less features than C#.
-That means that in some case, there is just no way to express in UnityScript what the C# code does.
+That means that in some cases, there is just no way to express in UnityScript what the C# code does.
 
 In some other cases, you will need to refactor part of the UnityScript code (when it's not done by the converter itself) to make it do the same thing as the C# code.
 
