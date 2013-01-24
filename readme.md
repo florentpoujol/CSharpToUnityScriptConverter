@@ -20,7 +20,7 @@ Last edit of this manual : 05 December 2012.
 * Email : florent dot poujol at gmail dot com
 * Website : http://www.florent-poujol.fr/en
 * [My profile on Unity's forums](http://forum.unity3d.com/members/23148-Lion)
-* Twitter : [@Lion_2](https://twitter.com/Lion_2)
+* Twitter : [@FlorentPoujol](https://twitter.com/FlorentPoujol)
 
 #How to buy
 
