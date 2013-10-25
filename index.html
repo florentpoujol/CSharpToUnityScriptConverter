@@ -31,7 +31,8 @@
         <hr>
 
         <section id="main_content">
-          <h1>What does it do ?</h1>
+          <h1>
+<a name="what-does-it-do-" class="anchor" href="#what-does-it-do-"><span class="octicon octicon-link"></span></a>What does it do ?</h1>
 
 <p>This extension for Unity3D does a damn good at converting C# scripts into UnityScript scripts.
 More precisely, the extension provides a very good quality mass-conversion solution to translate C# code into UnityScript.</p>
@@ -51,9 +52,10 @@ More precisely, the extension provides a very good quality mass-conversion solut
 
 <p>Current version : 1.0</p>
 
-<p>Last edit of this manual : 05 December 2012.</p>
+<p>Last edit of this manual : 25 October 2013.</p>
 
-<h1>Contact</h1>
+<h1>
+<a name="contact" class="anchor" href="#contact"><span class="octicon octicon-link"></span></a>Contact</h1>
 
 <ul>
 <li><a href="http://forum.unity3d.com/threads/161475-Efficient-C-to-UnityScript-converter">Support thread on Unity's forums</a></li>
@@ -63,22 +65,25 @@ More precisely, the extension provides a very good quality mass-conversion solut
 <li><a href="http://forum.unity3d.com/members/23148-Lion">My profile on Unity's forums</a></li>
 <li>Twitter : <a href="https://twitter.com/FlorentPoujol">@FlorentPoujol</a>
 </li>
-</ul><h1>How to buy</h1>
+</ul><h1>
+<a name="how-to-buy" class="anchor" href="#how-to-buy"><span class="octicon octicon-link"></span></a>How to buy</h1>
 
-<p>You can get it <strong><a href="http://u3d.as/content/florent-poujol/c-to-unity-script-converter/3Jp">on the Unity Asset Store</a>.</strong></p>
+<p>You can get it <strong><a href="https://www.assetstore.unity3d.com/#/content/5630">on the Unity Asset Store</a>.</strong></p>
 
 <p>You want to try before bying ? No problem !
-Head over to my website to <a href="http://www.florent-poujol.fr/en/unity3d/c-to-unityscript-converter">test the live demo</a>.
+Head over to my website to <a href="http://florentpoujol.fr/content/unity3d/csharptounityscript/">test the live demo</a>.
 Unlike with the extension, you can convert only 100 lines at a time but the quality of the conversion is identical !</p>
 
-<h1>How to install</h1>
+<h1>
+<a name="how-to-install" class="anchor" href="#how-to-install"><span class="octicon octicon-link"></span></a>How to install</h1>
 
 <p>Extract the CSharpToUnityScriptConverter.unitypackage in your Asset folder.
 It will have created the "Assets/CSharpToUnityScriptConverter" folder.</p>
 
 <p>Open the extension via the menu "Tools &gt; C# To UnityScript Converter".</p>
 
-<h1>How to use</h1>
+<h1>
+<a name="how-to-use" class="anchor" href="#how-to-use"><span class="octicon octicon-link"></span></a>How to use</h1>
 
 <p>The extension will convert any C# scripts found in the "source" directory and create their UnityScript conterpart in the "target" directory.</p>
 
@@ -94,7 +99,8 @@ If you hit the convert button again, it will convert again the whole source dire
 
 <p>The conversion speed is about 10Ko or a couple hundreds of lines per second.</p>
 
-<h1>Options</h1>
+<h1>
+<a name="options" class="anchor" href="#options"><span class="octicon octicon-link"></span></a>Options</h1>
 
 <p>You may choose if you want the converter to try to convert multiple inline variable declarations.</p>
 
@@ -104,7 +110,8 @@ If you hit the convert button again, it will convert again the whole source dire
 <p>Despite all my efforts, the converter may still match a few false positive.
 If you are confident that the code you want to convert does not contains such declarations, or only a few of them, you better leave the box unticked.</p>
 
-<h1>Quality of the conversion</h1>
+<h1>
+<a name="quality-of-the-conversion" class="anchor" href="#quality-of-the-conversion"><span class="octicon octicon-link"></span></a>Quality of the conversion</h1>
 
 <p>Be advised that UnityScript has less features than C#.
 That means that in some cases, there is just no way to express in UnityScript what the C# code does.</p>
@@ -113,7 +120,8 @@ That means that in some cases, there is just no way to express in UnityScript wh
 
 <p>Finally, in some yet other cases, the conversion may not be performed, depending on the syntactic environnement.</p>
 
-<h2>Be advised</h2>
+<h2>
+<a name="be-advised" class="anchor" href="#be-advised"><span class="octicon octicon-link"></span></a>Be advised</h2>
 
 <ul>
 <li>Casts without parenthesis around the casted expression stops at the first non alphanumeric character.</li>
@@ -121,19 +129,22 @@ That means that in some cases, there is just no way to express in UnityScript wh
 Also having curly brackets and/or parenthesis inside values or instance may lead the expression not to be converted.</li>
 <li>Commented code is ignored, and thus does not gets converted. Comments are actually stripped from the files before the conversion then put back in after.</li>
 <li>Don't bother with error message like "RegexUtilities.Block.GetEndOfBlockIndex() : No matching closing bracket has been found ! Returning -1. [...]", it does not necessarily means that the conversion of something is broken.</li>
-</ul><h1>Features not supported by UnityScript</h1>
+</ul><h1>
+<a name="features-not-supported-by-unityscript" class="anchor" href="#features-not-supported-by-unityscript"><span class="octicon octicon-link"></span></a>Features not supported by UnityScript</h1>
 
 <p>This sections shows which features does not work in UnityScript, and try to provide a work around when possible.</p>
 
 <p>In some cases, the converter could deal with the situation itself, but it is just not (yet) implemented.</p>
 
-<h2>Features dealt with by the converter</h2>
+<h2>
+<a name="features-dealt-with-by-the-converter" class="anchor" href="#features-dealt-with-by-the-converter"><span class="octicon octicon-link"></span></a>Features dealt with by the converter</h2>
 
 <ul>
 <li>abstract keyword : abstract classes/methods are converted into regular classes/methods.</li>
 <li>virtual keyword : it is just removed</li>
 <li>...</li>
-</ul><h2>Features that could be deal with by the converter (but that curently aren't)</h2>
+</ul><h2>
+<a name="features-that-could-be-deal-with-by-the-converter-but-that-curently-arent" class="anchor" href="#features-that-could-be-deal-with-by-the-converter-but-that-curently-arent"><span class="octicon octicon-link"></span></a>Features that could be deal with by the converter (but that curently aren't)</h2>
 
 <p>If these features are not currently converted by the converter, it does not means they will never be in the future.</p>
 
@@ -151,7 +162,8 @@ Also having curly brackets and/or parenthesis inside values or instance may lead
 list.Sort(function(x, y) x.CompareTo(y));
 </code></pre>
 
-<h2>Hopeless features</h2>
+<h2>
+<a name="hopeless-features" class="anchor" href="#hopeless-features"><span class="octicon octicon-link"></span></a>Hopeless features</h2>
 
 <p>The converter can't do anything about them (well, it does in some very specific cases), you have to deal with the situation yourself.</p>
 
@@ -160,7 +172,8 @@ list.Sort(function(x, y) x.CompareTo(y));
 <li>The where clause.</li>
 <li>Enums do not accept negative values.</li>
 <li>Static properties can't access another static property (you get the same error as if the accessed property is non-static).</li>
-</ul><h3>Params keyword</h3>
+</ul><h3>
+<a name="params-keyword" class="anchor" href="#params-keyword"><span class="octicon octicon-link"></span></a>Params keyword</h3>
 
 <p>They are left, so they pop errors in the Unity console.
 The solution is to remove the "params" keyword from the method declaration, then wrap the parameters in an array in the method call.</p>
@@ -187,7 +200,8 @@ Method( "", [1, 2] );
 Method( "", [1, 2, 3] );
 </code></pre>
 
-<h2>Delegates and Events</h2>
+<h2>
+<a name="delegates-and-events" class="anchor" href="#delegates-and-events"><span class="octicon octicon-link"></span></a>Delegates and Events</h2>
 
 <p>They do not exists in UnityScript but can be simulated to some extends.</p>
 
@@ -264,7 +278,8 @@ foorbarMethods( 1 );
 
 <p>As of v1.0, nothing is done by the converter, everything is left untouched in the code.</p>
 
-<h3>Arrays</h3>
+<h3>
+<a name="arrays" class="anchor" href="#arrays"><span class="octicon octicon-link"></span></a>Arrays</h3>
 
 <p>Single dimentionnal arrays should convert just fine.</p>
 
@@ -323,7 +338,8 @@ var array: int[,] = matrix(int, 1, 1);
 
 <p>It seems that you can't set the value of a multidimentionnal array while declaring it.</p>
 
-<h3>Out and Ref keywords</h3>
+<h3>
+<a name="out-and-ref-keywords" class="anchor" href="#out-and-ref-keywords"><span class="octicon octicon-link"></span></a>Out and Ref keywords</h3>
 
 <p>In UnityScript, you don't need these keywords when you call a C# method (ie : the 'hitInfo' parameter of Physics.Raycast()).
 But there is no way in UnityScript to create such behavior in the method declaration.
@@ -369,7 +385,8 @@ function Start()
 }
 </code></pre>
 
-<h1>Improving the conversion</h1>
+<h1>
+<a name="improving-the-conversion" class="anchor" href="#improving-the-conversion"><span class="octicon octicon-link"></span></a>Improving the conversion</h1>
 
 <p>Sometimes, someting that convert just fine in most of the scripts will just not convert at all or be messed up in another script, for no apparent reason.
 If that happens, please contact me (see contacts at the top) and give me your script if it's not top-secret.</p>
@@ -382,7 +399,7 @@ By gathering scripts where this happens, I may be able to find what triggers the
 
         <footer>
           C# to UnityScript converter is maintained by <a href="https://github.com/florentpoujol">florentpoujol</a><br>
-          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
         </footer>
 
                   <script type="text/javascript">
