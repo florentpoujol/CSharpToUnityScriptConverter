@@ -12,7 +12,7 @@ Main features :
 ======
 Current version : 1.0
 
-Last edit of this manual : 05 December 2012.
+Last edit of this manual : 25 October 2013.
 
 #Contact
 
@@ -24,10 +24,10 @@ Last edit of this manual : 05 December 2012.
 
 #How to buy
 
-You can get it **[on the Unity Asset Store](http://u3d.as/content/florent-poujol/c-to-unity-script-converter/3Jp).**
+You can get it **[on the Unity Asset Store](https://www.assetstore.unity3d.com/#/content/5630).**
 
 You want to try before bying ? No problem !
-Head over to my website to [test the live demo](http://www.florent-poujol.fr/en/unity3d/c-to-unityscript-converter).
+Head over to my website to [test the live demo](http://florentpoujol.fr/content/unity3d/csharptounityscript/).
 Unlike with the extension, you can convert only 100 lines at a time but the quality of the conversion is identical !
 
 #How to install
